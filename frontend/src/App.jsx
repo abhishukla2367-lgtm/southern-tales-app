@@ -1,16 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 
 // Components
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
-import ProtectedRoute from "./components/ProtectedRoute"; // ✅ Task 4 Logic
+import ProtectedRoute from "./components/ProtectedRoute"; 
 
 // Pages
 import Home from "./pages/Home";
@@ -33,7 +34,15 @@ import ReservationsList from "./components/admin/ReservationsList";
 
 // Contexts
 import { CartProvider } from "./context/CartContext";
-import { AuthProvider } from "./context/AuthContext"; // ✅ Task 3 & 5 State
+import { AuthProvider, AuthContext } from "./context/AuthContext"; 
+
+/* Admin Route Protector */
+const AdminRoute = ({ children }) => {
+  const { user, loading } = useContext(AuthContext);
+  if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
+  // Assumes your user object has an 'role' field from MongoDB
+  return user && user.role === "admin" ? children : <Navigate to="/login" />;
+};
 
 /* Scroll to top on route change */
 const ScrollToTop = () => {
@@ -44,14 +53,14 @@ const ScrollToTop = () => {
   return null;
 };
 
-/* Main Layout - Task 1: Professional UI Consistency */
+/* Main Layout */
 const Layout = ({ children }) => {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith("/admin");
 
   return (
     <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-background text-textPrimary"}>
-      {!isAdminRoute && <Header />} {/* Task 3: Header handles Login/Profile toggle */}
+      {!isAdminRoute && <Header />} 
       <main className={isAdminRoute ? "min-h-screen" : "min-h-[80vh]"}>
         {children}
       </main>
@@ -62,22 +71,18 @@ const Layout = ({ children }) => {
 
 export default function App() {
   return (
-    /* 
-       FIX: The Router must wrap Providers that use the 'useNavigate' hook.
-       This resolves the "useNavigate() may be used only in the context of a <Router> component" error.
-    */
     <Router 
       future={{ 
         v7_startTransition: true, 
         v7_relativeSplatPath: true 
       }}
     >
-      <AuthProvider> {/* Task 5 & 6 Auth Persistence */}
-        <CartProvider> {/* Now safe to use useNavigate inside CartContext */}
+      <AuthProvider>
+        <CartProvider>
           <ScrollToTop />
           <Layout>
             <Routes>
-              {/* PUBLIC ROUTES - Task 4: Browse without login */}
+              {/* PUBLIC ROUTES */}
               <Route path="/" element={<Home />} />
               <Route path="/menu" element={<Menu />} />
               <Route path="/about" element={<AboutUs />} />
@@ -85,12 +90,12 @@ export default function App() {
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/cart" element={<CartDrawer />} />
               
-              {/* AUTH ROUTES - Task 5: Register & Login */}
+              {/* AUTH ROUTES */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* PROTECTED ROUTES - Task 4: Login required for these actions */}
+              {/* PROTECTED USER ROUTES */}
               <Route 
                 path="/reservation" 
                 element={<ProtectedRoute><Reservation /></ProtectedRoute>} 
@@ -99,18 +104,28 @@ export default function App() {
                 path="/order-summary" 
                 element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} 
               />
-
-              {/* PROFILE ROUTE - Task 6: Show User details/Orders/Reservations */}
               <Route 
                 path="/profile" 
                 element={<ProtectedRoute><Profile /></ProtectedRoute>} 
               />
 
-              {/* ADMIN ROUTES */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/menu" element={<MenuList />} />
-              <Route path="/admin/orders" element={<OrdersList />} />
-              <Route path="/admin/reservations" element={<ReservationsList />} />
+              {/* PROTECTED ADMIN ROUTES */}
+              <Route 
+                path="/admin" 
+                element={<AdminRoute><AdminDashboard /></AdminRoute>} 
+              />
+              <Route 
+                path="/admin/menu" 
+                element={<AdminRoute><MenuList /></AdminRoute>} 
+              />
+              <Route 
+                path="/admin/orders" 
+                element={<AdminRoute><OrdersList /></AdminRoute>} 
+              />
+              <Route 
+                path="/admin/reservations" 
+                element={<AdminRoute><ReservationsList /></AdminRoute>} 
+              />
 
               {/* 404 Redirect */}
               <Route path="*" element={<Home />} />

@@ -4,24 +4,24 @@ import { useNavigate } from "react-router-dom";
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  // PERSISTENCE: Initialize from LocalStorage so cart survives page refreshes
+  const navigate = useNavigate();
+
+  // 1. PERSISTENCE: Initialize from LocalStorage (Requirement: Professional State Management)
   const [cartItems, setCartItems] = useState(() => {
     const savedCart = localStorage.getItem("restro_cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
-  
+
   const [orderType, setOrderType] = useState("delivery");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const navigate = useNavigate();
 
-  // Sync cart to LocalStorage whenever it changes
+  // 2. SYNC: Automatically update LocalStorage when cart changes
   useEffect(() => {
     localStorage.setItem("restro_cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // AUTH AWARENESS & CART LOGIC (Requirement 4 & 8)
+  // 3. AUTH GUARDED ACTION (Requirement #4): Restrict Add to Cart
   const addToCart = (item, user) => {
-    // If user is not logged in, redirect to login (Task Requirement #4)
     if (!user) {
       alert("Please login to add items to your cart.");
       navigate("/login");
@@ -76,11 +76,18 @@ export const CartProvider = ({ children }) => {
     [cartItems]
   );
 
-  // ORDER SUBMISSION LOGIC (Requirement 8)
-  // Connects to MongoDB via your Backend API
-  const placeOrder = async (user) => {
-    if (!user) return { success: false, message: "User not authenticated" };
-    if (cartItems.length === 0) return { success: false, message: "Cart is empty" };
+  // 4. PLACE ORDER (Requirement #2 & #8): MongoDB Backend Integration
+  const placeOrder = async (user, deliveryDetails = {}) => {
+    if (!user) {
+      alert("Session expired. Please login again.");
+      navigate("/login");
+      return { success: false };
+    }
+
+    if (cartItems.length === 0) {
+      alert("Your cart is empty.");
+      return { success: false };
+    }
 
     setIsPlacingOrder(true);
     try {
@@ -88,12 +95,15 @@ export const CartProvider = ({ children }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user._id, // Assumes user object has _id from MongoDB
+          userId: user._id,           // MongoDB ID from AuthContext
           customerName: user.name,
+          email: user.email,
           items: cartItems,
           totalAmount: totalPrice,
           orderType: orderType,
-          status: "Pending",
+          address: deliveryDetails.address || "N/A",
+          platform: deliveryDetails.platform || "Direct",
+          status: "Pending",          // For Admin Side Orders Page
           createdAt: new Date()
         }),
       });
@@ -101,15 +111,18 @@ export const CartProvider = ({ children }) => {
       const data = await response.json();
 
       if (response.ok) {
-        clearCart(); // Requirement: Remove items from cart after order
-        navigate("/profile"); // Redirect to My Orders
-        return { success: true, message: "Order placed successfully!" };
+        // Requirement #8: Remove items from cart on success
+        clearCart(); 
+        alert("Order Placed Successfully!");
+        navigate("/profile"); // Task #6: Show My Orders in Profile
+        return { success: true };
       } else {
-        throw new Error(data.message || "Failed to place order");
+        throw new Error(data.message || "Failed to save order in database");
       }
     } catch (error) {
-      console.error("Order Error:", error);
-      return { success: false, message: error.message };
+      console.error("Order Integration Error:", error);
+      alert("Backend Error: " + error.message);
+      return { success: false };
     } finally {
       setIsPlacingOrder(false);
     }

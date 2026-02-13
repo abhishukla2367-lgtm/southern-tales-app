@@ -50,6 +50,11 @@ app.use("/api/auth", authRoutes);
 const cartRoutes = require("./routes/cartRoutes");
 app.use("/api/cart", cartRoutes);
 
+// Add this in Section 3 (Route Mounting)
+const menuRoutes = require("./routes/menuRoutes"); 
+app.use("/api/menu", menuRoutes); 
+
+
 // Requirement #8.1 & 8.2: Order placement and clearing cart
 const orderRoutes = require("./routes/orderRoutes"); 
 app.use("/api/orders", orderRoutes); 

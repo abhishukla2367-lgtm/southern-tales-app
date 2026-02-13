@@ -1,5 +1,5 @@
-import React, { useState, useEffect,useContext } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext"; 
 import { useCart } from "../context/CartContext";
 
@@ -46,45 +46,24 @@ import masalaTea from "../assets/images/menu/beverages/masala-tea.jpg";
 import butterMilk from "../assets/images/menu/beverages/buttermilk.jpg";
 import freshLime from "../assets/images/menu/beverages/fresh-lime.jpg";
 
-/* ================= MENU ITEMS WITH NUMERIC PRICES ================= */
-const menuItems = [
-  { name: "Plain Dosa", category: "Breakfast", price: 165, veg: true, description: "Crispy rice crepe with sambar & chutney", image: plainDosa },
-  { name: "Idli (2 pcs)", category: "Breakfast", price: 120, veg: true, description: "Soft steamed rice cakes with chutney & sambar", image: idli },
-  { name: "Appam (2 pcs)", category: "Breakfast", price: 140, veg: true, description: "Soft lacy Kerala pancakes", image: appam },
-  { name: "Rava Dosa", category: "Breakfast", price: 150, veg: true, description: "Thin semolina crepe", image: ravaDosa },
-  { name: "Set Dosa", category: "Breakfast", price: 160, veg: true, description: "Soft spongy dosas (2 pcs)", image: setDosa },
-  { name: "Medu Vada (2 pcs)", category: "Breakfast", price: 130, veg: true, description: "Crispy lentil fritters", image: meduVada },
-  { name: "Upma", category: "Breakfast", price: 120, veg: true, description: "Savory semolina porridge", image: upma },
-  { name: "Pongal", category: "Breakfast", price: 150, veg: true, description: "Comfort rice & lentil dish", image: pongal },
-
-  { name: "Drumstick Coriander Soup", category: "Starters", price: 325, veg: true, description: "Earthy herbal soup", image: drumstickSoup },
-  { name: "Madras Tomato Soup", category: "Starters", price: 300, veg: true, description: "Spiced tomato soup", image: tomatoSoup },
-  { name: "Prawns Rasam", category: "Starters", price: 450, veg: false, description: "Tangy prawn rasam", image: prawnsRasam },
-  { name: "Broccoli Tikka", category: "Starters", price: 350, veg: true, description: "Marinated grilled broccoli", image: broccoliTikka },
-  { name: "Kanthari Mushroom Fry", category: "Starters", price: 380, veg: true, description: "Spicy sautéed mushrooms", image: mushroomFry },
-  { name: "Egg Roast", category: "Starters", price: 280, veg: false, description: "Kerala-style egg roast", image: eggRoast },
-  { name: "Pepper Fried Chicken", category: "Starters", price: 450, veg: false, description: "Peppery fried chicken", image: pepperChicken },
-  { name: "Paneer 65", category: "Starters", price: 350, veg: true, description: "Crispy fried paneer", image: paneer65 },
-
-  { name: "Chicken Ghee Roast", category: "Main Course", price: 550, veg: false, description: "Spicy coastal ghee roast", image: chickenGheeRoast },
-  { name: "Vegetable Korma", category: "Main Course", price: 420, veg: true, description: "Creamy mixed veg curry", image: vegKorma },
-  { name: "Fish Curry", category: "Main Course", price: 520, veg: false, description: "Traditional South Indian fish curry", image: fishCurry },
-  { name: "Paneer Butter Masala", category: "Main Course", price: 450, veg: true, description: "Rich tomato-based gravy", image: paneerButterMasala },
-
-  { name: "Payasam", category: "Desserts", price: 180, veg: true, description: "Traditional sweet pudding", image: payasam },
-  { name: "Kesari", category: "Desserts", price: 150, veg: true, description: "Semolina saffron dessert", image: kesari },
-  { name: "Gulab Jamun", category: "Desserts", price: 160, veg: true, description: "Soft syrupy dumplings", image: gulabJamun },
-  { name: "Coconut Ladoo", category: "Desserts", price: 140, veg: true, description: "Fresh coconut sweets", image: coconutLadoo },
-
-  { name: "Filter Coffee", category: "Beverages", price: 90, veg: true, description: "Authentic South Indian coffee", image: filterCoffee },
-  { name: "Masala Tea", category: "Beverages", price: 80, veg: true, description: "Spiced Indian chai", image: masalaTea },
-  { name: "Buttermilk", category: "Beverages", price: 70, veg: true, description: "Refreshing spiced buttermilk", image: butterMilk },
-  { name: "Fresh Lime Soda", category: "Beverages", price: 90, veg: true, description: "Chilled lime refreshment", image: freshLime },
-];
+const imageMap = {
+  plainDosa, idli, appam, ravaDosa, setDosa, meduVada, upma, pongal,
+  drumstickSoup, tomatoSoup, prawnsRasam, broccoliTikka, mushroomFry, 
+  eggRoast, pepperChicken, paneer65, chickenGheeRoast, vegKorma, 
+  fishCurry, paneerButterMasala, payasam, kesari, gulabJamun, 
+  coconutLadoo, filterCoffee, masalaTea, butterMilk, freshLime
+};
 
 const categories = ["All", "Breakfast", "Starters", "Main Course", "Desserts", "Beverages"];
+
 export default function Menu() {
-  const { addToCart } = useCart(); // Cart context
+  const [menuItems, setMenuItems] = useState([]); 
+  const [loading, setLoading] = useState(true);
+  const { user } = useContext(AuthContext); 
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVeg, setSelectedVeg] = useState("All");
@@ -93,154 +72,156 @@ export default function Menu() {
 
   const heroImages = [southFoodHero, southFoodHero2, southFoodHero3];
 
+  // Task #2: Connect to MongoDB via Backend
   useEffect(() => {
-    const interval = setInterval(() => setActiveHero((prev) => (prev + 1) % heroImages.length), 3000);
+    setLoading(true);
+    fetch("http://localhost:5000/api/menu") 
+      .then(res => res.json())
+      .then(data => {
+        setMenuItems(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Database error:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // Hero Slider
+  useEffect(() => {
+    const interval = setInterval(() => setActiveHero((prev) => (prev + 1) % heroImages.length), 4000);
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  const location = useLocation();
-  useEffect(() => {
-    if (location.state?.scrollToId) {
-      const el = document.getElementById(location.state.scrollToId);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-      window.history.replaceState({}, document.title);
+  // Task #4: Login requirement logic for Ordering
+  const handleAddToCart = (item) => {
+    if (!user) {
+      alert("Professional Note: Please login to add items to your cart.");
+      navigate("/login");
+      return;
     }
-  }, [location.state]);
+    addToCart(item);
+  };
 
   const filteredItems = menuItems.filter((item) => {
     const matchCategory = selectedCategory === "All" || item.category === selectedCategory;
     const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchVeg =
-      selectedVeg === "All" || (selectedVeg === "Veg" && item.veg) || (selectedVeg === "NonVeg" && !item.veg);
-    const priceNum = Number(item.price); // item.price is already a number
+    const matchVeg = selectedVeg === "All" || (selectedVeg === "Veg" && item.veg) || (selectedVeg === "NonVeg" && !item.veg);
+    
     let matchPrice = true;
-    if (selectedPrice === "Under200") matchPrice = priceNum < 200;
-    else if (selectedPrice === "200to400") matchPrice = priceNum >= 200 && priceNum <= 400;
-    else if (selectedPrice === "Above400") matchPrice = priceNum > 400;
+    if (selectedPrice === "Under200") matchPrice = item.price < 200;
+    else if (selectedPrice === "200to400") matchPrice = item.price >= 200 && item.price <= 400;
+    else if (selectedPrice === "Above400") matchPrice = item.price > 400;
+
     return matchCategory && matchSearch && matchVeg && matchPrice;
   });
 
   return (
-    <div className="w-full bg-gray-100">
-      {/* Navbar */}
-      <nav className="bg-orange-700 text-white px-8 py-4 flex items-center justify-between">
-        <div className="text-xl font-bold flex items-center gap-2">🍴 Restaurant</div>
-        <ul className="hidden md:flex gap-6 text-sm font-medium">
-          <li className="hover:text-yellow-300 cursor-pointer">Home</li>
-          <li className="hover:text-yellow-300 cursor-pointer">Menu</li>
-          <li className="hover:text-yellow-300 cursor-pointer">Blog</li>
-          <li className="hover:text-yellow-300 cursor-pointer">Reaction</li>
-          <li className="hover:text-yellow-300 cursor-pointer">About</li>
-          <li className="hover:text-yellow-300 cursor-pointer">Contact</li>
-        </ul>
-        <div className="bg-white rounded-full px-3 py-1 text-black text-sm">🔍</div>
-      </nav>
+    <div className="bg-gray-50 min-h-screen pb-12">
+      {/* TASK #1: HERO SECTION FIX (Visibility & Contrast) */}
+      {/* HERO SLIDER (Text removed from here for professional look) */}
+<div className="relative h-[350px] overflow-hidden">
+  {heroImages.map((img, index) => (
+    <img
+      key={index}
+      src={img}
+      alt="Hero"
+      className={`absolute w-full h-full object-cover transition-opacity duration-1000 ${index === activeHero ? "opacity-100" : "opacity-0"}`}
+    />
+  ))}
+  <div className="absolute inset-0 bg-black/30"></div>
+</div>
 
-      {/* Hero */}
-      <section
-        id="hero-section"
-        className="relative h-[450px] bg-cover bg-center flex items-center"
-        style={{ backgroundImage: `url(${heroImages[activeHero]})` }}
-      >
-        <div className="absolute inset-0 bg-black/60"></div>
-        <div className="relative z-10 max-w-4xl mx-auto text-center px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-orange-400">Choose Tasty and Healthy</h1>
-          <div className="flex justify-center gap-2 mt-6">
-            {heroImages.map((_, index) => (
-              <span
-                key={index}
-                onClick={() => setActiveHero(index)}
-                className={`w-3 h-3 rounded-full cursor-pointer ${
-                  activeHero === index ? "bg-orange-500" : "bg-white/50"
-                }`}
-              />
-            ))}
+{/* MAIN CONTENT AREA */}
+<div className="max-w-7xl mx-auto px-4 relative z-20">
+  
+  {/* SECTION TITLE - Positioned professionally above the filter */}
+  <div className="text-center mb-8 -mt-16"> 
+    <h2 className="text-orange-500 text-4xl md:text-5xl font-bold font-serif bg-gray-50 inline-block px-8 py-2 rounded-t-lg shadow-sm">
+      Our Menu
+    </h2>
+    <div className="h-1 w-24 bg-orange-500 mx-auto mt-2 rounded-full"></div>
+  </div>
+
+  {/* FILTER SECTION */}
+  <div id="menu-section" className="bg-white p-6 rounded-xl shadow-2xl grid grid-cols-1 md:grid-cols-4 gap-6 border border-gray-100">
+    <div className="flex flex-col">
+      <label className="text-xs font-bold text-gray-500 uppercase mb-1">Search Dishes</label>
+      <input type="text" placeholder="e.g. Masala Dosa" className="p-2 border rounded bg-gray-50 focus:ring-2 focus:ring-orange-500 outline-none text-gray-800" onChange={(e) => setSearchTerm(e.target.value)} />
+    </div>
+    <div className="flex flex-col">
+      <label className="text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
+      <select className="p-2 border rounded bg-gray-50 text-gray-800 shadow-sm" onChange={(e) => setSelectedCategory(e.target.value)}>
+        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+      </select>
+    </div>
+    <div className="flex flex-col">
+      <label className="text-xs font-bold text-gray-500 uppercase mb-1">Dietary</label>
+      <select className="p-2 border rounded bg-gray-50 text-gray-800" onChange={(e) => setSelectedVeg(e.target.value)}>
+        <option value="All">All Types</option>
+        <option value="Veg">Veg</option>
+        <option value="NonVeg">Non-Veg</option>
+      </select>
+    </div>
+    <div className="flex flex-col">
+      <label className="text-xs font-bold text-gray-500 uppercase mb-1">Price Range</label>
+      <select className="p-2 border rounded bg-gray-50 text-gray-800" onChange={(e) => setSelectedPrice(e.target.value)}>
+        <option value="All">All Prices</option>
+        <option value="Under200">Under ₹200</option>
+        <option value="200to400">₹200 - ₹400</option>
+        <option value="Above400">Above ₹400</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+
+      {/* TASK #1 & #2: MENU GRID & LOADING STATE */}
+      <div className="max-w-7xl mx-auto px-4 mt-16">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+            <p className="ml-4 text-gray-700 font-medium">Fetching our menu...</p>
           </div>
-        </div>
-      </section>
-
-      {/* Filters */}
-      <div className="max-w-7xl mx-auto py-10 px-4">
-        <h1 className="text-4xl font-bold text-center text-orange-500 mb-8">Our Menu</h1>
-        <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Search dishes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:max-w-md px-4 py-2 border rounded-full focus:ring-2 focus:ring-orange-400"
-          />
-          <select
-            value={selectedVeg}
-            onChange={(e) => setSelectedVeg(e.target.value)}
-            className="px-4 py-2 border rounded-full focus:ring-2 focus:ring-orange-400"
-          >
-            <option value="All">All</option>
-            <option value="Veg">Vegetarian</option>
-            <option value="NonVeg">Non-Vegetarian</option>
-          </select>
-          <select
-            value={selectedPrice}
-            onChange={(e) => setSelectedPrice(e.target.value)}
-            className="px-4 py-2 border rounded-full focus:ring-2 focus:ring-orange-400"
-          >
-            <option value="All">All Prices</option>
-            <option value="Under200">Under ₹200</option>
-            <option value="200to400">₹200 - ₹400</option>
-            <option value="Above400">Above ₹400</option>
-          </select>
-        </div>
-
-        {/* Categories */}
-        <div className="flex justify-center gap-4 mb-10 flex-wrap">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-full font-medium ${
-                selectedCategory === cat
-                  ? "bg-orange-500 text-white"
-                  : "bg-white text-orange-500 border border-orange-500 hover:bg-orange-500 hover:text-white"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Menu Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredItems.map((dish, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300"
-            >
-              <img
-                src={dish.image}
-                alt={dish.name}
-                className="w-full h-48 object-cover rounded-t-xl hover:scale-105 transition-transform duration-300 cursor-pointer"
-              />
-              <div className="p-4 flex flex-col flex-1 justify-between">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-semibold text-lg">{dish.name}</h3>
-                  <span className={`w-3 h-3 rounded-full ${dish.veg ? "bg-green-500" : "bg-red-500"}`} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {filteredItems.map((item) => (
+              <div key={item._id || item.name} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex flex-col">
+                <div className="relative h-52">
+                  <img src={imageMap[item.image]} alt={item.name} className="w-full h-full object-cover" />
+                  <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-white shadow-md ${item.veg ? 'bg-green-600' : 'bg-red-600'}`}>
+                    {item.veg ? 'VEG' : 'NON-VEG'}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">{dish.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-orange-500 text-lg">
-                    {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(dish.price)}
-                  </span>
-
-                 <button onClick={() => addToCart(dish,index)}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium px-4 py-2 rounded transition-colors duration-200"
+                
+                {/* TASK #1: FIX TEXT VISIBILITY (High Contrast Gray-900) */}
+                <div className="p-6 flex-grow flex flex-col">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-bold text-gray-900 leading-tight">{item.name}</h3>
+                    <span className="text-orange-600 font-extrabold text-lg">₹{item.price}</span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-6 flex-grow">
+                    {item.description || "Authentic South Indian taste served fresh with traditional sides."}
+                  </p>
+                  
+                  {/* Task #4 & #8: Add to Cart Trigger */}
+                  <button 
+                    onClick={() => handleAddToCart(item)}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg active:scale-95"
                   >
                     Add to Cart
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && filteredItems.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-gray-500 text-xl">No items found matching your criteria.</p>
+          </div>
+        )}
       </div>
     </div>
   );
