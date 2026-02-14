@@ -6,25 +6,28 @@ const Reservation = require('../models/Reservation');
  */
 exports.createReservation = async (req, res) => {
     try {
-        const { date, time, guests, tableNumber, specialRequests } = req.body;
+        const { date, time, guests, tableNumber, specialRequests, customerName, customerEmail } = req.body;
 
         // Task 7: Validation check (Ensures no empty reservations)
         if (!date || !time || !guests) {
             return res.status(400).json({ error: "Date, time, and guest count are required." });
         }
 
-        // Create reservation linked to the logged-in user
+        // FIXED: Changed 'user' to 'userId' to match your Reservation Schema
         const newReservation = await Reservation.create({
-            user: req.user.id, // Linked via Auth Middleware
+            userId: req.user.id, // From your protect middleware
+            customerName,        // Added for Admin visibility
+            customerEmail,       // Added for Admin visibility
             date,
             time,
             guests,
-            tableNumber,
+            tableNumber: tableNumber || "TBD",
             specialRequests
         });
 
         res.status(201).json({ success: true, data: newReservation });
     } catch (err) {
+        // This catch handles the 400/500 errors you were seeing
         res.status(400).json({ error: err.message });
     }
 };
@@ -35,8 +38,11 @@ exports.createReservation = async (req, res) => {
  */
 exports.getMyReservations = async (req, res) => {
     try {
-        const reservations = await Reservation.find({ user: req.user.id }).sort({ date: -1 });
-        res.status(200).json({ success: true, count: reservations.length, data: reservations });
+        // FIXED: Changed query from 'user' to 'userId'
+        const reservations = await Reservation.find({ userId: req.user.id }).sort({ date: -1 });
+        
+        // This 'data' key must match what your Profile.jsx is looking for
+        res.status(200).json({ success: true, data: reservations });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -46,11 +52,11 @@ exports.getMyReservations = async (req, res) => {
  * @desc    Get all reservations for Admin Dashboard (Task 7)
  * @access  Private/Admin
  */
-exports.getAllReservations = async (req, res) => {
+exports.getAllAdminReservations = async (req, res) => {
     try {
-        // Populate user details (name/email) to identify who made the booking
+        // FIXED: Populate using 'userId' field
         const reservations = await Reservation.find()
-            .populate('user', 'name email')
+            .populate('userId', 'name email') 
             .sort({ date: -1 });
             
         res.status(200).json({ success: true, data: reservations });

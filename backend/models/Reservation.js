@@ -2,11 +2,21 @@ const mongoose = require("mongoose");
 
 const ReservationSchema = new mongoose.Schema(
   {
-    // Requirement #2: Connects reservation to a User in MongoDB Atlas
-    user: {
+    // TASK 2 & 6: Links reservation to a specific User
+    // Changed 'user' to 'userId' to match your Profile Controller query
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    // TASK 7: Admin needs these details visible on the Admin Side
+    customerName: {
+      type: String,
+      required: true
+    },
+    customerEmail: {
+      type: String,
+      required: true
     },
     date: { 
       type: Date, 
@@ -22,21 +32,22 @@ const ReservationSchema = new mongoose.Schema(
       min: [1, "Must have at least 1 guest"]
     },
     tableNumber: { 
-      type: String 
+      type: String,
+      default: "TBD" // Set to To Be Decided initially
     }, 
-    // Requirement #7: Helps Admin manage the reservation flow
+    // TASK 7: Helps Admin manage the reservation flow
     status: {
       type: String,
       default: "Confirmed",
       enum: ["Confirmed", "Cancelled", "Completed"],
     },
-    // Professional touch: Helpful for Task 7 Admin side
     specialRequests: {
       type: String,
-      trim: true
+      trim: true,
+      default: ""
     }
   },
-  // Requirement #6: Timestamps allow sorting "My Reservations" by newest first
+  // TASK 6: Timestamps allow sorting "My Reservations" by newest first
   { timestamps: true }
 );
 
