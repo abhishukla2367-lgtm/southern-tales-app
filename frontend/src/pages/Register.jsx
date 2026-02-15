@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../api/axiosConfig"; 
 
-const Signup = () => {
+const Register = () => {
   const [formData, setFormData] = useState({ 
     name: "", 
     email: "", 
@@ -112,7 +112,7 @@ const Signup = () => {
           disabled={isLoading}
           className="mt-8 w-full rounded-lg bg-[#f5c27a] py-3 text-lg font-bold text-[#1a1a1a] hover:bg-[#e0b06b] transition-all disabled:opacity-50"
         >
-          {isLoading ? "Creating Account..." : "Sign Up"}
+          {isLoading ? "Creating Account..." : "Register"}
         </button>
 
         <p className="mt-6 text-center text-sm text-gray-600">
@@ -123,4 +123,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default Register;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ✅ Named export for the Context object
@@ -7,7 +7,7 @@ export const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const navigate = useNavigate();
 
-  // 1. Initialise from LocalStorage (Professional Persistence)
+  // 1. Initialise from LocalStorage (Requirement #8: Persistence)
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem("restro_cart");
@@ -20,14 +20,14 @@ export const CartProvider = ({ children }) => {
   const [orderType, setOrderType] = useState("delivery");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  // 2. Sync with LocalStorage
+  // 2. Sync with LocalStorage whenever cart changes
   useEffect(() => {
     localStorage.setItem("restro_cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
   /**
    * TASK 8: Add to Cart
-   * Check login status before adding (Task 4)
+   * Requirement #4: Check login status before adding items
    */
   const addToCart = (item, isLoggedIn) => {
     if (!isLoggedIn) {
@@ -37,10 +37,11 @@ export const CartProvider = ({ children }) => {
     }
 
     setCartItems((prev) => {
-      const existing = prev.find((i) => i.name === item.name);
+      // Use _id for consistent identification with MongoDB Atlas
+      const existing = prev.find((i) => i._id === item._id);
       if (existing) {
         return prev.map((i) =>
-          i.name === item.name ? { ...i, quantity: i.quantity + 1 } : i
+          i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
         );
       } else {
         return [...prev, { ...item, quantity: 1 }];
@@ -48,49 +49,57 @@ export const CartProvider = ({ children }) => {
     });
   };
 
-  const removeFromCart = (name) => {
-    setCartItems((prev) => prev.filter((item) => item.name !== name));
+  /**
+   * TASK 8.2: Remove single item from cart
+   */
+  const removeFromCart = (id) => {
+    setCartItems((prev) => prev.filter((item) => item._id !== id));
   };
 
-  const increaseQty = (name) => {
+  /**
+   * Helper: Update Quantity
+   * Consolidates increase/decrease logic for CartDrawer.jsx
+   */
+  const updateQuantity = (id, newQty) => {
+    if (newQty < 1) return; // Prevent quantity from going below 1
     setCartItems((prev) =>
       prev.map((item) =>
-        item.name === name ? { ...item, quantity: item.quantity + 1 } : item
+        item._id === id ? { ...item, quantity: newQty } : item
       )
     );
   };
 
-  const decreaseQty = (name) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.name === name && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
-  };
-
+  /**
+   * Requirement #8.3: Remove all items after successful order
+   */
   const clearCart = () => {
     setCartItems([]);
     localStorage.removeItem("restro_cart");
   };
 
-  const totalPrice = useMemo(
-    () =>
-      cartItems.reduce(
-        (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
-        0
-      ),
-    [cartItems]
-  );
+  /**
+   * TASK 8.1: Calculation Logic for UI
+   */
+  const getCartTotal = () => {
+    return cartItems.reduce(
+      (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
+      0
+    );
+  };
 
   /**
-   * TASK 8: Place Order (MongoDB Atlas Integration)
+   * TASK 8.3: Place Order (Backend Integration)
+   * Stores order in MongoDB Atlas and clears the cart on success
    */
   const placeOrder = async (user, deliveryDetails = {}) => {
     if (!user?._id) {
       alert("Session expired. Please login again.");
       navigate("/login");
+      return { success: false };
+    }
+
+    if (cartItems.length === 0) {
+      alert("Your cart is empty!");
       return { success: false };
     }
 
@@ -100,26 +109,25 @@ export const CartProvider = ({ children }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user._id,           // Task 2: MongoDB ID
+          userId: user._id,           // Links to Requirement #6 (Profile History)
           customerName: user.name,
           email: user.email,
           items: cartItems,
-          totalAmount: totalPrice,
+          totalAmount: getCartTotal(),
           orderType: orderType,
-          address: deliveryDetails.address || "N/A",
-          status: "Pending",          // For Admin Side (Task 8)
+          address: deliveryDetails.address || user.address || "N/A",
+          status: "Pending",          // For Admin Dashboard (Requirement #8)
           createdAt: new Date()
         }),
       });
 
       if (response.ok) {
-        clearCart(); // Requirement: Remove items from cart on success
+        clearCart(); // Requirement #8.3: Remove items from cart
         alert("Order Placed Successfully!");
-        navigate("/profile"); // Task 6: Show Orders in Profile
         return { success: true };
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save order");
+        throw new Error(errorData.message || "Failed to process order");
       }
     } catch (error) {
       console.error("Order Integration Error:", error);
@@ -136,10 +144,9 @@ export const CartProvider = ({ children }) => {
         cartItems,
         addToCart,
         removeFromCart,
-        increaseQty,
-        decreaseQty,
+        updateQuantity,
+        getCartTotal,
         clearCart,
-        totalPrice,
         orderType,
         setOrderType,
         placeOrder,
@@ -151,7 +158,7 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-// ✅ Custom hook for components to use
+// ✅ Custom hook for easy access in components like CartDrawer.jsx
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {

@@ -10,13 +10,12 @@ import {
 // Components
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import CartDrawer from "./components/CartDrawer"; // This is your sidebar
+import CartDrawer from "./components/CartDrawer"; 
 import ProtectedRoute from "./components/ProtectedRoute"; 
 
 // Pages
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
-import Cart from "./pages/Cart"; // <--- Ensure you create this file for the full page
 import OrderSummaryPage from "./pages/OrderSummaryPage";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
@@ -48,33 +47,36 @@ const AdminRoute = ({ children }) => {
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }, [pathname]);
   return null;
 };
 
-/* Main Layout */
+/* Main Layout Logic */
 const Layout = ({ children }) => {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
+  
   const isAdminRoute = pathname.startsWith("/admin");
-  const isCartPage = pathname === "/cart";
+  const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
+  const isCartRoute = pathname === "/cart";
 
   return (
-    /* FIXED: Using standard bg-black for professional consistency */
+    // FIX: Force bg-black here for the entire site theme (Requirement #1)
     <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-black text-white"}>
+      
       {!isAdminRoute && <Header />} 
       
-      <main className={isAdminRoute ? "min-h-screen" : "min-h-[80vh]"}>
+      <main className={isAdminRoute ? "" : "min-h-screen"}>
         {children}
       </main>
 
-      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && !isAuthPage && !isCartRoute && <Footer />}
       
       {/* 
-          Hide the drawer ONLY on the full cart page or admin panel 
-          to prevent double UI elements.
+          FIX: Removed the duplicate CartDrawer call from here. 
+          It will now ONLY render when called by the Route below.
       */}
-      {!isAdminRoute && !isCartPage && <CartDrawer />} 
     </div>
   );
 };
@@ -99,27 +101,21 @@ export default function App() {
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/gallery" element={<Gallery />} />
               
-              {/* FIXED: Dedicated Cart Page Route */}
-              <Route path="/cart" element={<Cart />} />
+              {/* 
+                  REQUIREMENT #8: Single Cart Page Logic
+                  We render the CartDrawer as a standalone page here.
+              */}
+              <Route path="/cart" element={<CartDrawer />} />
               
               {/* AUTH ROUTES */}
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register/>} />
+              <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* PROTECTED USER ROUTES */}
-              <Route 
-                path="/reservation" 
-                element={<ProtectedRoute><Reservation /></ProtectedRoute>} 
-              />
-              <Route 
-                path="/order-summary" 
-                element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} 
-              />
-              <Route 
-                path="/profile" 
-                element={<ProtectedRoute><Profile /></ProtectedRoute>} 
-              />
+              <Route path="/reservation" element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
+              <Route path="/order-summary" element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
               {/* PROTECTED ADMIN ROUTES */}
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -127,7 +123,8 @@ export default function App() {
               <Route path="/admin/orders" element={<AdminRoute><OrdersList /></AdminRoute>} />
               <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
 
-              <Route path="*" element={<Home />} />
+              {/* Fallback to Home */}
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </Layout>
         </CartProvider>

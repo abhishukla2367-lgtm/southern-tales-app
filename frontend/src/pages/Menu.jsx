@@ -181,9 +181,12 @@ export default function Menu() {
                                 </div>
                                 <p className="text-gray-500 text-xs mb-8 line-clamp-2 font-medium leading-relaxed">{item.description}</p>
 
-                           <button onClick={() => addToCart(item, isLoggedIn)}>
-                            Add to Cart
-                           </button>
+                           <button
+    onClick={() => handleAddToCart(item)}
+    className="w-full sm:w-auto px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-xl transition-all duration-300 transform active:scale-[0.98] shadow-lg shadow-orange-500/20 uppercase tracking-wider text-sm"
+>
+    Add to Cart
+</button>
 
                             </div>
                         </div>

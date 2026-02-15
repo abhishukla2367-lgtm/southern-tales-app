@@ -4,29 +4,38 @@ const jwt = require("jsonwebtoken");
 // Task 6: Loading history models for Profile page
 let Order, Reservation;
 try {
+  // Use path-appropriate requires for your project structure
   Order = require("../models/Order");
   Reservation = require("../models/Reservation");
 } catch (e) {
-  console.warn("Order or Reservation models not found. Profile history may be empty.");
+  console.warn("⚠️ Order or Reservation models not found. Profile history will be empty.");
 }
 
 /**
  * @route   POST /api/auth/register
- * @desc    Task 5: Register User (No Username required)
+ * @desc    Task 5: User Registration
  */
-exports.register = async (req, res, next) => { 
+exports.register = async (req, res) => { 
   try {
     const { name, email, password, phone, address } = req.body;
 
-    // 1. Check if user already exists (Standardize email to lowercase)
-    const normalizedEmail = email.toLowerCase();
-    const userExists = await User.findOne({ email: normalizedEmail }); 
-    
-    if (userExists) {
-      return res.status(400).json({ message: "Email is already registered" });
+    // Validation: Prevents 400 Bad Request if frontend sends empty data
+    if (!name || !email || !password || !phone || !address) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "All fields are required (Name, Email, Password, Phone, Address)" 
+      });
     }
 
-    // 2. Task 5: Password is hashed automatically by UserSchema.pre("save")
+    const normalizedEmail = email.toLowerCase();
+    
+    // 1. Check if user already exists
+    const userExists = await User.findOne({ email: normalizedEmail }); 
+    if (userExists) {
+      return res.status(400).json({ success: false, message: "Email is already registered" });
+    }
+
+    // 2. Create User (Password is hashed by UserSchema pre-save)
     await User.create({
       name,
       email: normalizedEmail,
@@ -35,10 +44,13 @@ exports.register = async (req, res, next) => {
       address,
     });
 
-    res.status(201).json({ message: "Registration successful" });
+    res.status(201).json({ 
+      success: true,
+      message: "Registration successful! You can now log in." 
+    });
   } catch (err) {
     console.error("❌ Registration Error:", err.message);
-    next(err); 
+    res.status(500).json({ success: false, message: "Registration failed", error: err.message });
   }
 };
 
@@ -49,35 +61,41 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Please provide both email and password" });
+    }
     
-    // CRITICAL: .select("+password") overrides 'select: false' in the User Schema
+    // Explicitly select password since 'select: false' is used in the User Model
     const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
 
     if (user && (await user.matchPassword(password))) {
-      // Task 3: Sign token with 1-day expiry
+      // Create JWT Token
       const token = jwt.sign(
         { id: user._id, role: user.role || "user" },
         process.env.JWT_SECRET,
         { expiresIn: "1d" }
       );
 
-      // Return user data (excluding password) and token
-      res.json({
+      res.status(200).json({
+        success: true,
         token,
         user: {
           id: user._id,
           name: user.name,
           email: user.email,
           role: user.role || "user",
-          avatar: user.avatar
+          avatar: user.avatar,
+          phone: user.phone,
+          address: user.address
         },
       });
     } else {
-      res.status(401).json({ message: "Invalid email or password" });
+      res.status(401).json({ success: false, message: "Invalid email or password" });
     }
   } catch (err) {
     console.error("❌ Login Error:", err.message);
-    res.status(500).json({ message: "Login failed" });
+    res.status(500).json({ success: false, message: "Login server error" });
   }
 };
 
@@ -87,25 +105,35 @@ exports.login = async (req, res) => {
  */
 exports.getProfile = async (req, res) => {
   try {
-    // Note: req.user comes from your verifyToken middleware
-    const userId = req.user.id; 
+    const userId = req.user.id; // Assigned by your auth middleware
 
-    // 1. Fetch User details (password excluded by default in schema)
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    // 2. Fetch history from MongoDB Atlas
-    // IMPORTANT: Ensure your Order/Reservation schemas use "userId" or "user"
-    const orders = Order ? await Order.find({ userId }).sort({ createdAt: -1 }) : [];
-    const reservations = Reservation ? await Reservation.find({ userId }).sort({ date: -1 }) : [];
+    // Task 6: Fetch related data if models are available
+    let orders = [];
+    let reservations = [];
 
-    res.json({
+    if (Order) {
+      orders = await Order.find({ userId: userId }).sort({ createdAt: -1 });
+    }
+    
+    if (Reservation) {
+      reservations = await Reservation.find({ userId: userId }).sort({ date: -1 });
+    }
+
+    res.status(200).json({
+      success: true,
       user,
       orders,
       reservations,
     });
   } catch (err) {
     console.error("❌ Profile Fetch Error:", err.message);
-    res.status(500).json({ message: "Failed to load profile" });
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to load profile data", 
+      error: err.message 
+    });
   }
 };
