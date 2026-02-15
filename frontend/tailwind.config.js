@@ -1,13 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./src/**/*.{js,jsx,ts,tsx}"], // scan all React files
   theme: {
-    extend: {
-      colors: {
-        heroBg: "rgba(0,0,0,0.6)",  // Global hero-section background color
-        textPrimary: "#FFFFFF",     // Global text color for readability
-      },
-    },
+    extend: {},
   },
   plugins: [],
 };

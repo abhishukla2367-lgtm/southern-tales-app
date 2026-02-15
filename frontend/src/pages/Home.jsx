@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Phone } from "lucide-react";
-import PromotionsSection from "../components/PromotionsSection";
-import { motion } from "framer-motion";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Phone,
+  Mail,
+  User,
+  Send,
+  MapPin,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
 
-
-
-
+/* ================= IMAGE IMPORTS ================= */
+import offer1 from "../assets/images/offers/offer1.jpg";
+import offer2 from "../assets/images/offers/offer2.jpg";
+import offer3 from "../assets/images/offers/offer3.jpg";
 import dosa from "../assets/images/dishes/dosa.jpg";
 import idli from "../assets/images/dishes/idli.jpg";
 import meduvada from "../assets/images/dishes/medu-vada.jpg";
-
-
 import gallery1 from "../assets/images/gallery/gallery1.jpg";
 import gallery2 from "../assets/images/gallery/gallery2.jpg";
 import gallery3 from "../assets/images/gallery/gallery3.jpg";
 import gallery4 from "../assets/images/gallery/gallery4.jpg";
 import gallery5 from "../assets/images/gallery/gallery5.jpg";
 import gallery6 from "../assets/images/gallery/gallery6.jpg";
-
-// Our Story Image
 import aboutImage from "../assets/images/about/our-story.jpg";
 
 /* ================= DATA ================= */
@@ -29,346 +34,397 @@ const heroImages = [
   "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1470",
 ];
 
-
-
-const dishes = [
-  { img: dosa, name: "Masala Dosa", price: "₹160", veg: true },
-  { img: idli, name: "Idli Sambar", price: "₹120", veg: true },
-  { img: meduvada, name: "Medu Vada", price: "₹90", veg: true },
+const offers = [
+  {
+    img: offer1,
+    title: "Weekend Special: 20% Off",
+    description: "Enjoy 20% off on all South Indian dishes every weekend!",
+  },
+  {
+    img: offer2,
+    title: "Buy 1 Get 1 Free",
+    description:
+      "On all Filter Coffee and beverages during happy hours (5–7 PM).",
+  },
+  {
+    img: offer3,
+    title: "Lunch Combo Offer",
+    description: "Get a free dessert with any Main Course combo meal!",
+  },
 ];
 
-const galleryImages = [gallery1, gallery2, gallery3, gallery4, gallery5, gallery6];
+const galleryImages = [
+  gallery1,
+  gallery2,
+  gallery3,
+  gallery4,
+  gallery5,
+  gallery6,
+];
 
-/* ================= ANIMATION VARIANTS ================= */
-const fadeUp = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
-const fadeLeft = { hidden: { opacity: 0, x: -50 }, visible: { opacity: 1, x: 0 } };
-const fadeRight = { hidden: { opacity: 0, x: 50 }, visible: { opacity: 1, x: 0 } };
-const scaleHover = { scale: 1.05 };
-
+/* ================= MAIN COMPONENT ================= */
 
 const Home = () => {
   const navigate = useNavigate();
   const [currentHero, setCurrentHero] = useState(0);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSent, setIsSent] = useState(false);
 
+  // Auto-rotate Hero Images
   useEffect(() => {
-    const interval = setInterval(() => setCurrentHero((prev) => (prev + 1) % heroImages.length), 3000);
+    const interval = setInterval(() => {
+      setCurrentHero((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleContactChange = (e) => {
+    const { name, value } = e.target;
+    setContactForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    // Simulated API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSent(true);
+      setContactForm({ name: "", email: "", message: "" });
+      setTimeout(() => setIsSent(false), 4000);
+    }, 1500);
+  };
+
   return (
-    <div className="scroll-smooth m-0">
-     {/* HERO */}
+    /* UPDATED: Background to Pure Black */
+    <div className="bg-black scroll-smooth m-0 font-sans text-gray-100">
+      {/* HERO SECTION */}
       <section
         id="home"
-        className="relative h-screen flex items-center justify-center text-center bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroImages[currentHero]})` }}
+        className="relative h-[90vh] md:h-screen flex items-center justify-center text-center overflow-hidden"
       >
-        <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out scale-105"
+          style={{
+            backgroundImage: `url(${heroImages[currentHero]})`,
+            filter: "brightness(0.4)",
+          }}
+        />
+        {/* UPDATED: Gradient overlay to blend into Black */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black z-10" />
 
-        <div className="absolute inset-0 flex items-center justify-between px-4 z-20 pointer-events-none">
+        {/* Navigation Arrows */}
+        <div className="absolute inset-0 flex items-center justify-between px-4 md:px-10 z-20 pointer-events-none">
           <button
-            onClick={() => setCurrentHero((prev) => (prev - 1 + heroImages.length) % heroImages.length)}
-            className="bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition pointer-events-auto"
+            onClick={() =>
+              setCurrentHero(
+                (prev) => (prev - 1 + heroImages.length) % heroImages.length,
+              )
+            }
+            className="bg-white/10 backdrop-blur-md text-white p-3 rounded-full hover:bg-orange-500 transition-all pointer-events-auto active:scale-90"
           >
-            <ArrowLeft size={32} />
+            <ArrowLeft size={28} />
           </button>
-
           <button
-            onClick={() => setCurrentHero((prev) => (prev + 1) % heroImages.length)}
-            className="bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition pointer-events-auto"
+            onClick={() =>
+              setCurrentHero((prev) => (prev + 1) % heroImages.length)
+            }
+            className="bg-white/10 backdrop-blur-md text-white p-3 rounded-full hover:bg-orange-500 transition-all pointer-events-auto active:scale-90"
           >
-            <ArrowRight size={32} />
+            <ArrowRight size={28} />
           </button>
         </div>
 
-        <motion.div
-          className="relative z-10 max-w-2xl px-6"
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          transition={{ duration: 1 }}
-        >
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4">Southern Tales</h1>
-          <p className="text-lg text-gray-200 mb-6">Where every bite tells a story</p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <motion.button
-              whileHover={scaleHover}
+        <div className="relative z-20 max-w-4xl px-6">
+          <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tight">
+            Southern <span className="text-orange-500">Tales</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-300 mb-10 italic font-light">
+            Bringing the authentic taste of the South to your table.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-5 justify-center">
+            <button
               onClick={() => navigate("/menu")}
-              className="bg-orange-500 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-600 transition"
+              className="bg-orange-500 text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-orange-600 shadow-xl transition-all hover:-translate-y-1 active:scale-95"
             >
-              Explore Menu
-            </motion.button>
-            <motion.button
-              whileHover={scaleHover}
-              onClick={() => (window.location.href = "tel:+919876543210")}
-              className="flex items-center gap-2 border border-white text-white px-8 py-3 rounded-full hover:bg-white hover:text-black transition"
-            >
-              <Phone size={18} />
-              Call Now
-            </motion.button>
+              Explore Our Menu
+            </button>
+            <button
+              onClick={() => navigate("/reservation")}
+              className="flex items-center gap-3 border-2 border-white text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-black transition-all active:scale-95"
+            > Reserve a Table
+            </button>
           </div>
-        </motion.div>
+        </div>
       </section>
 
-     <PromotionsSection />
-
-      {/* OUR STORY */}
-      <motion.section
-        id="about"
-        className="py-20 px-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-      >
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-stretch">
-          <motion.div
-            className="w-full h-full rounded-xl shadow-lg bg-cover bg-center transform transition-transform duration-700 hover:scale-105"
-            style={{ backgroundImage: `url(${aboutImage})` }}
-            initial={{ opacity: 0, x: -200 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-          />
-          <motion.div
-            className="flex flex-col justify-center bg-white p-6 rounded-xl space-y-4 h-full"
-            initial={{ opacity: 0, x: 200 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-          >
-            <h2 className="text-4xl font-bold">Our Story</h2>
-            <h3 className="text-2xl font-semibold text-orange-500">A Taste of Southern Heritage</h3>
-            <p>Welcome to Southern Tales, where every dish tells a story of tradition, flavor, and the rich culinary heritage of South India.</p>
-            <p>Nestled in the heart of CBD Belapur, we bring you an authentic dining experience celebrating flavors from Kerala, Tamil Nadu, Karnataka, and Andhra Pradesh.</p>
-            <p>Our chefs craft each dish using time-honored recipes passed down through generations, with the freshest ingredients and traditional spices.</p>
-            <p>From crispy dosas to aromatic biryanis, every bite is a journey through the vibrant streets of the South.</p>
-            <p>We combine culinary expertise with passion to create an unforgettable gastronomic experience.</p>
-            <p>Our warm ambiance and attentive service ensure a memorable dining experience for all guests.</p>
-            <p>Join the thousands of happy customers who have experienced the taste, tradition, and hospitality of Southern Tales.</p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/about")}
-              className="mt-4 self-start bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-full transition"
-            >
-              Know More
-            </motion.button>
-          </motion.div>
+      {/* OFFERS SECTION */}
+      <section id="offers" className="py-24 px-6 max-w-7xl mx-auto bg-black">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Exclusive Offers
+          </h2>
+          <div className="w-20 h-1.5 bg-orange-500 mx-auto rounded-full" />
         </div>
-      </motion.section>
-
-      {/* SERVICES */}
-      <motion.section
-        id="services"
-        className="py-24 px-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={fadeUp}
-      >
-        <h2 className="text-4xl font-bold text-center mb-16 text-[#F9FAF7]">Our Services</h2>
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto">
-          <ServiceCard emoji="🍽️" title="Dine-In Experience" />
-          <ServiceCard emoji="🥡" title="Takeaway & Pickup" />
-          <ServiceCard emoji="🎉" title="Catering Services" />
-          <ServiceCard emoji="📦" title="Online Orders" />
-        </div>
-      </motion.section>
-
-      {/* WHY CHOOSE US */}
-      <motion.section
-        id="why-choose-us"
-        className="py-20 bg-yellow-50 px-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={fadeUp}
-      >
-        <h2 className="text-4xl font-bold text-center mb-12">Why Choose Us</h2>
-        <div className="max-w-6xl mx-auto grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-          <WhyCard emoji="🍛" title="Authentic Taste" />
-          <WhyCard emoji="🥬" title="Fresh Ingredients" />
-          <WhyCard emoji="🤝" title="Warm Hospitality" />
-        </div>
-      </motion.section>
-
-      {/* POPULAR DISHES */}
-      <motion.section
-        id="popular"
-        className="py-10 bg-yellow-100"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={fadeUp}
-      >
-        <h2 className="text-3xl font-bold text-center mb-12">Popular Dishes</h2>
-        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8 px-6">
-          {dishes.map((dish, idx) => (
-            <DishCard key={idx} {...dish} />
-          ))}
-        </div>
-        <div className="flex justify-center mt-8">
-          <motion.button
-            whileHover={scaleHover}
-            onClick={() => navigate("/menu")}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-full transition"
-          >
-            Explore Menu
-          </motion.button>
-        </div>
-      </motion.section>
-
-      {/* GALLERY */}
-      <motion.section
-        id="gallery"
-        className="py-20 bg-[#0F3D3E] text-[#F9FAF7] text-center px-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={fadeUp}
-      >
-        <h2 className="text-4xl font-bold mb-10">Gallery</h2>
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {galleryImages.map((img, idx) => (
-            <motion.img
+        <div className="grid md:grid-cols-3 gap-10">
+          {offers.map((offer, idx) => (
+            <div
               key={idx}
-              src={img}
-              alt={`Gallery ${idx + 1}`}
-              className="h-48 w-full object-cover rounded-lg hover:scale-105 transition"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.2 }}
-            />
+              className="bg-[#111111] rounded-3xl shadow-lg overflow-hidden border border-white/10 group hover:shadow-orange-500/10 hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="overflow-hidden h-60">
+                <img
+                  src={offer.img}
+                  alt={offer.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
+              </div>
+              <div className="p-8">
+                <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-orange-500 transition-colors">
+                  {offer.title}
+                </h3>
+                <p className="text-gray-400 leading-relaxed">
+                  {offer.description}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
-        <div className="flex justify-center mt-8">
-          <motion.button
-            whileHover={scaleHover}
-            onClick={() => navigate("/gallery")}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-full transition"
-          >
-            More to Gallery
-          </motion.button>
-        </div>
-      </motion.section>
+      </section>
 
-      {/* RESERVATION */}
-      <motion.section
-        id="reservation"
-        className="py-24 px-6 bg-gradient-to-r from-[#7A1F2A] via-[#8B2C2C] to-[#9C5A2E]"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={fadeUp}
-      >
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div className="text-[#F9FAF7]">
-            <p className="text-yellow-400 font-semibold mb-2">RESERVE YOUR EXPERIENCE</p>
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-6">Book Your Table Today</h2>
-            <p className="text-lg mb-8">Join us for an unforgettable dining experience.</p>
-            <motion.button
-              whileHover={scaleHover}
-              onClick={() => navigate("/reservation")}
-              className="bg-yellow-400 text-black px-8 py-3 rounded-full font-semibold hover:bg-yellow-500 transition"
-            >
-              Make a Reservation
-            </motion.button>
+      {/* OUR STORY SECTION */}
+      <section id="about" className="py-24 bg-[#0a0a0a] px-6">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-orange-500/20 rounded-[40px] rotate-3 group-hover:rotate-0 transition-transform duration-500" />
+            <img
+              src={aboutImage}
+              alt="Our Story"
+              className="relative rounded-[32px] shadow-2xl z-10 w-full grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700"
+            />
+          </div>
+          <div className="space-y-8">
+            <div className="inline-block px-4 py-1.5 bg-orange-500/10 text-orange-500 rounded-full text-sm font-bold tracking-widest uppercase">
+              Established 2010
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">
+              Authentic Flavors, <br />
+              Traditional Recipes.
+            </h2>
+            <p className="text-gray-400 text-lg leading-relaxed">
+              Nestled in the heart of CBD Belapur, we bring you an authentic
+              dining experience celebrating flavors from Kerala, Tamil Nadu,
+              Karnataka, and Andhra Pradesh.
+            </p>
+            <div className="grid grid-cols-3 gap-8 pt-6 border-t border-white/10">
+              <Stat value="15+" label="Years" />
+              <Stat value="50+" label="Dishes" />
+              <Stat value="10k+" label="Guests" />
+            </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* CONTACT */}
-      <motion.section
-        id="contact"
-        className="py-20 bg-yellow-100 text-center px-6"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={fadeUp}
-      >
-        <h2 className="text-4xl font-bold mb-8">Contact Us</h2>
-        <p className="text-lg mb-2">📞 +91 98765 43210</p>
-        <p className="text-lg mb-6">✉️ contact@southerntales.com</p>
-        <div className="flex justify-center gap-6 mt-4 flex-wrap">
-          <button
-    onClick={() => {
-      alert("Call on this number:- +91 98765 43210");
-      window.location.href = "tel:+919876543210";
-    }}
-    className="flex items-center gap-2 bg-yellow-400 text-black font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-yellow-500 transition"
-  >
-    {/* Phone Icon (standard) */}
-    <svg
-       xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21 11.72 11.72 0 003.66.58 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.72 11.72 0 00.58 3.66 1 1 0 01-.21 1.11l-2.2 2.2z" />
-    </svg>
-    Call Now
-  </button>
-          <a
-            href="https://wa.me/919876543210"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-full transition"
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-              alt="WhatsApp"
-              className="w-5 h-5"
+      {/* SERVICES SECTION */}
+      <section id="services" className="py-24 bg-black text-white px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center mb-20">Our Services</h2>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <ServiceCard
+              emoji="🍽️"
+              title="Fine Dining"
+              desc="Traditional ambiance with modern comfort."
             />
-            WhatsApp
-          </a>
+            <ServiceCard
+              emoji="🥡"
+              title="Quick Takeaway"
+              desc="Fast packing to keep your food fresh."
+            />
+            <ServiceCard
+              emoji="🎉"
+              title="Event Catering"
+              desc="Authentic feasts for your special days."
+            />
+            <ServiceCard
+              emoji="📦"
+              title="Home Delivery"
+              desc="Hot meals delivered to your doorstep."
+            />
+          </div>
         </div>
-      </motion.section>
+      </section>
+
+      {/* CONTACT & MAP SECTION */}
+      <section id="contact" className="py-24 px-6 bg-black">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Connect With Us
+            </h2>
+            <p className="text-gray-500">
+              Reach out for bookings, feedback, or inquiries.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* Form */}
+            <div className="bg-[#111111] rounded-[32px] p-10 shadow-xl border border-white/5 relative overflow-hidden">
+              {isSent && (
+                <div className="absolute inset-0 bg-black/95 z-30 flex flex-col items-center justify-center animate-in fade-in duration-500">
+                  <CheckCircle2 className="text-green-500 w-20 h-20 mb-6" />
+                  <h3 className="text-3xl font-bold mb-2">Message Received!</h3>
+                  <p className="text-gray-400">
+                    We'll get back to you shortly.
+                  </p>
+                </div>
+              )}
+              <form
+                onSubmit={handleContactSubmit}
+                className="space-y-6 relative z-10"
+              >
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-400 ml-1">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600"
+                      size={20}
+                    />
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Enter your name"
+                      value={contactForm.name}
+                      onChange={handleContactChange}
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl bg-black border border-white/10 text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-400 ml-1">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600"
+                      size={20}
+                    />
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="email@example.com"
+                      value={contactForm.email}
+                      onChange={handleContactChange}
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl bg-black border border-white/10 text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-400 ml-1">
+                    Message
+                  </label>
+                  <textarea
+                    name="message"
+                    placeholder="How can we help you?"
+                    value={contactForm.message}
+                    onChange={handleContactChange}
+                    rows={4}
+                    className="w-full p-5 rounded-2xl bg-black border border-white/10 text-white focus:ring-2 focus:ring-orange-500 outline-none transition-all resize-none"
+                    required
+                  />
+                </div>
+                <button
+                  disabled={isSubmitting}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-lg"
+                >
+                  {isSubmitting ? (
+                    <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Send size={22} /> Send Message
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* Contact Details & Fixed Map */}
+            <div className="space-y-10">
+              <div className="grid sm:grid-cols-2 gap-6">
+                <ContactInfoCard
+                  icon={<MapPin />}
+                  title="Our Location"
+                  detail="CBD Belapur, Navi Mumbai"
+                />
+                <ContactInfoCard
+                  icon={<Phone />}
+                  title="Call Us"
+                  detail="+91 98765 43210"
+                />
+              </div>
+
+              {/* FIXED GOOGLE MAP EMBED */}
+              <div className="rounded-[32px] overflow-hidden h-80 shadow-2xl border-4 border-[#111111]">
+                <iframe
+                  title="Restaurant Location"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.583344682022!2d73.036063!3d19.016053!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c3dad636055d%3A0x88989e24345d4c9!2sCBD%20Belapur%2C%20Navi%20Mumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1707480000000!5m2!1sen!2sin"
+                  className="w-full h-full border-0 grayscale invert brightness-90 contrast-125"
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
 
 /* ================= SUB COMPONENTS ================= */
-const DishCard = ({ img, name, price, veg }) => (
-  <motion.div
-    className="bg-white rounded-xl shadow hover:scale-105 transition p-6 text-center"
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.5 }}
-  >
-    <img src={img} alt={name} className="h-48 w-full object-cover rounded-lg mb-4" />
-    <div className="flex justify-between items-center mb-2">
-      <h3 className="text-xl font-semibold">{name}</h3>
-      <span className={`w-3 h-3 rounded-full ${veg ? "bg-green-500" : "bg-red-500"}`} />
+
+const Stat = ({ value, label }) => (
+  <div className="text-center">
+    <h4 className="text-3xl font-black text-orange-500">{value}</h4>
+    <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mt-1">
+      {label}
+    </p>
+  </div>
+);
+
+const ServiceCard = ({ emoji, title, desc }) => (
+  <div className="bg-[#111111] border border-white/5 rounded-[32px] p-10 text-center hover:bg-orange-500 transition-all duration-500 group cursor-default">
+    <div className="text-6xl mb-6 group-hover:scale-125 transition-transform duration-500">
+      {emoji}
     </div>
-    <p className="text-orange-500 font-bold">{price}</p>
-  </motion.div>
+    <h3 className="text-2xl font-bold mb-3">{title}</h3>
+    <p className="text-gray-500 group-hover:text-white/90 text-sm leading-relaxed">
+      {desc}
+    </p>
+  </div>
 );
 
-const ServiceCard = ({ emoji, title }) => (
-  <motion.div
-    className="bg-white rounded-2xl shadow-lg p-8 text-center hover:-translate-y-2 hover:scale-105 transition"
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.5 }}
-  >
-    <div className="text-5xl mb-5">{emoji}</div>
-    <h3 className="text-xl font-semibold mb-3">{title}</h3>
-    <p className="text-gray-700">Premium service crafted for your comfort and convenience.</p>
-  </motion.div>
-);
-
-const WhyCard = ({ emoji, title }) => (
-  <motion.div
-    className="bg-white rounded-2xl shadow-lg p-8 text-center hover:-translate-y-2 hover:scale-105 transition"
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.5 }}
-  >
-    <div className="text-5xl mb-4">{emoji}</div>
-    <h3 className="text-xl font-semibold mb-3">{title}</h3>
-    <p className="text-gray-700">Quality, care, and consistency in every experience.</p>
-  </motion.div>
+const ContactInfoCard = ({ icon, title, detail }) => (
+  <div className="bg-[#111111] p-6 rounded-3xl shadow-lg border border-white/5 flex items-center gap-5 hover:border-orange-500 transition-colors">
+    <div className="bg-orange-500/10 p-4 rounded-2xl text-orange-500">
+      {React.cloneElement(icon, { size: 24 })}
+    </div>
+    <div>
+      <h4 className="font-black text-white text-sm uppercase tracking-wide">
+        {title}
+      </h4>
+      <p className="text-gray-500 text-sm mt-0.5">{detail}</p>
+    </div>
+  </div>
 );
 
 export default Home;

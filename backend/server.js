@@ -22,6 +22,7 @@ app.use(cors({
 
 // Task 5 & 8: Essential for parsing JSON data for Register, Login, and Cart
 app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
 
 // Professional Logging: Helps track Task 4 & 7 access attempts in real-time
 app.use((req, res, next) => {

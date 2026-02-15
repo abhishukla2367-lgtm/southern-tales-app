@@ -1,19 +1,21 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Apply hero background to whole body and all sections by default */
-html,
-body {
+
+
+/* Reset default spacing */
+html, body {
   margin: 0;
   padding: 0;
   scroll-behavior: smooth;
   font-family: "Inter", sans-serif;
-  background-color: rgba(0, 0, 0, 0.6); /* Hero section color */
-  color: white; /* ensure text is visible */
 }
 
-/* Make all sections inherit the background automatically */
-section {
-  background-color: rgba(0, 0, 0, 0.6);
+/* Optional: smooth hover transitions */
+button,
+a {
+  transition: all 0.3s ease;
 }

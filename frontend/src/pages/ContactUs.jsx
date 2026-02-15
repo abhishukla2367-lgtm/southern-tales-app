@@ -1,272 +1,183 @@
 import React, { useState } from "react";
-
-const reviewsData = [
-  {
-    name: "Rohit Verma",
-    rating: 5,
-    comment:
-      "Authentic South Indian flavors. The dosa was crisp and the filter coffee was excellent.",
-  },
-  {
-    name: "Ananya Iyer",
-    rating: 3,
-    comment:
-      "Loved the ambience and taste. Sambhar was rich and very comforting.",
-  },
-  {
-    name: "Vikram Patel",
-    rating: 4,
-    comment:
-      "Food was good overall, but service was slightly slow during rush hours.",
-  },
-];
-
-const Star = () => (
-  <svg className="w-5 h-5 fill-yellow-400" viewBox="0 0 20 20">
-    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.97a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.97c.3.921-.755 1.688-1.54 1.118l-3.381-2.455a1 1 0 00-1.176 0l-3.38 2.455c-.785.57-1.84-.197-1.54-1.118l1.287-3.97a1 1 0 00-.364-1.118L2.075 9.397c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.97z" />
-  </svg>
-);
+import { Mail, User, Send, MapPin, Phone, Clock, CheckCircle2 } from "lucide-react";
 
 const Contact = () => {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
+    const [form, setForm] = useState({ name: "", email: "", message: "" });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSent, setIsSent] = useState(false);
 
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+    };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert("Form submitted!");
-    setForm({ name: "", email: "", message: "" });
-  };
+        // Simulating an API call
+        setTimeout(() => {
+            setIsSubmitting(false);
+            setIsSent(true);
+            setForm({ name: "", email: "", message: "" });
 
-  const handleReviewSubmit = (e) => {
-    e.preventDefault();
-    setReviewSubmitted(true);
-    setTimeout(() => setReviewSubmitted(false), 3000);
-  };
+            // Reset success message after 5 seconds
+            setTimeout(() => setIsSent(false), 5000);
+        }, 1500);
+    };
 
-  return (
-    <div className="max-w-7xl mx-auto px-6 py-20 space-y-20">
-      {/* Contact Form */}
-      <section className="bg-yellow-50 rounded-xl shadow p-8 max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-center">Contact Us</h2>
+    return (
+        /* Main background set to deep black */
+        <section className="min-h-screen bg-black py-20 px-4 sm:px-6 lg:px-8 text-white">
+            <div className="max-w-7xl mx-auto">
 
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
-          <input
-            type="text"
-            name="name"
-            placeholder="Name"
-            value={form.name}
-            onChange={handleChange}
-            autoComplete="new-password"
-            aria-autocomplete="none"
-            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-400"
-            required
-          />
-
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            autoComplete="new-password"
-            readOnly
-            onFocus={(e) => e.target.removeAttribute("readOnly")}
-            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-400"
-            required
-          />
-
-          <textarea
-            name="message"
-            placeholder="Message"
-            value={form.message}
-            onChange={handleChange}
-            autoComplete="off"
-            rows={5}
-            className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-400"
-            required
-          />
-
-          <button
-            type="submit"
-            className="bg-yellow-400 text-black font-semibold px-6 py-3 rounded-lg hover:bg-yellow-500 transition w-full"
-          >
-            Send Message
-          </button>
-        </form>
-      </section>
-
-      {/* Restaurant Info + Google Map */}
-      <section className="max-w-5xl mx-auto space-y-6">
-        <h3 className="text-2xl font-bold">Our Location</h3>
-        <p>📍 123 Southern Street, CBD Belapur, Navi Mumbai</p>
-
-        <div className="w-full h-64 rounded-xl overflow-hidden shadow">
-          <iframe
-            title="Southern Tales Location"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d241317.11611872047!2d72.74109855534745!3d19.062536453107355!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c6e04b2b4b1b%3A0xbdf1c2e3c3e7f9c7!2sCBD%20Belapur%2C%20Navi%20Mumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1686266674561!5m2!1sen!2sin"
-            className="w-full h-full border-0"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-      </section>
-
-      {/* Reviews Section */}
-      <section className="max-w-7xl mx-auto space-y-12">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold">Customer Reviews</h2>
-          <p className="text-gray-600">Real experiences shared by our guests</p>
-        </div>
-
-        {/* Reviews Grid */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {reviewsData.map((review, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-2xl shadow-md p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
-            >
-              {/* Header */}
-              <div className="flex items-center gap-4 mb-4">
-                {/* Avatar */}
-                <div className="h-12 w-12 rounded-full bg-yellow-400 text-black font-bold flex items-center justify-center text-lg">
-                  {review.name.charAt(0)}
+                {/* Header Section */}
+                <div className="text-center mb-16">
+                    <h2 className="text-4xl font-extrabold text-white sm:text-5xl">
+                        Get in <span className="text-orange-500">Touch</span>
+                    </h2>
+                    <p className="mt-4 text-xl text-zinc-400 max-w-2xl mx-auto font-light">
+                        Have a question about our menu or want to book a table? We'd love to hear from you.
+                    </p>
                 </div>
 
-                <div>
-                  <h4 className="font-semibold text-gray-900">{review.name}</h4>
-                  <div className="flex items-center gap-1">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} />
-                    ))}
-                    <span className="ml-2 text-sm text-gray-500">
-                      {review.rating}.0
-                    </span>
-                  </div>
+                <div className="grid lg:grid-cols-2 gap-16 items-start">
+                    {/* Left Side: Contact Form */}
+                    <div className="bg-zinc-900 rounded-3xl shadow-2xl p-8 md:p-12 border border-white/5 relative overflow-hidden">
+                        {isSent && (
+                            <div className="absolute inset-0 bg-zinc-900/95 z-10 flex flex-col items-center justify-center animate-in fade-in duration-500">
+                                <CheckCircle2 className="text-orange-500 w-20 h-20 mb-4" />
+                                <h3 className="text-2xl font-bold text-white">Message Sent!</h3>
+                                <p className="text-zinc-400">We'll get back to you shortly.</p>
+                                <button
+                                    onClick={() => setIsSent(false)}
+                                    className="mt-6 text-orange-500 font-semibold hover:text-orange-400 transition-colors"
+                                >
+                                    Send another message
+                                </button>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-zinc-300 ml-1">Full Name</label>
+                                    <div className="relative">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            placeholder="John Doe"
+                                            value={form.name}
+                                            onChange={handleChange}
+                                            className="w-full pl-12 pr-4 py-3.5 bg-zinc-800 rounded-2xl border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-zinc-300 ml-1">Email Address</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            placeholder="john@example.com"
+                                            value={form.email}
+                                            onChange={handleChange}
+                                            className="w-full pl-12 pr-4 py-3.5 bg-zinc-800 rounded-2xl border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-zinc-300 ml-1">Your Message</label>
+                                <textarea
+                                    name="message"
+                                    placeholder="Tell us what's on your mind..."
+                                    value={form.message}
+                                    onChange={handleChange}
+                                    rows={5}
+                                    className="w-full p-5 bg-zinc-800 rounded-2xl border border-white/10 text-white placeholder:text-zinc-500 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all resize-none"
+                                    required
+                                />
+                            </div>
+
+                            <button
+                                disabled={isSubmitting}
+                                className={`w-full py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] shadow-lg ${isSubmitting
+                                    ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                                    : "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/20"
+                                    }`}
+                            >
+                                {isSubmitting ? (
+                                    <div className="w-6 h-6 border-3 border-white/20 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <>
+                                        <Send size={20} />
+                                        Send Message
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* Right Side: Contact Info & Map */}
+                    <div className="flex flex-col h-full space-y-8">
+                        <div className="bg-zinc-900 p-8 rounded-3xl shadow-xl border border-white/5 flex-grow">
+                            <h3 className="text-2xl font-bold text-white mb-8">Contact Information</h3>
+
+                            <div className="space-y-6">
+                                <div className="flex items-start gap-5">
+                                    <div className="bg-orange-500/10 p-3 rounded-xl">
+                                        <MapPin className="text-orange-500" size={24} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white">Our Location</p>
+                                        <p className="text-zinc-400">123 Southern Street, Belapur,<br />Navi Mumbai, MH 400614</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-5">
+                                    <div className="bg-orange-500/10 p-3 rounded-xl">
+                                        <Phone className="text-orange-500" size={24} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white">Phone Number</p>
+                                        <p className="text-zinc-400">+91 98765 43210</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-5">
+                                    <div className="bg-orange-500/10 p-3 rounded-xl">
+                                        <Clock className="text-orange-500" size={24} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white">Opening Hours</p>
+                                        <p className="text-zinc-400">Mon - Sun: 10:00 AM - 11:00 PM</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Map Container */}
+                        <div className="w-full h-72 rounded-3xl overflow-hidden shadow-2xl border-4 border-zinc-900 transform hover:scale-[1.01] transition-transform duration-500 grayscale opacity-80 hover:grayscale-0 hover:opacity-100">
+                            <iframe
+                                title="Google Maps Location"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.441113264423!2d73.0334803!3d19.0113111!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c3dadf000001%3A0x633d9c88220f8c37!2sCBD%20Belapur%2C%20Navi%20Mumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                                className="w-full h-full border-0"
+                                allowFullScreen=""
+                                loading="lazy"
+                            />
+                        </div>
+                    </div>
                 </div>
-              </div>
-
-              {/* Review Text */}
-              <p className="text-gray-700 leading-relaxed">“{review.comment}”</p>
             </div>
-          ))}
-        </div>
-
-        {/* Review Submission */}
-        <div className="bg-yellow-50 p-10 rounded-2xl shadow max-w-3xl mx-auto">
-          <h3 className="text-2xl font-bold mb-6 text-center">
-            Share Your Experience
-          </h3>
-
-          {reviewSubmitted && (
-            <div className="mb-6 p-4 bg-green-100 text-green-800 rounded-lg text-center font-medium">
-              ✅ Thank you! Your review has been submitted
-            </div>
-          )}
-
-          <form onSubmit={handleReviewSubmit} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Your Name"
-              className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-400"
-              required
-            />
-            <textarea
-              placeholder="Write your review..."
-              rows={4}
-              className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-400"
-              required
-            />
-
-            {/* ⭐ Star Rating Input */}
-            <div className="flex flex-col items-center mb-4">
-              <div className="flex space-x-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg
-                    key={star}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => setRating(star)}
-                    className={`w-8 h-8 cursor-pointer transition-colors ${
-                      star <= (hoverRating || rating)
-                        ? "text-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.97a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.97c.3.921-.755 1.688-1.54 1.118l-3.381-2.455a1 1 0 00-1.176 0l-3.38 2.455c-.785.57-1.84-.197-1.54-1.118l1.287-3.97a1 1 0 00-.364-1.118L2.075 9.397c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.97z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-500 mt-2 text-sm">
-                {rating
-                  ? `You rated us ${rating} star${rating > 1 ? "s" : ""}`
-                  : "Click to rate us!"}
-              </p>
-            </div>
-
-            <button className="bg-yellow-400 text-black font-semibold px-6 py-3 rounded-lg hover:bg-yellow-500 transition w-full">
-              Submit Review
-            </button>
-          </form>
-        </div>
-      </section>
-
-      {/* Floating Call & WhatsApp Buttons */}
-<div className="fixed bottom-6 right-6 flex space-x-4 z-50">
-  {/* Call Now Button */}
-  <button
-    onClick={() => {
-      alert("Call on this number:- +91 98765 43210");
-      window.location.href = "tel:+919876543210";
-    }}
-    className="flex items-center gap-2 bg-yellow-400 text-black font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-yellow-500 transition"
-  >
-    {/* Phone Icon (standard) */}
-    <svg
-       xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21 11.72 11.72 0 003.66.58 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.72 11.72 0 00.58 3.66 1 1 0 01-.21 1.11l-2.2 2.2z" />
-    </svg>
-    Call Now
-  </button>
-
-  {/* WhatsApp Button */}
-  <a
-    href="https://wa.me/919876543210"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="flex items-center gap-2 bg-green-500 text-white font-semibold px-5 py-3 rounded-full shadow-lg hover:bg-green-600 transition"
-  >
-    {/* Standard WhatsApp Icon */}
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-5 w-5"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-    >
-      <path d="M20.52 3.48a11.89 11.89 0 00-16.78 16.78l-1.89 6.89 6.89-1.89a11.89 11.89 0 0016.78-16.78zM12 21.75a9.75 9.75 0 01-5.23-1.51l-.38-.23-4.28 1.17 1.17-4.28-.23-.38A9.75 9.75 0 1121.75 12a9.72 9.72 0 01-9.75 9.75z" />
-      <path d="M16.05 13.93c-.26-.13-1.54-.76-1.78-.84-.24-.08-.42-.13-.6.13s-.69.84-.85 1.01-.31.19-.57.06a6.3 6.3 0 01-1.87-1.15 6.56 6.56 0 01-1.21-1.5c-.13-.24 0-.37.09-.49.09-.12.2-.31.3-.46.09-.15.12-.25.18-.41.06-.16.03-.3-.02-.41-.05-.12-.6-1.44-.82-1.97-.22-.52-.45-.45-.6-.46-.15 0-.33-.01-.51-.01s-.42.06-.64.31c-.22.25-.85.83-.85 2.03s.87 2.36.99 2.52c.12.16 1.72 2.62 4.16 3.67.58.25 1.03.4 1.38.51.58.18 1.11.15 1.53.09.47-.07 1.54-.63 1.76-1.24.22-.61.22-1.13.15-1.24-.07-.12-.26-.19-.52-.32z" />
-    </svg>
-    WhatsApp
-  </a>
-</div>
-</div>
-  );
+        </section>
+    );
 };
 
 export default Contact;

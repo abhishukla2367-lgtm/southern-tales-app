@@ -1,28 +1,36 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-const CartContext = createContext();
+// ✅ Named export for the Context object
+export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const navigate = useNavigate();
 
-  // 1. PERSISTENCE: Initialize from LocalStorage (Requirement: Professional State Management)
+  // 1. Initialise from LocalStorage (Professional Persistence)
   const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem("restro_cart");
-    return savedCart ? JSON.parse(savedCart) : [];
+    try {
+      const savedCart = localStorage.getItem("restro_cart");
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const [orderType, setOrderType] = useState("delivery");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  // 2. SYNC: Automatically update LocalStorage when cart changes
+  // 2. Sync with LocalStorage
   useEffect(() => {
     localStorage.setItem("restro_cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // 3. AUTH GUARDED ACTION (Requirement #4): Restrict Add to Cart
-  const addToCart = (item, user) => {
-    if (!user) {
+  /**
+   * TASK 8: Add to Cart
+   * Check login status before adding (Task 4)
+   */
+  const addToCart = (item, isLoggedIn) => {
+    if (!isLoggedIn) {
       alert("Please login to add items to your cart.");
       navigate("/login");
       return;
@@ -76,16 +84,13 @@ export const CartProvider = ({ children }) => {
     [cartItems]
   );
 
-  // 4. PLACE ORDER (Requirement #2 & #8): MongoDB Backend Integration
+  /**
+   * TASK 8: Place Order (MongoDB Atlas Integration)
+   */
   const placeOrder = async (user, deliveryDetails = {}) => {
-    if (!user) {
+    if (!user?._id) {
       alert("Session expired. Please login again.");
       navigate("/login");
-      return { success: false };
-    }
-
-    if (cartItems.length === 0) {
-      alert("Your cart is empty.");
       return { success: false };
     }
 
@@ -95,29 +100,26 @@ export const CartProvider = ({ children }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user._id,           // MongoDB ID from AuthContext
+          userId: user._id,           // Task 2: MongoDB ID
           customerName: user.name,
           email: user.email,
           items: cartItems,
           totalAmount: totalPrice,
           orderType: orderType,
           address: deliveryDetails.address || "N/A",
-          platform: deliveryDetails.platform || "Direct",
-          status: "Pending",          // For Admin Side Orders Page
+          status: "Pending",          // For Admin Side (Task 8)
           createdAt: new Date()
         }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        // Requirement #8: Remove items from cart on success
-        clearCart(); 
+        clearCart(); // Requirement: Remove items from cart on success
         alert("Order Placed Successfully!");
-        navigate("/profile"); // Task #6: Show My Orders in Profile
+        navigate("/profile"); // Task 6: Show Orders in Profile
         return { success: true };
       } else {
-        throw new Error(data.message || "Failed to save order in database");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save order");
       }
     } catch (error) {
       console.error("Order Integration Error:", error);
@@ -149,4 +151,11 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-export const useCart = () => useContext(CartContext);
+// ✅ Custom hook for components to use
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
+};

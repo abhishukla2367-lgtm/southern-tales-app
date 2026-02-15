@@ -5,7 +5,6 @@ const Order = require("../models/Order");
 const Reservation = require("../models/Reservation");
 
 // Task 4 & 6: Import the protection middleware
-// Ensure this path is correct based on your folder structure
 const { protect } = require("../middleware/protect");
 
 /**
@@ -15,28 +14,35 @@ const { protect } = require("../middleware/protect");
  */
 router.get("/", protect, async (req, res) => {
   try {
-    // Parallel fetching for high performance (Task 6.1 & 6.2)
+    // 1. Get the current user ID from the 'protect' middleware
+    const currentUserId = req.user.id;
+
+    // 2. Parallel fetching (Task 6.1 & 6.2)
+    // Using Promise.all ensures we don't wait for one query to finish before starting the next
     const [user, orders, reservations] = await Promise.all([
-      // 1. Get user details (Task 5)
-      User.findById(req.user.id).select("-password"),
+      // info from User collection (Task 5)
+      User.findById(currentUserId).select("-password"),
 
-      // 2. Get user orders (Task 8) - Ensure Order model also uses 'userId'
-      Order.find({ userId: req.user.id }).sort({ createdAt: -1 }),
+      // info from Order collection (Task 8)
+      // ENSURE your Order schema uses 'userId' field name
+      Order.find({ userId: currentUserId }).sort({ createdAt: -1 }),
 
-      // 3. Get user reservations (Task 7)
-      // FIXED: Changed 'user' to 'userId' to match your ReservationSchema exactly
-      Reservation.find({ userId: req.user.id }).sort({ date: 1 })
+      // info from Reservation collection (Task 7)
+      // FIXED: Matches your ReservationSchema field name 'userId'
+      Reservation.find({ userId: currentUserId }).sort({ date: 1 })
     ]);
 
+    // 3. Validation: If user doesn't exist in DB anymore
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Return the object structure your Frontend expects
+    // 4. Final Response (Matches Profile.jsx destructuring)
+    // Structure: { user, orders, reservations }
     res.status(200).json({ 
       user, 
-      orders, 
-      reservations 
+      orders: orders || [], 
+      reservations: reservations || [] 
     });
 
   } catch (err) {
@@ -50,7 +56,7 @@ router.get("/", protect, async (req, res) => {
 
 /**
  * @route   PUT /api/profile/update
- * @desc    Task 6.1: Update user details (Name, Phone, Address)
+ * @desc    Professional Touch: Update user details (Task 6.1)
  * @access  Private
  */
 router.put("/update", protect, async (req, res) => {
@@ -60,11 +66,17 @@ router.put("/update", protect, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       { $set: { name, phone, address } },
+      // new: true returns updated doc; runValidators ensures data is valid
       { new: true, runValidators: true } 
     ).select("-password");
 
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     res.status(200).json(updatedUser);
   } catch (err) {
+    console.error("Update Profile Error:", err.message);
     res.status(500).json({ message: "Update failed", error: err.message });
   }
 });

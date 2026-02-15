@@ -10,19 +10,20 @@ import {
 // Components
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import CartDrawer from "./components/CartDrawer";
+import CartDrawer from "./components/CartDrawer"; // This is your sidebar
 import ProtectedRoute from "./components/ProtectedRoute"; 
 
 // Pages
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
+import Cart from "./pages/Cart"; // <--- Ensure you create this file for the full page
 import OrderSummaryPage from "./pages/OrderSummaryPage";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import Reservation from "./pages/Reservation";
 import Gallery from "./pages/Gallery";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import Profile from "./pages/Profile"; 
 
@@ -39,8 +40,7 @@ import { AuthProvider, AuthContext } from "./context/AuthContext";
 /* Admin Route Protector */
 const AdminRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
-  if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
-  // Assumes your user object has an 'role' field from MongoDB
+  if (loading) return <div className="h-screen flex items-center justify-center bg-black text-white">Loading...</div>;
   return user && user.role === "admin" ? children : <Navigate to="/login" />;
 };
 
@@ -57,14 +57,24 @@ const ScrollToTop = () => {
 const Layout = ({ children }) => {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith("/admin");
+  const isCartPage = pathname === "/cart";
 
   return (
-    <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-background text-textPrimary"}>
+    /* FIXED: Using standard bg-black for professional consistency */
+    <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-black text-white"}>
       {!isAdminRoute && <Header />} 
+      
       <main className={isAdminRoute ? "min-h-screen" : "min-h-[80vh]"}>
         {children}
       </main>
+
       {!isAdminRoute && <Footer />}
+      
+      {/* 
+          Hide the drawer ONLY on the full cart page or admin panel 
+          to prevent double UI elements.
+      */}
+      {!isAdminRoute && !isCartPage && <CartDrawer />} 
     </div>
   );
 };
@@ -88,11 +98,13 @@ export default function App() {
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/gallery" element={<Gallery />} />
-              <Route path="/cart" element={<CartDrawer />} />
+              
+              {/* FIXED: Dedicated Cart Page Route */}
+              <Route path="/cart" element={<Cart />} />
               
               {/* AUTH ROUTES */}
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              <Route path="/register" element={<Register/>} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* PROTECTED USER ROUTES */}
@@ -110,24 +122,11 @@ export default function App() {
               />
 
               {/* PROTECTED ADMIN ROUTES */}
-              <Route 
-                path="/admin" 
-                element={<AdminRoute><AdminDashboard /></AdminRoute>} 
-              />
-              <Route 
-                path="/admin/menu" 
-                element={<AdminRoute><MenuList /></AdminRoute>} 
-              />
-              <Route 
-                path="/admin/orders" 
-                element={<AdminRoute><OrdersList /></AdminRoute>} 
-              />
-              <Route 
-                path="/admin/reservations" 
-                element={<AdminRoute><ReservationsList /></AdminRoute>} 
-              />
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/menu" element={<AdminRoute><MenuList /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><OrdersList /></AdminRoute>} />
+              <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
 
-              {/* 404 Redirect */}
               <Route path="*" element={<Home />} />
             </Routes>
           </Layout>
