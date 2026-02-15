@@ -11,40 +11,26 @@ const { protect, admin } = require("../middleware/protect");
  * @desc    Task 4 & 7: Reserve a table (Requires Login)
  * @access  Private
  */
+// Inside reservationRoutes.js
 router.post("/", protect, async (req, res) => {
   try {
-    const { date, time, guests, tableNumber, specialRequests } = req.body;
+    const { name, email, phone, date, time, guests, specialRequests } = req.body;
 
-    // Guideline: Proper validations
-    if (!date || !time || !guests) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Validation Failed: Date, Time, and Guest count are required." 
-      });
-    }
-
-    // Task 7: Store reservation in database linked to logged-in user
     const newReservation = new Reservation({
-      user: req.user.id, 
+      userId: req.user.id,
+      customerName: name,      // Map 'name' from frontend to 'customerName' in Schema
+      customerEmail: email,    // Map 'email' from frontend to 'customerEmail' in Schema
+      phone,                   // Ensure this is in your Schema too!
       date,
       time,
       guests,
-      tableNumber,
       specialRequests
     });
 
-    const savedRes = await newReservation.save();
-    res.status(201).json({ 
-      success: true, 
-      message: "Reservation confirmed successfully!", 
-      data: savedRes 
-    });
+    await newReservation.save();
+    res.status(201).json({ success: true, message: "Reservation confirmed!" });
   } catch (err) {
-    res.status(500).json({ 
-      success: false, 
-      message: "Server Error: Could not process reservation.", 
-      error: err.message 
-    });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -58,16 +44,17 @@ router.post("/", protect, async (req, res) => {
  */
 router.get("/my-reservations", protect, async (req, res) => {
   try {
-    // Professional Detail: Fetch only the logged-in user's data
-    const reservations = await Reservation.find({ user: req.user.id })
-      .sort({ date: -1 }); // Newest first for better UI
+    // Fixed: Must query by 'userId' to match your Schema
+    const reservations = await Reservation.find({ userId: req.user.id })
+      .sort({ date: -1 }); 
 
     res.status(200).json({
       success: true,
       count: reservations.length,
-      data: reservations
+      reservations: reservations // Key matches Profile.jsx: const { reservations } = data
     });
   } catch (err) {
+    console.error("Profile Fetch Error:", err.message);
     res.status(500).json({ 
       success: false, 
       message: "Error retrieving your reservations." 
@@ -85,9 +72,9 @@ router.get("/my-reservations", protect, async (req, res) => {
  */
 router.get("/admin/all", protect, admin, async (req, res) => {
   try {
-    // Populate user details so Admin knows the customer's name and email
+    // Fixed: Populate 'userId' (not 'user') to match Schema
     const allReservations = await Reservation.find()
-      .populate("user", "name email") 
+      .populate("userId", "name email") 
       .sort({ date: 1 });
       
     res.status(200).json({
@@ -95,6 +82,7 @@ router.get("/admin/all", protect, admin, async (req, res) => {
       data: allReservations
     });
   } catch (err) {
+    console.error("Admin Fetch Error:", err.message);
     res.status(500).json({ 
       success: false, 
       message: "Admin Access Error: Could not fetch all reservations." 

@@ -19,7 +19,7 @@ const Login = () => {
   // Task 3: If user is already logged in, send them home immediately
   useEffect(() => {
     if (user) {
-      navigate("/", { replace: true });
+      navigate(from, { replace: true }); 
     }
   }, [user, navigate]);
 
@@ -50,7 +50,7 @@ const Login = () => {
         login(userData, token);
         
         // Final Task: Force navigate to homepage
-        navigate("/", { replace: true }); 
+        navigate(from, { replace: true }); 
       } else {
         setError("Login failed: Invalid data from server.");
       }

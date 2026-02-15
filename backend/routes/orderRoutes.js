@@ -64,7 +64,7 @@ router.get("/my-orders", protect, async (req, res) => {
     // Sorted by createdAt: -1 (Newest first) for a professional UI experience
     const orders = await Order.find({ user: req.user.id }).sort({ createdAt: -1 });
     
-    res.status(200).json(orders);
+    res.status(200).json({ success: true, orders: orders }); 
   } catch (err) {
     res.status(500).json({ message: "Failed to retrieve your order history." });
   }

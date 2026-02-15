@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../api/axiosConfig"; 
 
 export default function Reservation() {
+    const navigate = useNavigate();
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -11,9 +14,21 @@ export default function Reservation() {
     });
 
     const [errors, setErrors] = useState({});
+    const [submitting, setSubmitting] = useState(false);
+
+    // MAPPING: Scrambled names to actual form keys to trick Chrome/Safari
+    const nameMap = {
+        "ux_user_fullname": "name",
+        "ux_user_contact_email": "email",
+        "ux_user_phone_num": "phone",
+        "ux_booking_date": "date",
+        "ux_booking_time": "time",
+        "ux_guest_count": "guests"
+    };
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const actualKey = nameMap[e.target.name] || e.target.name;
+        setForm({ ...form, [actualKey]: e.target.value });
     };
 
     const validate = () => {
@@ -28,164 +43,148 @@ export default function Reservation() {
         return newErrors;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const validationErrors = validate();
+        
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Login required to reserve a table (Requirement #4)");
+            navigate("/login");
+            return;
+        }
 
+        const validationErrors = validate();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
 
-        setErrors({});
-        alert("Table reserved successfully!");
-        setForm({
-            name: "",
-            email: "",
-            phone: "",
-            date: "",
-            time: "",
-            guests: "",
-        });
+        try {
+            setSubmitting(true);
+            // Task 7: Sending real data to MongoDB Atlas
+            await API.post("/reservations", form);
+            alert("Table reserved successfully!");
+            setForm({ name: "", email: "", phone: "", date: "", time: "", guests: "" });
+            setErrors({});
+            navigate("/profile");
+        } catch (err) {
+            console.error("Reservation Error:", err);
+            alert(err.response?.data?.message || "Failed to book table.");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
         <section id="reservation" className="py-20 bg-black px-6 min-h-screen">
             <div className="max-w-4xl mx-auto text-center">
-                <h2 className="text-4xl font-bold mb-4 text-white">
-                    Book Your Table
-                </h2>
-                <p className="text-zinc-400 mb-10">
-                    Join us for an unforgettable dining experience.
-                </p>
+                <h2 className="text-4xl font-bold mb-4 text-white">Book Your Table</h2>
+                <p className="text-zinc-400 mb-10">Join us for an unforgettable dining experience.</p>
 
                 <form
                     autoComplete="off"
-                    className="bg-zinc-900 max-w-lg mx-auto p-8 rounded-2xl shadow-2xl border border-white/10 space-y-5 text-left"
+                    role="presentation"
+                    className="bg-[#111111] max-w-lg mx-auto p-8 rounded-2xl shadow-2xl border border-zinc-800 space-y-5 text-left"
                     onSubmit={handleSubmit}
                 >
-                    <div>
-                        <input type="text" name="fakeusernameremembered" autoComplete="username" hidden />
-                        <input type="password" name="fakepasswordremembered" autoComplete="new-password" hidden />
+                    {/* HONEYPOT: Browser targets these first, leaving real inputs alone */}
+                    <input type="text" name="name" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+                    <input type="email" name="email" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
 
-                        <label className="block text-sm font-medium mb-1 text-zinc-300">Full Name</label>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Full Name</label>
                         <input
                             type="text"
-                            name="name"
-                            autoComplete="new-name"
+                            name="ux_user_fullname"
+                            autoComplete="new-password" 
                             value={form.name}
                             onChange={handleChange}
-                            className="w-full bg-zinc-800 border-zinc-700 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
-                            placeholder="John Doe"
+                            className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
+                            placeholder="Your Name"
                         />
-                        {errors.name && (
-                            <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-                        )}
+                        {errors.name && <p className="text-red-400 text-xs mt-1 font-medium">{errors.name}</p>}
                     </div>
 
-                    {/* Email */}
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-zinc-300">
-                            Email Address
-                        </label>
+                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Email Address</label>
                         <input
                             type="email"
-                            name="email"
-                            autoComplete="new-email"
+                            name="ux_user_contact_email"
+                            autoComplete="new-password"
                             value={form.email}
                             onChange={handleChange}
-                            className="w-full bg-zinc-800 border-zinc-700 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                            className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
                             placeholder="hello@example.com"
                         />
-                        {errors.email && (
-                            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                        )}
+                        {errors.email && <p className="text-red-400 text-xs mt-1 font-medium">{errors.email}</p>}
                     </div>
 
-                    {/* Phone */}
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-zinc-300">
-                            Phone Number
-                        </label>
+                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Phone Number</label>
                         <input
                             type="tel"
-                            name="phone"
-                            autoComplete="new-tel"
+                            name="ux_user_phone_num"
+                            autoComplete="new-password"
                             value={form.phone}
                             onChange={handleChange}
-                            className="w-full bg-zinc-800 border-zinc-700 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                            className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
                             placeholder="9876543210"
                         />
-                        {errors.phone && (
-                            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
-                        )}
+                        {errors.phone && <p className="text-red-400 text-xs mt-1 font-medium">{errors.phone}</p>}
                     </div>
 
-                    {/* Guests */}
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-zinc-300">
-                            Number of Guests
-                        </label>
+                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Number of Guests</label>
                         <select
-                            name="guests"
+                            name="ux_guest_count"
                             value={form.guests}
                             onChange={handleChange}
-                            className="w-full bg-zinc-800 border-zinc-700 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                            autoComplete="off"
+                            className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none"
                         >
-                            <option value="" className="bg-zinc-900">Select number of people</option>
-                            <option value="1" className="bg-zinc-900">1 Person</option>
-                            <option value="2" className="bg-zinc-900">2 People</option>
-                            <option value="3" className="bg-zinc-900">3 People</option>
-                            <option value="4" className="bg-zinc-900">4 People</option>
-                            <option value="5" className="bg-zinc-900">5 People</option>
+                            <option value="" className="bg-[#111111]">Select people</option>
+                            {[1, 2, 3, 4, 5, 6].map(num => (
+                                <option key={num} value={num} className="bg-[#111111]">{num} {num === 1 ? 'Person' : 'People'}</option>
+                            ))}
                         </select>
-                        {errors.guests && (
-                            <p className="text-red-500 text-xs mt-1">{errors.guests}</p>
-                        )}
+                        {errors.guests && <p className="text-red-400 text-xs mt-1 font-medium">{errors.guests}</p>}
                     </div>
 
-                    {/* Date & Time */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1 text-zinc-300">Date</label>
+                            <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Date</label>
                             <input
                                 type="date"
-                                name="date"
+                                name="ux_booking_date"
+                                autoComplete="off"
                                 value={form.date}
                                 onChange={handleChange}
-                                className="w-full bg-zinc-800 border-zinc-700 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                                className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none [color-scheme:dark]"
                             />
-                            {errors.date && (
-                                <p className="text-red-500 text-xs mt-1">{errors.date}</p>
-                            )}
+                            {errors.date && <p className="text-red-400 text-xs mt-1 font-medium">{errors.date}</p>}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-1 text-zinc-300">Time</label>
+                            <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Time</label>
                             <input
                                 type="time"
-                                name="time"
+                                name="ux_booking_time"
+                                autoComplete="off"
                                 value={form.time}
                                 onChange={handleChange}
-                                className="w-full bg-zinc-800 border-zinc-700 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
+                                className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none [color-scheme:dark]"
                             />
-                            {errors.time && (
-                                <p className="text-red-500 text-xs mt-1">{errors.time}</p>
-                            )}
+                            {errors.time && <p className="text-red-400 text-xs mt-1 font-medium">{errors.time}</p>}
                         </div>
                     </div>
 
-                    {/* Submit */}
                     <button
                         type="submit"
-                        className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-lg font-bold shadow-md transition-all active:scale-[0.98]"
+                        disabled={submitting}
+                        className={`w-full ${submitting ? 'bg-zinc-700' : 'bg-orange-600 hover:bg-orange-500'} text-white py-3 rounded-lg font-black shadow-lg transition-all active:scale-[0.98] uppercase tracking-wider`}
                     >
-                        Confirm Reservation
+                        {submitting ? "Booking..." : "Confirm Reservation"}
                     </button>
-
-                    <p className="text-xs text-center text-zinc-500">
-                        By clicking reserve, you agree to our terms and conditions.
-                    </p>
                 </form>
             </div>
         </section>
