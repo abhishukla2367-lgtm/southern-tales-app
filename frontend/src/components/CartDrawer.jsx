@@ -50,10 +50,42 @@ const CartDrawer = () => {
       navigate("/login");
       return;
     }
-    const result = await placeOrder(user);
-    if (result.success) navigate("/profile");
-  };
 
+    // Capture User Info from Auth Context
+    const address = user?.address || "";
+    const phone = user?.phone || user?.phoneNumber || user?.mobile || "";
+
+    // Requirement: Validation for Delivery
+    if (orderType === "delivery") {
+      if (!address || !phone) {
+        alert("Please add your address and phone number in your profile before placing a delivery order.");
+        navigate("/profile");
+        return;
+      }
+    }
+
+    // Requirement: Validation for Pickup
+    if (orderType === "pickup" && !phone) {
+      alert("Please add your phone number in your profile before placing a pickup order.");
+      navigate("/profile");
+      return;
+    }
+
+    // Call placeOrder - The Context handles the conversion of _id to productId now
+    try {
+      // Pass the cleaned delivery details object
+      const result = await placeOrder(user, { 
+        address: orderType === "pickup" ? "Restaurant Pickup" : address, 
+        phone 
+      });
+
+      if (result.success) {
+        // Success is handled by the context (alerts and navigation)
+      }
+    } catch (error) {
+      console.error("Checkout component error:", error);
+    }
+  };
   return (
     // FIX: Forced bg-black and text-white for Professional Theme
     <div className="min-h-screen pt-32 bg-black text-white flex flex-col items-center px-4">
@@ -84,8 +116,8 @@ const CartDrawer = () => {
         <div className="w-full max-w-3xl flex flex-col gap-8 mb-24">
           {/* ITEMS LIST */}
           <div className="space-y-4">
-            {cartItems.map((item) => (
-              <div key={item._id} className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl border border-white/5 p-5 flex items-center justify-between group">
+            {cartItems.map((item, idx) => (
+              <div key={item._id || item.name || idx} className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl border border-white/5 p-5 flex items-center justify-between group">
                 <div className="flex items-center gap-5">
                   <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-xl border border-white/10" />
                   <div>

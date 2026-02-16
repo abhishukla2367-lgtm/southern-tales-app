@@ -7,12 +7,13 @@ export const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const navigate = useNavigate();
 
-  // 1. Initialise from LocalStorage (Requirement #8: Persistence)
+  // 1. Initialize from LocalStorage (Requirement #8: Persistence)
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem("restro_cart");
       return savedCart ? JSON.parse(savedCart) : [];
     } catch (e) {
+      console.error("Cart hydration failed:", e);
       return [];
     }
   });
@@ -44,7 +45,8 @@ export const CartProvider = ({ children }) => {
           i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
         );
       } else {
-        return [...prev, { ...item, quantity: 1 }];
+        // Ensure price is treated as a number immediately
+        return [...prev, { ...item, quantity: 1, price: Number(item.price) }];
       }
     });
   };
@@ -61,7 +63,10 @@ export const CartProvider = ({ children }) => {
    * Consolidates increase/decrease logic for CartDrawer.jsx
    */
   const updateQuantity = (id, newQty) => {
-    if (newQty < 1) return; // Prevent quantity from going below 1
+    if (newQty < 1) {
+      removeFromCart(id); // If quantity drops below 1, remove it
+      return;
+    }
     setCartItems((prev) =>
       prev.map((item) =>
         item._id === id ? { ...item, quantity: newQty } : item
@@ -79,12 +84,13 @@ export const CartProvider = ({ children }) => {
 
   /**
    * TASK 8.1: Calculation Logic for UI
+   * Uses Number() casting to prevent string concatenation bugs
    */
   const getCartTotal = () => {
     return cartItems.reduce(
       (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
       0
-    );
+    ).toFixed(2); // Keeps currency formatting consistent
   };
 
   /**
@@ -92,7 +98,8 @@ export const CartProvider = ({ children }) => {
    * Stores order in MongoDB Atlas and clears the cart on success
    */
   const placeOrder = async (user, deliveryDetails = {}) => {
-    if (!user?._id) {
+    // Basic validation to prevent crashes
+    if (!user || !user._id) {
       alert("Session expired. Please login again.");
       navigate("/login");
       return { success: false };
@@ -105,33 +112,54 @@ export const CartProvider = ({ children }) => {
 
     setIsPlacingOrder(true);
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No authentication token found.");
+      }
+
+      // Consolidate delivery details from either arguments or user profile
+      const address = deliveryDetails.address || user.address || "";
+      const phone = deliveryDetails.phone || user.phone || user.phoneNumber || "";
+
+      // Validate delivery info for "delivery" orders
+      if (orderType === "delivery" && (!address || !phone)) {
+        alert("Please provide a delivery address and contact phone number.");
+        setIsPlacingOrder(false);
+        return { success: false };
+      }
+
+      const payload = {
+        items: cartItems,
+        totalAmount: Number(getCartTotal()),
+        orderType,
+        deliveryInfo: {
+          address,
+          phone,
+        },
+      };
+
       const response = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user._id,           // Links to Requirement #6 (Profile History)
-          customerName: user.name,
-          email: user.email,
-          items: cartItems,
-          totalAmount: getCartTotal(),
-          orderType: orderType,
-          address: deliveryDetails.address || user.address || "N/A",
-          status: "Pending",          // For Admin Dashboard (Requirement #8)
-          createdAt: new Date()
-        }),
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        clearCart(); // Requirement #8.3: Remove items from cart
+        clearCart(); 
         alert("Order Placed Successfully!");
+        navigate("/profile"); // Requirement #6: Navigate to profile to see 'My Orders'
         return { success: true };
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to process order");
+        throw new Error(data.message || "Failed to process order");
       }
     } catch (error) {
       console.error("Order Integration Error:", error);
-      alert("Backend Error: " + error.message);
+      alert("Order Error: " + error.message);
       return { success: false };
     } finally {
       setIsPlacingOrder(false);
@@ -158,7 +186,7 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-// ✅ Custom hook for easy access in components like CartDrawer.jsx
+// ✅ Custom hook for easy access
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {

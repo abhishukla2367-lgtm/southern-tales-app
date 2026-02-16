@@ -105,15 +105,15 @@ export default function Menu() {
     const handleAddToCart = (item) => {
         const token = localStorage.getItem("token"); // Double check local storage
         
-        if (!isLoggedIn && !token) {
-            // Task 4: Ordering food requires login
-            alert("Please login to add items to your cart!");
-            navigate("/login");
-            return;
-        }
+        // if (!isLoggedIn ) {
+        //     // Task 4: Ordering food requires login
+        //     alert("Please login to add items to your cart!");
+        //     navigate("/login");
+        //     return;
+        // }
         
         // If logged in (via Context OR Token), allow the action
-        addToCart(item);
+        addToCart(item, isLoggedIn);
     };
 
     const filteredItems = menuItems.filter((item) => {
