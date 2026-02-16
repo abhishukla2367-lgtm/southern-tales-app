@@ -154,7 +154,8 @@ const Header = () => {
                             >
                                 <UserCircle size={24} className="text-[#f5c27a]" />
                                 {user?.name || "Profile"}
-                            </button>
+                            </button> 
+                            
                         )}
                     </div>
                 </div>

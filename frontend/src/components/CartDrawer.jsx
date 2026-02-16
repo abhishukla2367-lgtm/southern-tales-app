@@ -1,36 +1,29 @@
 ﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
 import emptyCartImage from "../assets/images/empty-cart.jpg";
 import eatsureLogo from "../assets/images/eat-sure-logo.png";
-import { Trash2, ShoppingBag, ArrowLeft, Truck, Package, CreditCard } from "lucide-react";
 
 const CartDrawer = () => {
   const navigate = useNavigate();
-  const { user, isLoggedIn } = useAuth();
 
-  // Updated to match your final CartContext.jsx function names
   const {
     cartItems,
+    increaseQty,
+    decreaseQty,
     removeFromCart,
-    updateQuantity,
     clearCart,
-    getCartTotal,
+    totalPrice,
     orderType,
     setOrderType,
-    placeOrder,
-    isPlacingOrder
   } = useCart();
 
-  const totalPrice = getCartTotal();
   const [platform, setPlatform] = useState("");
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
-      maximumFractionDigits: 0,
     }).format(amount);
 
   useEffect(() => {
@@ -38,129 +31,217 @@ const CartDrawer = () => {
   }, []);
 
   const deliveryPlatforms = [
-    { name: "Zomato", logo: "https://upload.wikimedia.org/wikipedia/commons/7/75/Zomato_logo.png" },
-    { name: "Swiggy", logo: "https://upload.wikimedia.org/wikipedia/commons/1/13/Swiggy_logo.png" },
-    { name: "Dominos", logo: "https://upload.wikimedia.org/wikipedia/commons/7/74/Dominos_pizza_logo.svg" },
-    { name: "EatSure", logo: eatsureLogo },
+    {
+      name: "Zomato",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/7/75/Zomato_logo.png",
+    },
+    {
+      name: "Swiggy",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/1/13/Swiggy_logo.png",
+    },
+    {
+      name: "Dominos",
+      logo: "https://upload.wikimedia.org/wikipedia/commons/7/74/Dominos_pizza_logo.svg",
+    },
+    {
+      name: "EatSure",
+      logo: eatsureLogo,
+    },
   ];
 
-  const handleCheckout = async () => {
-    if (!isLoggedIn) {
-      alert("Please login to place an order.");
-      navigate("/login");
-      return;
-    }
-
-    // Capture User Info from Auth Context
-    const address = user?.address || "";
-    const phone = user?.phone || user?.phoneNumber || user?.mobile || "";
-
-    // Requirement: Validation for Delivery
-    if (orderType === "delivery") {
-      if (!address || !phone) {
-        alert("Please add your address and phone number in your profile before placing a delivery order.");
-        navigate("/profile");
-        return;
-      }
-    }
-
-    // Requirement: Validation for Pickup
-    if (orderType === "pickup" && !phone) {
-      alert("Please add your phone number in your profile before placing a pickup order.");
-      navigate("/profile");
-      return;
-    }
-
-    // Call placeOrder - The Context handles the conversion of _id to productId now
-    try {
-      // Pass the cleaned delivery details object
-      const result = await placeOrder(user, { 
-        address: orderType === "pickup" ? "Restaurant Pickup" : address, 
-        phone 
-      });
-
-      if (result.success) {
-        // Success is handled by the context (alerts and navigation)
-      }
-    } catch (error) {
-      console.error("Checkout component error:", error);
-    }
-  };
   return (
-    // FIX: Forced bg-black and text-white for Professional Theme
-    <div className="min-h-screen pt-32 bg-black text-white flex flex-col items-center px-4">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-2">
-          Your <span className="text-orange-500">Cart</span>
-        </h1>
-        <div className="h-1 w-20 bg-orange-500 mx-auto rounded-full mb-4"></div>
-        <p className="text-zinc-400 font-medium italic">Review Your Delicious Selections</p>
-      </div>
+    <div className="min-h-screen pt-28 bg-gray-50 flex flex-col items-center px-4">
+      <h1 className="text-4xl font-extrabold text-orange-600 mb-2 text-center">
+        Your Cart
+      </h1>
+      <p className="text-gray-600 mb-10 text-center text-lg">
+        Review Your Delicious Selections
+      </p>
 
       {cartItems.length === 0 ? (
-        <div className="flex flex-col items-center gap-6 mt-16 animate-in fade-in zoom-in duration-500">
-          <div className="relative">
-            <img src={emptyCartImage} alt="Empty Cart" className="w-48 h-48 opacity-20 grayscale" />
-            <ShoppingBag className="absolute inset-0 m-auto text-orange-500 w-12 h-12 opacity-80" />
-          </div>
-          <h2 className="text-2xl font-bold text-zinc-200">Your cart is empty</h2>
-          <p className="text-zinc-500 text-center max-w-sm">Add some South Indian dishes to get started</p>
+        <div className="flex flex-col items-center gap-6 mt-20">
+          <img src={emptyCartImage} alt="Empty Cart" className="w-40 h-40" />
+          <h2 className="text-xl font-semibold text-gray-700">
+            Your cart is empty
+          </h2>
+          <p className="text-gray-500 text-center max-w-sm">
+            Add some South Indian dishes to get started
+          </p>
           <button
             onClick={() => navigate("/menu")}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-4 rounded-xl mt-4 transition-all shadow-lg shadow-orange-500/20"
+            className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium px-6 py-3 rounded-md mt-4"
           >
             Browse Menu
           </button>
         </div>
       ) : (
-        <div className="w-full max-w-3xl flex flex-col gap-8 mb-24">
-          {/* ITEMS LIST */}
-          <div className="space-y-4">
-            {cartItems.map((item, idx) => (
-              <div key={item._id || item.name || idx} className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl border border-white/5 p-5 flex items-center justify-between group">
-                <div className="flex items-center gap-5">
-                  <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-xl border border-white/10" />
-                  <div>
-                    <h3 className="font-bold text-lg text-white">{item.name}</h3>
-                    <p className="text-orange-500 font-black text-xl">{formatCurrency(item.price * item.quantity)}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 bg-black/40 p-2 rounded-xl border border-white/5">
-                  <div className="flex items-center gap-3 bg-zinc-800 rounded-lg px-2 py-1">
-                    <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="text-zinc-400 hover:text-white font-bold text-xl px-2">−</button>
-                    <span className="font-bold text-white min-w-[20px] text-center">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item._id, item.quantity + 1)} className="text-zinc-400 hover:text-white font-bold text-xl px-2">+</button>
-                  </div>
-                  <button onClick={() => removeFromCart(item._id)} className="p-2 text-zinc-500 hover:text-red-500"><Trash2 size={20} /></button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* SERVICE MODE (Task 8.2) */}
-          <div className="bg-zinc-900/50 rounded-2xl border border-white/5 p-6">
-            <h3 className="font-bold text-white uppercase tracking-wider mb-4">Service Mode</h3>
-            <div className="flex gap-4 p-1 bg-black rounded-xl border border-white/5">
-              <button onClick={() => setOrderType("delivery")} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all ${orderType === "delivery" ? "bg-orange-500 text-white" : "text-zinc-500"}`}><Truck size={18} /> Delivery</button>
-              <button onClick={() => setOrderType("pickup")} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all ${orderType === "pickup" ? "bg-orange-500 text-white" : "text-zinc-500"}`}><Package size={18} /> Pickup</button>
-            </div>
-          </div>
-
-          {/* FINAL SUMMARY & CHECKOUT (Task 8.3) */}
-          <div className="bg-zinc-900/80 rounded-3xl border border-white/10 p-8 shadow-2xl">
-            <div className="flex justify-between items-end mb-8">
-              <div>
-                <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest mb-1">Total Payable</p>
-                <h2 className="text-4xl font-black text-white">{formatCurrency(totalPrice)}</h2>
-              </div>
-            </div>
-            <button
-              onClick={handleCheckout}
-              disabled={isPlacingOrder}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl text-xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-3 disabled:opacity-50"
+        <div className="w-full max-w-3xl flex flex-col gap-6 mb-20">
+          {/* CART ITEMS */}
+          {cartItems.map((item) => (
+            <div
+              key={item.name}
+              className="bg-white rounded-xl shadow p-4 flex items-center justify-between"
             >
-              {isPlacingOrder ? "PROCESSING..." : <><CreditCard size={24} /> PLACE ORDER</>}
+              <div className="flex items-center gap-4">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-20 h-20 object-cover rounded-lg"
+                />
+                <div>
+                  <h3 className="font-semibold text-lg">{item.name}</h3>
+                  <p className="text-orange-500 font-bold">
+                    {formatCurrency(item.price * item.quantity)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => decreaseQty(item.name)}
+                  className="bg-gray-200 px-2 rounded hover:bg-gray-300"
+                >
+                  -
+                </button>
+                <span className="px-2">{item.quantity}</span>
+                <button
+                  onClick={() => increaseQty(item.name)}
+                  className="bg-gray-200 px-2 rounded hover:bg-gray-300"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => removeFromCart(item.name)}
+                  className="bg-red-500 text-white px-2 rounded hover:bg-red-600 ml-2"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* ORDER TYPE */}
+          <div className="bg-white rounded-xl shadow p-4">
+            <h3 className="font-semibold text-gray-700 mb-3">Order Type</h3>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setOrderType("delivery")}
+                className={`flex-1 py-2 rounded-lg font-semibold transition ${
+                  orderType === "delivery"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Delivery
+              </button>
+              <button
+                onClick={() => setOrderType("pickup")}
+                className={`flex-1 py-2 rounded-lg font-semibold transition ${
+                  orderType === "pickup"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Pickup
+              </button>
+            </div>
+
+            {/* DELIVERY OPTIONS */}
+            {orderType === "delivery" && (
+              <>
+                {/* PLATFORM SELECTION */}
+                <div className="mt-6">
+                  <h4 className="font-semibold text-gray-700 mb-4">
+                    Choose Delivery Partner
+                  </h4>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {deliveryPlatforms.map((p) => (
+                      <button
+                        key={p.name}
+                        onClick={() => setPlatform(p.name)}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-xl border font-semibold
+                          transition-all duration-200
+                          ${
+                            platform === p.name
+                              ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-500 shadow-md scale-[1.02]"
+                              : "bg-gray-50 text-gray-800 border-gray-200 hover:bg-white hover:shadow-sm hover:scale-[1.01]"
+                          }
+                        `}
+                      >
+                        <img
+                          src={p.logo}
+                          alt={p.name}
+                          className="w-6 h-6 object-contain"
+                        />
+                        <span>{p.name}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {platform && (
+                    <p className="mt-3 text-sm text-green-600 font-semibold">
+                      Selected Delivery Partner: {platform}
+                    </p>
+                  )}
+                </div>
+
+                {/* DELIVERY DETAILS */}
+                <div className="mt-5 space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Enter delivery address"
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Preferred delivery time"
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* PICKUP DETAILS */}
+            {orderType === "pickup" && (
+              <div className="mt-5 space-y-3">
+                <input
+                  type="text"
+                  placeholder="Preferred pickup time"
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* TOTAL */}
+          <div className="flex justify-between items-center">
+            <span className="text-xl font-semibold">Total:</span>
+            <span className="text-xl font-bold text-orange-500">
+              {formatCurrency(totalPrice)}
+            </span>
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="flex gap-4">
+            <button
+              onClick={clearCart}
+              className="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-3 rounded-md flex-1"
+            >
+              Clear Cart
+            </button>
+
+            <button
+              disabled={orderType === "delivery" && !platform}
+              onClick={() => navigate("/order-summary")}
+              className={`font-semibold px-6 py-3 rounded-md flex-1 transition ${
+                orderType === "delivery" && !platform
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-yellow-400 hover:bg-yellow-500 text-black"
+              }`}
+            >
+              Checkout
             </button>
           </div>
         </div>

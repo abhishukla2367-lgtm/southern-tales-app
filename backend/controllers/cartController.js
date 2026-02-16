@@ -63,11 +63,12 @@ exports.addToCart = async (req, res) => {
     } else {
       // FIX: Correctly initialize the items array when creating a new cart
       const totalBill = Number(price) * Number(quantity);
-      cart = await Cart.create({
-        user: userId,
-        items:
-        totalBill
-      });
+     cart = await Cart.create({
+     user: userId,
+     items: [{ productId, name, price: Number(price), quantity: Number(quantity), image }],
+     totalBill: Number(price) * Number(quantity)
+    });
+
     }
     
     res.status(201).json(cart);
