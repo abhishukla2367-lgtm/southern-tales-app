@@ -79,7 +79,7 @@ export default function AdminDashboard() {
                                     </div>
 
                                     <div className="text-left hidden lg:block leading-none">
-                                        <p className="text-[13px] font-bold text-slate-800 tracking-tight">Aryan M Shivgunde</p>
+                                        <p className="text-[13px] font-bold text-slate-800 tracking-tight">Abhishek S Shukla</p>
                                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">Owner / Admin</p>
                                     </div>
                                     <ChevronDown size={14} className="text-slate-400 mx-2 group-hover:text-slate-600 transition-colors" />
