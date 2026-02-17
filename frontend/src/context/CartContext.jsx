@@ -7,7 +7,7 @@ export const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const navigate = useNavigate();
 
-  // 1. Initialize from LocalStorage (Requirement #8: Persistence)
+  // 1. Initialize from LocalStorage (Task #8: Persistence)
   const [cartItems, setCartItems] = useState(() => {
     try {
       const savedCart = localStorage.getItem("restro_cart");
@@ -45,26 +45,25 @@ export const CartProvider = ({ children }) => {
           i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
         );
       } else {
-        // Ensure price is treated as a number immediately
         return [...prev, { ...item, quantity: 1, price: Number(item.price) }];
       }
     });
   };
 
   /**
-   * TASK 8.2: Remove single item from cart
+   * TASK 8.2: Remove item from cart
    */
   const removeFromCart = (id) => {
     setCartItems((prev) => prev.filter((item) => item._id !== id));
   };
 
   /**
-   * Helper: Update Quantity
-   * Consolidates increase/decrease logic for CartDrawer.jsx
+   * REPLACES increaseQty/decreaseQty
+   * Fixes: "Uncaught TypeError: increaseQty is not a function"
    */
   const updateQuantity = (id, newQty) => {
     if (newQty < 1) {
-      removeFromCart(id); // If quantity drops below 1, remove it
+      removeFromCart(id);
       return;
     }
     setCartItems((prev) =>
@@ -74,9 +73,6 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  /**
-   * Requirement #8.3: Remove all items after successful order
-   */
   const clearCart = () => {
     setCartItems([]);
     localStorage.removeItem("restro_cart");
@@ -84,21 +80,20 @@ export const CartProvider = ({ children }) => {
 
   /**
    * TASK 8.1: Calculation Logic for UI
-   * Uses Number() casting to prevent string concatenation bugs
    */
   const getCartTotal = () => {
-    return cartItems.reduce(
+    const total = cartItems.reduce(
       (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
       0
-    ).toFixed(2); // Keeps currency formatting consistent
+    );
+    return Number(total.toFixed(2));
   };
 
   /**
    * TASK 8.3: Place Order (Backend Integration)
-   * Stores order in MongoDB Atlas and clears the cart on success
+   * Connects to MongoDB Atlas and satisfies Task 6 (Profile Page visibility)
    */
   const placeOrder = async (user, deliveryDetails = {}) => {
-    // Basic validation to prevent crashes
     if (!user || !user._id) {
       alert("Session expired. Please login again.");
       navigate("/login");
@@ -112,54 +107,44 @@ export const CartProvider = ({ children }) => {
 
     setIsPlacingOrder(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found.");
-      }
-
-      // Consolidate delivery details from either arguments or user profile
-      const address = deliveryDetails.address || user.address || "";
-      const phone = deliveryDetails.phone || user.phone || user.phoneNumber || "";
-
-      // Validate delivery info for "delivery" orders
-      if (orderType === "delivery" && (!address || !phone)) {
-        alert("Please provide a delivery address and contact phone number.");
-        setIsPlacingOrder(false);
-        return { success: false };
-      }
-
+      const token = localStorage.getItem("token"); // For secure API calls
+      
+      // Construct payload for MongoDB Atlas Schema
       const payload = {
+        userId: user._id,
+        userName: user.name, // Required for Admin Dashboard visibility
         items: cartItems,
-        totalAmount: Number(getCartTotal()),
+        totalAmount: getCartTotal(),
         orderType,
         deliveryInfo: {
-          address,
-          phone,
+          address: deliveryDetails.address || "Store Pickup",
+          time: deliveryDetails.time || "ASAP",
         },
+        status: "Pending", // For Admin side management
+        createdAt: new Date(),
       };
 
       const response = await fetch("http://localhost:5000/api/orders", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json", 
-          Authorization: `Bearer ${token}` 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : "" 
         },
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
         clearCart(); 
         alert("Order Placed Successfully!");
-        navigate("/profile"); // Requirement #6: Navigate to profile to see 'My Orders'
+        navigate("/profile"); // Task 6: Direct to profile to see My Orders
         return { success: true };
       } else {
-        throw new Error(data.message || "Failed to process order");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Server Error (500)");
       }
     } catch (error) {
       console.error("Order Integration Error:", error);
-      alert("Order Error: " + error.message);
+      alert("Order failed: " + error.message);
       return { success: false };
     } finally {
       setIsPlacingOrder(false);
@@ -172,8 +157,8 @@ export const CartProvider = ({ children }) => {
         cartItems,
         addToCart,
         removeFromCart,
-        updateQuantity,
-        getCartTotal,
+        updateQuantity, // Used in CartDrawer for +/- buttons
+        getCartTotal,   // Used for showing total price
         clearCart,
         orderType,
         setOrderType,
@@ -186,7 +171,7 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-// ✅ Custom hook for easy access
+// Custom hook for easy access
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
