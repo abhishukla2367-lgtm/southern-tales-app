@@ -21,7 +21,10 @@ const protect = (req, res, next) => {
 
             // 3. Attach decoded user data (id, role) to the request object
             // This allows req.user.id to be used in your Order/Reservation controllers
-            req.user = decoded;
+            req.user = {
+    ...decoded,
+    _id: decoded.id || decoded._id 
+};
 
             next();
         } catch (error) {

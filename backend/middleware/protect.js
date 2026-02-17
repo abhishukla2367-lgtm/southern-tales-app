@@ -23,7 +23,11 @@ const protect = async (req, res, next) => {
        * Task 6 & 8: Attach the user payload to the request object.
        * Ensure your Login/Register logic includes 'id' and 'role' in the JWT payload.
        */
-      req.user = decoded; 
+      req.user = {
+  _id: decoded.id || decoded._id, // Standardize to _id for MongoDB compatibility
+  role: decoded.role,
+  isAdmin: decoded.isAdmin
+};
 
       next();
     } catch (error) {

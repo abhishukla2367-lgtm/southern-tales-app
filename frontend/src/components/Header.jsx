@@ -13,7 +13,7 @@ const Header = () => {
 
     const navigate = useNavigate();
     const { cartItems } = useCart(); 
-    const cartCount = cartItems.length;  // This should eventually come from CartContext
+    const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);  // This should eventually come from CartContext
 
     const handleLogout = () => {
         logout(); // ✅ Use the logout function from Context (Task 3)

@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require("../models/Order"); 
 const Cart = require("../models/Cart"); 
 
-// Task 4 & 5: Middleware to ensure only logged-in users and admins can access routes
+// Import middlewares - Standardizing to use 'protect'
 const { protect, admin } = require("../middleware/protect");
 
 /**
@@ -15,22 +15,20 @@ router.post("/", protect, async (req, res) => {
   try {
     const { items, totalAmount, deliveryInfo, orderType } = req.body;
 
-    // --- 1. VALIDATION (Requirement: Proper validations for all forms) ---
+    // --- 1. VALIDATION ---
     if (!items || items.length === 0) {
       return res.status(400).json({ message: "Cannot place an order with an empty cart." });
     }
 
-    // Ensure delivery details exist to prevent Mongoose validation errors
     if (!deliveryInfo || !deliveryInfo.address || !deliveryInfo.phone) {
       return res.status(400).json({ 
-        message: "Delivery details are missing. Please provide an address and phone number." 
+        message: "Delivery details are missing (Address and Phone required)." 
       });
     }
 
-    // --- 2. DATA MAPPING: Fixes "productId is required" Error ---
-    // Maps frontend '_id' to the backend Schema's 'productId'
+    // --- 2. DATA MAPPING: UI '_id' to Schema 'productId' ---
     const formattedItems = items.map((item) => ({
-      productId: item._id, 
+      productId: item._id || item.productId, 
       name: item.name,
       quantity: item.quantity,
       price: Number(item.price)
@@ -38,12 +36,10 @@ router.post("/", protect, async (req, res) => {
 
     // --- 3. CREATE ORDER ---
     const newOrder = new Order({
-      // Use fallback for ID property from protect middleware
-      user: req.user._id || req.user.id, 
+      user: req.user._id, 
       items: formattedItems, 
       totalAmount,
       deliveryInfo, 
-      orderType: orderType || "delivery", 
       status: "Pending",
       paymentStatus: "Unpaid"
     });
@@ -51,19 +47,18 @@ router.post("/", protect, async (req, res) => {
     const savedOrder = await newOrder.save();
 
     // --- 4. CLEAR CART (Task 8.2) ---
-    // Remove the cart document for this user after successful order save
-    await Cart.findOneAndDelete({ user: req.user._id || req.user.id }); 
+    await Cart.findOneAndDelete({ user: req.user._id }); 
     
     res.status(201).json({ 
         success: true,
-        message: "Order placed successfully! Your cart has been cleared.", 
+        message: "Order placed successfully!", 
         order: savedOrder 
     });
 
   } catch (err) {
     console.error("Order Error:", err.message);
     res.status(500).json({ 
-      message: "Order processing failed. Please try again.", 
+      message: "Order processing failed.", 
       error: err.message 
     });
   }
@@ -76,11 +71,14 @@ router.post("/", protect, async (req, res) => {
  */
 router.get("/my-orders", protect, async (req, res) => {
   try {
-    const userId = req.user._id || req.user.id;
-    // Task 6: Fetch orders newest first for professional UI
-    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+    // Task 6: Fetch orders specifically for the logged-in user
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
     
-    res.status(200).json({ success: true, orders }); 
+    res.status(200).json({ 
+      success: true, 
+      count: orders.length,
+      orders 
+    }); 
   } catch (err) {
     res.status(500).json({ message: "Failed to retrieve your order history." });
   }
@@ -93,7 +91,6 @@ router.get("/my-orders", protect, async (req, res) => {
  */
 router.get("/admin/all", protect, admin, async (req, res) => {
   try {
-    // Populate retrieves User's name and email for the Admin Dashboard
     const allOrders = await Order.find()
       .populate("user", "name email") 
       .sort({ createdAt: -1 });

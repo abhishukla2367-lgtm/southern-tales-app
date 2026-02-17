@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 
 /* ================= IMAGE IMPORTS ================= */
 import southFoodHero from "../assets/images/hero/south-food.jpg";
@@ -47,44 +48,56 @@ import freshLime from "../assets/images/menu/beverages/fresh-lime.jpg";
 
 /* ================= MENU ITEMS WITH NUMERIC PRICES ================= */
 const menuItems = [
-  { name: "Plain Dosa", category: "Breakfast", price: 165, veg: true, description: "Crispy rice crepe with sambar & chutney", image: plainDosa },
-  { name: "Idli (2 pcs)", category: "Breakfast", price: 120, veg: true, description: "Soft steamed rice cakes with chutney & sambar", image: idli },
-  { name: "Appam (2 pcs)", category: "Breakfast", price: 140, veg: true, description: "Soft lacy Kerala pancakes", image: appam },
-  { name: "Rava Dosa", category: "Breakfast", price: 150, veg: true, description: "Thin semolina crepe", image: ravaDosa },
-  { name: "Set Dosa", category: "Breakfast", price: 160, veg: true, description: "Soft spongy dosas (2 pcs)", image: setDosa },
-  { name: "Medu Vada (2 pcs)", category: "Breakfast", price: 130, veg: true, description: "Crispy lentil fritters", image: meduVada },
-  { name: "Upma", category: "Breakfast", price: 120, veg: true, description: "Savory semolina porridge", image: upma },
-  { name: "Pongal", category: "Breakfast", price: 150, veg: true, description: "Comfort rice & lentil dish", image: pongal },
+  { _id: "a1", name: "Plain Dosa", category: "Breakfast", price: 165, veg: true, description: "Crispy rice crepe with sambar & chutney", image: plainDosa },
+  { _id: "a2", name: "Idli (2 pcs)", category: "Breakfast", price: 120, veg: true, description: "Soft steamed rice cakes with chutney & sambar", image: idli },
+  { _id: "a3", name: "Appam (2 pcs)", category: "Breakfast", price: 140, veg: true, description: "Soft lacy Kerala pancakes", image: appam },
+  { _id: "a4", name: "Rava Dosa", category: "Breakfast", price: 150, veg: true, description: "Thin semolina crepe", image: ravaDosa },
+  { _id: "a5", name: "Set Dosa", category: "Breakfast", price: 160, veg: true, description: "Soft spongy dosas (2 pcs)", image: setDosa },
+  { _id: "a6", name: "Medu Vada (2 pcs)", category: "Breakfast", price: 130, veg: true, description: "Crispy lentil fritters", image: meduVada },
+  { _id: "a7", name: "Upma", category: "Breakfast", price: 120, veg: true, description: "Savory semolina porridge", image: upma },
+  { _id: "a8", name: "Pongal", category: "Breakfast", price: 150, veg: true, description: "Comfort rice & lentil dish", image: pongal },
 
-  { name: "Drumstick Coriander Soup", category: "Starters", price: 325, veg: true, description: "Earthy herbal soup", image: drumstickSoup },
-  { name: "Madras Tomato Soup", category: "Starters", price: 300, veg: true, description: "Spiced tomato soup", image: tomatoSoup },
-  { name: "Prawns Rasam", category: "Starters", price: 450, veg: false, description: "Tangy prawn rasam", image: prawnsRasam },
-  { name: "Broccoli Tikka", category: "Starters", price: 350, veg: true, description: "Marinated grilled broccoli", image: broccoliTikka },
-  { name: "Kanthari Mushroom Fry", category: "Starters", price: 380, veg: true, description: "Spicy sautéed mushrooms", image: mushroomFry },
-  { name: "Egg Roast", category: "Starters", price: 280, veg: false, description: "Kerala-style egg roast", image: eggRoast },
-  { name: "Pepper Fried Chicken", category: "Starters", price: 450, veg: false, description: "Peppery fried chicken", image: pepperChicken },
-  { name: "Paneer 65", category: "Starters", price: 350, veg: true, description: "Crispy fried paneer", image: paneer65 },
+  { _id: "b1", name: "Drumstick Coriander Soup", category: "Starters", price: 325, veg: true, description: "Earthy herbal soup", image: drumstickSoup },
+  { _id: "b2", name: "Madras Tomato Soup", category: "Starters", price: 300, veg: true, description: "Spiced tomato soup", image: tomatoSoup },
+  { _id: "b3", name: "Prawns Rasam", category: "Starters", price: 450, veg: false, description: "Tangy prawn rasam", image: prawnsRasam },
+  { _id: "b4", name: "Broccoli Tikka", category: "Starters", price: 350, veg: true, description: "Marinated grilled broccoli", image: broccoliTikka },
+  { _id: "b5", name: "Kanthari Mushroom Fry", category: "Starters", price: 380, veg: true, description: "Spicy sautéed mushrooms", image: mushroomFry },
+  { _id: "b6", name: "Egg Roast", category: "Starters", price: 280, veg: false, description: "Kerala-style egg roast", image: eggRoast },
+  { _id: "b7", name: "Pepper Fried Chicken", category: "Starters", price: 450, veg: false, description: "Peppery fried chicken", image: pepperChicken },
+  { _id: "b8", name: "Paneer 65", category: "Starters", price: 350, veg: true, description: "Crispy fried paneer", image: paneer65 },
 
-  { name: "Chicken Ghee Roast", category: "Main Course", price: 550, veg: false, description: "Spicy coastal ghee roast", image: chickenGheeRoast },
-  { name: "Vegetable Korma", category: "Main Course", price: 420, veg: true, description: "Creamy mixed veg curry", image: vegKorma },
-  { name: "Fish Curry", category: "Main Course", price: 520, veg: false, description: "Traditional South Indian fish curry", image: fishCurry },
-  { name: "Paneer Butter Masala", category: "Main Course", price: 450, veg: true, description: "Rich tomato-based gravy", image: paneerButterMasala },
+  { _id: "c1", name: "Chicken Ghee Roast", category: "Main Course", price: 550, veg: false, description: "Spicy coastal ghee roast", image: chickenGheeRoast },
+  { _id: "c2", name: "Vegetable Korma", category: "Main Course", price: 420, veg: true, description: "Creamy mixed veg curry", image: vegKorma },
+  { _id: "c3", name: "Fish Curry", category: "Main Course", price: 520, veg: false, description: "Traditional South Indian fish curry", image: fishCurry },
+  { _id: "c4", name: "Paneer Butter Masala", category: "Main Course", price: 450, veg: true, description: "Rich tomato-based gravy", image: paneerButterMasala },
 
-  { name: "Payasam", category: "Desserts", price: 180, veg: true, description: "Traditional sweet pudding", image: payasam },
-  { name: "Kesari", category: "Desserts", price: 150, veg: true, description: "Semolina saffron dessert", image: kesari },
-  { name: "Gulab Jamun", category: "Desserts", price: 160, veg: true, description: "Soft syrupy dumplings", image: gulabJamun },
-  { name: "Coconut Ladoo", category: "Desserts", price: 140, veg: true, description: "Fresh coconut sweets", image: coconutLadoo },
+  { _id: "d1", name: "Payasam", category: "Desserts", price: 180, veg: true, description: "Traditional sweet pudding", image: payasam },
+  { _id: "d2", name: "Kesari", category: "Desserts", price: 150, veg: true, description: "Semolina saffron dessert", image: kesari },
+  { _id: "d3", name: "Gulab Jamun", category: "Desserts", price: 160, veg: true, description: "Soft syrupy dumplings", image: gulabJamun },
+  { _id: "d4", name: "Coconut Ladoo", category: "Desserts", price: 140, veg: true, description: "Fresh coconut sweets", image: coconutLadoo },
 
-  { name: "Filter Coffee", category: "Beverages", price: 90, veg: true, description: "Authentic South Indian coffee", image: filterCoffee },
-  { name: "Masala Tea", category: "Beverages", price: 80, veg: true, description: "Spiced Indian chai", image: masalaTea },
-  { name: "Buttermilk", category: "Beverages", price: 70, veg: true, description: "Refreshing spiced buttermilk", image: butterMilk },
-  { name: "Fresh Lime Soda", category: "Beverages", price: 90, veg: true, description: "Chilled lime refreshment", image: freshLime },
+  { _id: "e1", name: "Filter Coffee", category: "Beverages", price: 90, veg: true, description: "Authentic South Indian coffee", image: filterCoffee },
+  { _id: "e2", name: "Masala Tea", category: "Beverages", price: 80, veg: true, description: "Spiced Indian chai", image: masalaTea },
+  { _id: "e3", name: "Buttermilk", category: "Beverages", price: 70, veg: true, description: "Refreshing spiced buttermilk", image: butterMilk },
+  { _id: "e4", name: "Fresh Lime Soda", category: "Beverages", price: 90, veg: true, description: "Chilled lime refreshment", image: freshLime },
 ];
 
 const categories = ["All", "Breakfast", "Starters", "Main Course", "Desserts", "Beverages"];
 export default function Menu() {
-  const { addToCart } = useCart(); // Cart context
+  // Cart context
   const user = JSON.parse(localStorage.getItem("user"));
+  const { isLoggedIn } = useAuth(); 
+  const { addToCart } = useCart();
+  const handleAddToCartWithLogin = (item) => {
+  if (!isLoggedIn) {
+    // Force login only the first time they try to add an item
+    alert("Please login to start adding items to your cart");
+    return navigate("/login");
+  }
+  // Proceed normally if already logged in
+  addToCart(item);
+};
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVeg, setSelectedVeg] = useState("All");
@@ -183,40 +196,39 @@ export default function Menu() {
 
       {/* 3. MENU GRID (Perfect Alignment Fixed) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {filteredItems.map((dish, index) => (
+        {filteredItems.map((item) => (
           <div
-            key={index}
+            key={item._id}
             className="flex flex-col bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-zinc-900 hover:border-[#f5c27a]/30 transition-all duration-500 h-full shadow-2xl"
           >
             {/* Image (Fixed Aspect Ratio) */}
             <div className="relative h-56 overflow-hidden">
-              <img src={dish.image} alt={dish.name} className="w-full h-full object-cover" />
+              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
               <div className="absolute top-4 right-4">
                 <span className={`px-3 py-1 rounded-full text-[10px] font-black border ${
-                  dish.veg ? "bg-green-500/10 border-green-500/50 text-green-400" : "bg-red-500/10 border-red-500/50 text-red-400"
+                  item.veg ? "bg-green-500/10 border-green-500/50 text-green-400" : "bg-red-500/10 border-red-500/50 text-red-400"
                 }`}>
-                  {dish.veg ? "● VEG" : "▲ NON-VEG"}
+                  {item.veg ? "● VEG" : "▲ NON-VEG"}
                 </span>
               </div>
             </div>
 
             {/* Content Wrapper (Uses flex-1 to push footer down) */}
             <div className="p-7 flex-1 flex flex-col">
-              <h3 className="text-xl font-bold text-white mb-2">{dish.name}</h3>
+              <h3 className="text-xl font-bold text-white mb-2">{item.name}</h3>
               <p className="text-zinc-500 text-sm mb-8 line-clamp-2 leading-relaxed">
-                {dish.description}
+                {item.description}
               </p>
 
               {/* FOOTER: Perfectly aligned across all cards */}
               <div className="mt-auto pt-5 border-t border-zinc-900 flex justify-between items-center">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-zinc-600 uppercase font-bold tracking-widest">Price</span>
-                  <span className="text-2xl font-black text-white">₹{dish.price}</span>
+                  <span className="text-2xl font-black text-white">₹{item.price}</span>
                 </div>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addToCart(dish, !!user);
+                  onClick={() => {
+                    handleAddToCartWithLogin(item);
                   }}
                   className="bg-[#f5c27a] hover:bg-white active:scale-90 text-black font-black px-6 py-3 rounded-2xl transition-all duration-300 shadow-[0_10px_20px_-10px_rgba(245,194,122,0.4)] text-xs uppercase"
                 >

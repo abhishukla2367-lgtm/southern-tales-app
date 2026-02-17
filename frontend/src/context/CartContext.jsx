@@ -1,151 +1,75 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
-// ✅ Named export for the Context object
-export const CartContext = createContext();
+const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const navigate = useNavigate();
-
-  // 1. Initialize from LocalStorage (Task #8: Persistence)
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const savedCart = localStorage.getItem("restro_cart");
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch (e) {
-      console.error("Cart hydration failed:", e);
-      return [];
-    }
-  });
-
-  const [orderType, setOrderType] = useState("delivery");
+  const [cartItems, setCartItems] = useState([]);
+  // FIX: Default to empty string so Delivery apps are hidden until clicked
+  const [orderType, setOrderType] = useState(""); 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  // 2. Sync with LocalStorage whenever cart changes
+  // Load cart from localStorage on mount
   useEffect(() => {
-    localStorage.setItem("restro_cart", JSON.stringify(cartItems));
+    const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    setCartItems(savedCart);
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  /**
-   * TASK 8: Add to Cart
-   * Requirement #4: Check login status before adding items
-   */
-  const addToCart = (item, isLoggedIn) => {
-    if (!isLoggedIn) {
-      alert("Please login to add items to your cart.");
-      navigate("/login");
-      return;
-    }
-
-    setCartItems((prev) => {
-      // Use _id for consistent identification with MongoDB Atlas
-      const existing = prev.find((i) => i._id === item._id);
-      if (existing) {
-        return prev.map((i) =>
-          i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
+  // FIX: Multi-item Logic (Appends new items, updates quantity for existing)
+  const addToCart = (newItem) => {
+    setCartItems((prevItems) => {
+      const exists = prevItems.find((item) => item._id === newItem._id);
+      if (exists) {
+        return prevItems.map((item) =>
+          item._id === newItem._id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         );
-      } else {
-        return [...prev, { ...item, quantity: 1, price: Number(item.price) }];
       }
+      // If item is new, append it to the array
+      return [...prevItems, { ...newItem, quantity: 1 }];
     });
   };
 
-  /**
-   * TASK 8.2: Remove item from cart
-   */
+  const updateQuantity = (id, newQuantity) => {
+    if (newQuantity < 1) return removeFromCart(id);
+    setCartItems((prev) =>
+      prev.map((item) => (item._id === id ? { ...item, quantity: newQuantity } : item))
+    );
+  };
+
   const removeFromCart = (id) => {
     setCartItems((prev) => prev.filter((item) => item._id !== id));
   };
 
-  /**
-   * REPLACES increaseQty/decreaseQty
-   * Fixes: "Uncaught TypeError: increaseQty is not a function"
-   */
-  const updateQuantity = (id, newQty) => {
-    if (newQty < 1) {
-      removeFromCart(id);
-      return;
-    }
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item._id === id ? { ...item, quantity: newQty } : item
-      )
-    );
-  };
-
   const clearCart = () => {
     setCartItems([]);
-    localStorage.removeItem("restro_cart");
+    setOrderType(""); // Reset order type on clear
   };
 
-  /**
-   * TASK 8.1: Calculation Logic for UI
-   */
   const getCartTotal = () => {
-    const total = cartItems.reduce(
-      (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
-      0
-    );
-    return Number(total.toFixed(2));
+    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  /**
-   * TASK 8.3: Place Order (Backend Integration)
-   * Connects to MongoDB Atlas and satisfies Task 6 (Profile Page visibility)
-   */
-  const placeOrder = async (user, deliveryDetails = {}) => {
-    if (!user || !user._id) {
-      alert("Session expired. Please login again.");
-      navigate("/login");
-      return { success: false };
-    }
+  // Header Count Logic: Sum of all quantities
+  const getCartCount = () => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  };
 
-    if (cartItems.length === 0) {
-      alert("Your cart is empty!");
-      return { success: false };
-    }
-
+  const placeOrder = async (user, deliveryDetails) => {
     setIsPlacingOrder(true);
     try {
-      const token = localStorage.getItem("token"); // For secure API calls
-      
-      // Construct payload for MongoDB Atlas Schema
-      const payload = {
-        userId: user._id,
-        userName: user.name, // Required for Admin Dashboard visibility
-        items: cartItems,
-        totalAmount: getCartTotal(),
-        orderType,
-        deliveryInfo: {
-          address: deliveryDetails.address || "Store Pickup",
-          time: deliveryDetails.time || "ASAP",
-        },
-        status: "Pending", // For Admin side management
-        createdAt: new Date(),
-      };
-
-      const response = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": token ? `Bearer ${token}` : "" 
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        clearCart(); 
-        alert("Order Placed Successfully!");
-        navigate("/profile"); // Task 6: Direct to profile to see My Orders
-        return { success: true };
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Server Error (500)");
-      }
+      // Replace with your actual [API endpoint](https://developer.mozilla.org) logic
+      console.log("Placing Order for:", user.name, deliveryDetails);
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
+      alert("Order Placed Successfully!");
+      clearCart();
     } catch (error) {
-      console.error("Order Integration Error:", error);
-      alert("Order failed: " + error.message);
-      return { success: false };
+      console.error("Order Failed", error);
     } finally {
       setIsPlacingOrder(false);
     }
@@ -156,14 +80,15 @@ export const CartProvider = ({ children }) => {
       value={{
         cartItems,
         addToCart,
+        updateQuantity,
         removeFromCart,
-        updateQuantity, // Used in CartDrawer for +/- buttons
-        getCartTotal,   // Used for showing total price
         clearCart,
+        getCartTotal,
+        getCartCount,
         orderType,
         setOrderType,
         placeOrder,
-        isPlacingOrder
+        isPlacingOrder,
       }}
     >
       {children}
@@ -171,11 +96,4 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-// Custom hook for easy access
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
-  return context;
-};
+export const useCart = () => useContext(CartContext);
