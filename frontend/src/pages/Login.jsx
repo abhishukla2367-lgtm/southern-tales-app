@@ -94,17 +94,25 @@ const Login = () => {
         </div>
 
         <div className="mb-8">
-          <label className="mb-2 block text-sm font-bold text-gray-300">Password</label>
-          <input
-            type="password"
-            value={password}
-            autoComplete="new-password"
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full rounded-xl border border-white/10 bg-[#252525] p-3.5 text-white outline-none transition-all focus:border-[#f5c27a] focus:ring-1 focus:ring-[#f5c27a]"
-            required
-          />
-        </div>
+  <div className="flex items-center justify-between mb-2">
+    <label className="text-sm font-bold text-gray-300">Password</label>
+    <Link 
+      to="/forgot-password" 
+      className="text-sm font-bold text-[#f5c27a] hover:underline transition-colors"
+    >
+      Forgot Password?
+    </Link>
+  </div>
+  <input
+    type="password"
+    value={password}
+    autoComplete="new-password"
+    onChange={(e) => setPassword(e.target.value)}
+    placeholder="••••••••"
+    className="w-full rounded-xl border border-white/10 bg-[#252525] p-3.5 text-white outline-none transition-all focus:border-[#f5c27a] focus:ring-1 focus:ring-[#f5c27a]"
+    required
+  />
+</div>
 
         <button 
           type="submit" 

@@ -2,19 +2,19 @@ const mongoose = require("mongoose");
 
 const OrderSchema = new mongoose.Schema(
   {
-    // Requirement #2 & #6: Links order to User and improves search performance with an index
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "Order must belong to a user"],
-      index: true, 
+    // Task 6 & 8: Changed from 'user' to 'userId' for consistency with Reservations
+    userId: {
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User',
+      required: true, // Ensuring every order belongs to someone
+      index: true     // Speeds up "My Orders" queries significantly
     },
     // Task 8: Detailed item tracking
     items: [
       {
         productId: {
-       type: String, 
-      },
+          type: String, 
+        },
         name: { type: String, required: true },
         quantity: { 
           type: Number, 
@@ -56,6 +56,4 @@ const OrderSchema = new mongoose.Schema(
   }
 );
 
-// Professional Touch: Virtual field or indexes can be added here if needed
-// Exporting the model for use in Task 8 Controllers
 module.exports = mongoose.model("Order", OrderSchema);

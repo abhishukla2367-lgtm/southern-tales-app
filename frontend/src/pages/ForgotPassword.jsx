@@ -1,49 +1,70 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const [isSent, setIsSent] = useState(false);
+
+  // STRICT AUTOCOMPLETE KILL: Unique field name on every mount
+  const fieldKey = useMemo(() => `reset_em_${Math.random().toString(36).substring(7)}`, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert("Password reset link sent!");
+    // Logic for sending reset link goes here
+    setIsSent(true);
     setEmail("");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-yellow-50">
+    <div className="flex min-h-screen items-center justify-center bg-black p-6">
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
-        className="bg-white p-8 rounded-xl shadow w-full max-w-md space-y-4"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1a1a1a] p-10 shadow-2xl"
       >
-        <h2 className="text-2xl font-bold text-center">Forgot Password</h2>
+        {/* HONEYPOT: Prevents browser from trying to autofill saved logins here */}
+        <input style={{ display: 'none' }} type="text" name="prevent_autofill" />
 
-        <p className="text-sm text-gray-600 text-center">
-          Enter your registered email and we’ll send you a reset link.
+        <h2 className="mb-3 text-center text-3xl font-extrabold text-white">Reset Password</h2>
+
+        <p className="mb-8 text-center text-sm font-medium text-gray-400 leading-relaxed">
+          Enter your registered email address and we'll send a secure link to reset your password.
         </p>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-400"
-          required
-        />
+        {isSent && (
+          <div className="mb-6 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-center text-sm font-bold text-green-400">
+            ✅ Reset link has been sent to your email!
+          </div>
+        )}
+
+        <div className="mb-6">
+          <label className="mb-2 block text-sm font-bold text-gray-300">Email Address</label>
+          <input
+            type="email"
+            name={fieldKey}
+            placeholder="email@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            // STRICT: Kill autocomplete
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-white/10 bg-[#252525] p-4 text-white outline-none transition-all focus:border-[#f5c27a] focus:ring-1 focus:ring-[#f5c27a]"
+            required
+          />
+        </div>
 
         <button
           type="submit"
-          className="bg-yellow-400 text-black font-semibold px-6 py-3 rounded-lg w-full hover:bg-yellow-500 transition"
+          className="w-full rounded-xl bg-[#f5c27a] py-4 text-sm font-black uppercase tracking-widest text-black shadow-lg transition-all hover:bg-[#eab366] hover:scale-[1.01] active:scale-[0.98]"
         >
           Send Reset Link
         </button>
 
-        <div className="text-center text-sm">
-          <Link to="/login" className="text-orange-500 font-medium">
-            Back to Login
+        <div className="mt-8 text-center text-sm">
+          <Link 
+            to="/login" 
+            className="font-bold text-[#f5c27a] hover:underline transition-colors"
+          >
+            &larr; Back to Login
           </Link>
         </div>
       </form>

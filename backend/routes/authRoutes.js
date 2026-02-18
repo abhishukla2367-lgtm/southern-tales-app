@@ -3,13 +3,13 @@ const User = require("../models/User");
 const Order = require("../models/Order"); 
 const Reservation = require("../models/Reservation");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose"); // Added for ObjectId casting
 
 // Use a consistent secret key name from your .env file
 const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SEC;
 
 /**
  * Task 4: Middleware to verify user session
- * Protects routes like /profile, /reservations, and /orders
  */
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -17,7 +17,6 @@ const verifyToken = (req, res, next) => {
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1]; 
 
-    // Error Prevention: Ensure the secret exists before verifying
     if (!JWT_SECRET) {
       return res.status(500).json({ message: "Server Configuration Error: JWT Secret is missing." });
     }
@@ -34,13 +33,10 @@ const verifyToken = (req, res, next) => {
 
 /**
  * Task 5: Register User
- * @route   POST /api/auth/register
  */
 router.post("/register", async (req, res) => {
   try {
     const { email, name, password, phone, address } = req.body;
-    
-    // Normalize email to prevent duplicate accounts with different casing
     const normalizedEmail = email.trim().toLowerCase();
     
     const existingUser = await User.findOne({ email: normalizedEmail });
@@ -49,7 +45,7 @@ router.post("/register", async (req, res) => {
     const newUser = new User({ 
       name,
       email: normalizedEmail,
-      password, // Handled by pre-save hook in User Model
+      password, 
       phone,
       address
     });
@@ -63,7 +59,6 @@ router.post("/register", async (req, res) => {
 
 /**
  * Task 5: Login User
- * @route   POST /api/auth/login
  */
 router.post("/login", async (req, res) => {
   try {
@@ -73,31 +68,18 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Please provide both email and password" });
     }
 
-    // Find user and explicitly select password for comparison
     const user = await User.findOne({ email: email.trim().toLowerCase() }).select("+password");
     
-    if (!user) {
+    if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    // Compare hashed password using the User Model method
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    // Task 5: Generate JWT Token
-    if (!JWT_SECRET) {
-      return res.status(500).json({ message: "Server Error: secretOrPrivateKey must have a value in .env" });
     }
 
     const token = jwt.sign(
       { id: user._id, role: user.role || "user" },
       JWT_SECRET,
-      { expiresIn: "3d" }
+      { expiresIn: "1d" } // Changed to 1d for standard internship practice
     );
 
-    // Prepare user object for frontend (excluding password)
     const userObject = user.toObject();
     delete userObject.password;
 
@@ -113,19 +95,33 @@ router.post("/login", async (req, res) => {
  */
 router.get("/profile", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    // 1. Convert the string ID from the token to a MongoDB ObjectId
+    const currentUserId = new mongoose.Types.ObjectId(req.user.id);
+
+    const user = await User.findById(currentUserId).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Task 6: Fetch combined history for Orders and Reservations
+    // 2. Task 6: Fetch history using the new 'userId' key
     const [orders, reservations] = await Promise.all([
-      Order.find({ userId: req.user.id }).sort({ createdAt: -1 }),
-      Reservation.find({ userId: req.user.id }).sort({ date: -1 })
+      // ✅ Corrected: Querying by 'userId'
+      Order.find({ userId: currentUserId }).sort({ createdAt: -1 }),
+      
+      // ✅ Corrected: Querying by 'userId' for Reservations
+      Reservation.find({ userId: currentUserId }).sort({ date: -1 })
     ]);
 
-    res.status(200).json({ user, orders, reservations });
+    // 3. Log results for easier debugging in your terminal
+    console.log(`📊 Profile Sync [${user.email}]: Orders(${orders.length}) Res(${reservations.length})`);
+
+    res.status(200).json({ 
+      success: true,
+      user, 
+      orders, 
+      reservations 
+    });
   } catch (err) {
-    console.error("Profile Fetch Error:", err);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("❌ Profile Fetch Error:", err.message);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
 

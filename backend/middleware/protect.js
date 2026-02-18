@@ -11,8 +11,7 @@ const protect = async (req, res, next) => {
       // ✅ FIX: Attach both 'id' and '_id' to prevent undefined errors in controllers
       const userId = decoded.id || decoded._id;
       
-      req.user = {
-        id: userId,        // For your Controller queries
+      req.user = {      
         _id: userId,       // For MongoDB compatibility
         role: decoded.role,
         isAdmin: decoded.isAdmin

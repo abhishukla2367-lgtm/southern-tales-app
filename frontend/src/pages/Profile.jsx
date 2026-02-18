@@ -18,6 +18,7 @@ const Profile = () => {
       try {
         setLoading(true);
         const res = await API.get("/auth/profile");
+        console.log("DEBUG DATA:", res.data);
         setData(res.data);
       } catch (err) {
         console.error("Profile Fetch Error:", err);
@@ -46,7 +47,11 @@ const Profile = () => {
 
   if (!data || !data.user) return null;
 
-  const { user, orders, reservations } = data;
+// Inside your Profile.jsx component
+const user = data?.user || {};
+// Force orders to be an array, even if the backend key is slightly different
+const orders = data?.orders || data?.data?.orders || []; 
+const reservations = data?.reservations || data?.data?.reservations || [];
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-20 pt-10 text-gray-200">
@@ -108,37 +113,40 @@ const Profile = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800">
-                    {orders && orders.length > 0 ? (
-                      orders.map((o) => (
-                        <tr key={o._id} className="transition-colors hover:bg-[#1d1d1d]/50">
-                          <td className="px-6 py-4 font-mono text-sm font-bold text-gray-400">
-                            #{o._id.slice(-6).toUpperCase()}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-bold text-white">
-                            ₹{o.totalAmount?.toFixed(2) || "0.00"}
-                          </td>
+  {/* Use the local 'orders' variable we defined earlier for safety */}
+  {orders && orders.length > 0 ? (
+    orders.map((o) => (
+      <tr key={o._id} className="transition-colors hover:bg-[#1d1d1d]/50">
+        <td className="px-6 py-4 font-mono text-sm font-bold text-gray-400">
+          #{o._id ? o._id.slice(-6).toUpperCase() : "N/A"}
+        </td>
+        
+        <td className="px-6 py-4 text-sm font-bold text-white">
+          {/* Use Number() to ensure toFixed doesn't error out on strings */}
+          ₹{Number(o.totalAmount || 0).toFixed(2)}
+        </td>
 
-                          
-                          <td className="px-6 py-4">
-                            <span className={`inline-block rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
-                              o.status?.toLowerCase() === 'delivered' 
-                                ? 'bg-green-900/30 text-green-400' 
-                                : 'bg-orange-900/30 text-orange-400'
-                            }`}>
-                              {o.status || "Pending"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="3" className="py-20 text-center text-gray-600">
-                          <p className="mb-2 text-3xl">📦</p>
-                          <p className="text-sm font-medium">You haven't placed any orders yet.</p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
+        <td className="px-6 py-4">
+          <span className={`inline-block rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+            o.status?.toLowerCase() === 'delivered' 
+              ? 'bg-green-900/30 text-green-400' 
+              : 'bg-orange-900/30 text-orange-400'
+          }`}>
+            {o.status || "Pending"}
+          </span>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="3" className="py-20 text-center text-gray-600">
+        <p className="mb-2 text-3xl">📦</p>
+        <p className="text-sm font-medium">You haven't placed any orders yet.</p>
+      </td>
+    </tr>
+  )}
+</tbody>
+
                 </table>
               </div>
             </div>

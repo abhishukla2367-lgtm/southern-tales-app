@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Order = require("../models/Order"); 
 const Cart = require("../models/Cart"); 
 
-// Import middlewares - Standardizing to use 'protect'
+// Import middlewares
 const { protect, admin } = require("../middleware/protect");
 
 /**
@@ -13,7 +14,7 @@ const { protect, admin } = require("../middleware/protect");
  */
 router.post("/", protect, async (req, res) => {
   try {
-    const { items, totalAmount, deliveryInfo, orderType } = req.body;
+    const { items, totalAmount, deliveryInfo } = req.body;
 
     // --- 1. VALIDATION ---
     if (!items || items.length === 0) {
@@ -26,7 +27,7 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
-    // --- 2. DATA MAPPING: UI '_id' to Schema 'productId' ---
+    // --- 2. DATA MAPPING ---
     const formattedItems = items.map((item) => ({
       productId: item._id || item.productId, 
       name: item.name,
@@ -35,10 +36,11 @@ router.post("/", protect, async (req, res) => {
     }));
 
     // --- 3. CREATE ORDER ---
+    // FIX: Using req.user.id to match your protect middleware exactly
     const newOrder = new Order({
-      user: req.user._id, 
+      user: req.user.id, 
       items: formattedItems, 
-      totalAmount,
+      totalAmount: Number(totalAmount),
       deliveryInfo, 
       status: "Pending",
       paymentStatus: "Unpaid"
@@ -47,7 +49,8 @@ router.post("/", protect, async (req, res) => {
     const savedOrder = await newOrder.save();
 
     // --- 4. CLEAR CART (Task 8.2) ---
-    await Cart.findOneAndDelete({ user: req.user._id }); 
+    // FIX: Using req.user.id to ensure the correct cart is deleted
+    await Cart.findOneAndDelete({ user: req.user.id }); 
     
     res.status(201).json({ 
         success: true,
@@ -56,7 +59,7 @@ router.post("/", protect, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Order Error:", err.message);
+    console.error("Order Creation Error:", err.message);
     res.status(500).json({ 
       message: "Order processing failed.", 
       error: err.message 
@@ -71,8 +74,11 @@ router.post("/", protect, async (req, res) => {
  */
 router.get("/my-orders", protect, async (req, res) => {
   try {
+    // FIX: Convert string ID to Mongoose ObjectId for a guaranteed match
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+
     // Task 6: Fetch orders specifically for the logged-in user
-    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
     
     res.status(200).json({ 
       success: true, 
@@ -80,6 +86,7 @@ router.get("/my-orders", protect, async (req, res) => {
       orders 
     }); 
   } catch (err) {
+    console.error("Fetch Orders Error:", err.message);
     res.status(500).json({ message: "Failed to retrieve your order history." });
   }
 });

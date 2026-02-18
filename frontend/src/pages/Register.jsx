@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../api/axiosConfig"; 
 
@@ -7,12 +7,22 @@ const Register = () => {
     name: "", 
     email: "", 
     password: "",
-    phone: "",      // New Field
-    address: ""     // New Field
+    phone: "",      
+    address: ""     
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // STRICT AUTOCOMPLETE KILL: Generate stable random names once per mount
+  // This prevents focus loss while keeping the field names unique to the browser
+  const fieldKeys = useMemo(() => ({
+    name: `n_${Math.random().toString(36).substring(7)}`,
+    email: `e_${Math.random().toString(36).substring(7)}`,
+    phone: `p_${Math.random().toString(36).substring(7)}`,
+    address: `a_${Math.random().toString(36).substring(7)}`,
+    pass: `pw_${Math.random().toString(36).substring(7)}`
+  }), []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,75 +40,89 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#1a1a1a] p-6">
+    <div className="flex min-h-screen items-center justify-center bg-black p-6">
       <form 
         onSubmit={handleSubmit} 
-        className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl"
+        className="w-full max-w-lg rounded-xl bg-black p-8 shadow-2xl border border-gray-800"
         autoComplete="off"
       >
-        <h2 className="mb-6 text-center text-3xl font-bold text-[#2d2d2d]">Join Us</h2>
+        {/* HONEYPOT: Catches initial browser autofill attempts */}
+        <input style={{ display: 'none' }} type="text" name="prevent_autofill_user" />
+        <input style={{ display: 'none' }} type="password" name="prevent_autofill_pass" />
+
+        <h2 className="mb-6 text-center text-3xl font-bold text-white">Join Us</h2>
         
         {error && (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-center text-sm text-red-600">
+          <div className="mb-4 rounded-md border border-red-900 bg-red-900/20 p-3 text-center text-sm text-red-400">
             {error}
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Full Name */}
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Full Name</label>
+            <label className="mb-1 block text-sm font-semibold text-gray-400">Full Name</label>
             <input
+              name={fieldKeys.name}
               type="text"
-              className="w-full rounded-lg border border-gray-300 p-3 text-black outline-none focus:border-[#f5c27a]"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
               required
-              autoComplete="off"
+              autoComplete="one-time-code"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
 
+          {/* Email Address - FIXED SYNTAX */}
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Email Address</label>
+            <label className="mb-1 block text-sm font-semibold text-gray-400">Email Address</label>
             <input
+              name={fieldKeys.email}
               type="email"
-              className="w-full rounded-lg border border-gray-300 p-3 text-black outline-none focus:border-[#f5c27a]"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
               required
-              autoComplete="off"
+              autoComplete="new-password"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
+          {/* Phone Number */}
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Phone Number</label>
+            <label className="mb-1 block text-sm font-semibold text-gray-400">Phone Number</label>
             <input
+              name={fieldKeys.phone}
               type="tel"
-              placeholder="+91 98765 43210"
-              className="w-full rounded-lg border border-gray-300 p-3 text-black outline-none focus:border-[#f5c27a]"
+              placeholder="+91"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
               required
-              autoComplete="off"
+              autoComplete="new-password"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
 
+          {/* Address */}
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Residential Address</label>
+            <label className="mb-1 block text-sm font-semibold text-gray-400">Residential Address</label>
             <textarea
+              name={fieldKeys.address}
               rows="2"
-              className="w-full rounded-lg border border-gray-300 p-3 text-black outline-none focus:border-[#f5c27a]"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
               required
-              autoComplete="off"
+              autoComplete="new-password"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
           </div>
 
+          {/* Password */}
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-700">Password</label>
+            <label className="mb-1 block text-sm font-semibold text-gray-400">Password</label>
             <input
+              name={fieldKeys.pass}
               type="password"
-              className="w-full rounded-lg border border-gray-300 p-3 text-black outline-none focus:border-[#f5c27a]"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
               required
               autoComplete="new-password"
               value={formData.password}
@@ -110,13 +134,13 @@ const Register = () => {
         <button 
           type="submit" 
           disabled={isLoading}
-          className="mt-8 w-full rounded-lg bg-[#f5c27a] py-3 text-lg font-bold text-[#1a1a1a] hover:bg-[#e0b06b] transition-all disabled:opacity-50"
+          className="mt-8 w-full rounded-lg bg-[#f5c27a] py-3 text-lg font-bold text-black hover:bg-[#e0b06b] transition-all disabled:opacity-50"
         >
           {isLoading ? "Creating Account..." : "Register"}
         </button>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account? <Link to="/login" className="font-bold text-[#e0b06b] hover:underline">Login</Link>
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Already have an account? <Link to="/login" className="font-bold text-[#f5c27a] hover:underline">Login</Link>
         </p>
       </form>
     </div>

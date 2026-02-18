@@ -1,15 +1,14 @@
 const User = require("../models/User");
+const Order = require("../models/Order");
+const Reservation = require("../models/Reservation");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
-// 🛠️ FIX: Direct imports are safer. If these fail, the server will tell you exactly why (Path error).
-const Order = require("../models/Order"); 
-const Reservation = require("../models/Reservation");
-
 /**
+ * @desc    Register new user
  * @route   POST /api/auth/register
  */
-exports.register = async (req, res) => { 
+exports.register = async (req, res) => {
   try {
     const { name, email, password, phone, address } = req.body;
 
@@ -18,12 +17,18 @@ exports.register = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase();
-    const userExists = await User.findOne({ email: normalizedEmail }); 
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ success: false, message: "Email already registered" });
     }
 
-    await User.create({ name, email: normalizedEmail, password, phone, address });
+    await User.create({
+      name,
+      email: normalizedEmail,
+      password, // Password hashing should be handled in User Model Middleware
+      phone,
+      address,
+    });
 
     res.status(201).json({ success: true, message: "Registration successful!" });
   } catch (err) {
@@ -32,6 +37,7 @@ exports.register = async (req, res) => {
 };
 
 /**
+ * @desc    Authenticate user & get token
  * @route   POST /api/auth/login
  */
 exports.login = async (req, res) => {
@@ -60,37 +66,43 @@ exports.login = async (req, res) => {
 };
 
 /**
+ * @desc    Requirement #6: Get user profile with Orders and Reservations
  * @route   GET /api/auth/profile
+ * @access  Private
  */
 exports.getProfile = async (req, res) => {
   try {
-    // 🛡️ Middleware Check: Ensure req.user exists from your authMiddleware
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ success: false, message: "Not authorized, no ID found" });
-    }
+    // 1. Get current logged-in user ID from token (provided by your auth middleware)
+    const currentId = req.user.id; 
+    const objectId = new mongoose.Types.ObjectId(currentId);
 
-    const userId = req.user.id; 
+    // 2. Fetch all three in parallel for better performance
+    const [user, orders, reservations] = await Promise.all([
+      User.findById(objectId).select("-password"),
+      
+      // ✅ UPDATED: Now matches your new Schema field 'userId'
+      Order.find({ userId: objectId }).sort({ createdAt: -1 }), 
 
-    // 1. Fetch User
-    const user = await User.findById(userId).select("-password");
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    // 2. Fetch Orders & Reservations 
-    // 💡 IMPORTANT: Ensure your OrderSchema has a field named 'user' that stores the ID
-    const [orders, reservations] = await Promise.all([
-      Order.find({ user: userId }).sort({ createdAt: -1 }),
-      Reservation.find({ user: userId }).sort({ date: -1 })
+      // Matches 'userId' field in your Reservations
+      Reservation.find({ userId: objectId }).sort({ date: -1 })
     ]);
 
-    // 3. Final Response
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // 3. LOG TO SERVER CONSOLE: Check this in your terminal to verify data is coming through
+    console.log(`✅ Profile Sync: ${user.email}`);
+    console.log(`📊 Stats -> Orders found: ${orders.length} | Reservations found: ${reservations.length}`);
+
     res.status(200).json({
       success: true,
       user,
-      orders,
-      reservations,
+      orders, // This will now correctly contain the user's orders
+      reservations
     });
   } catch (err) {
-    console.error("❌ Profile Fetch Error:", err);
-    res.status(500).json({ success: false, message: "Failed to load profile", error: err.message });
+    console.error("Profile Fetch Error:", err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 };

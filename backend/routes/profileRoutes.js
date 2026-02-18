@@ -1,10 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const Reservation = require("../models/Reservation");
-
-// Task 4 & 6: Import the protection middleware
 const { protect } = require("../middleware/protect");
 
 /**
@@ -14,32 +13,41 @@ const { protect } = require("../middleware/protect");
  */
 router.get("/", protect, async (req, res) => {
   try {
-    // 1. Get the current user ID from the 'protect' middleware
-    const currentUserId = req.user.id;
+    // 1. Get the current user ID (Checking both ._id and .id for safety)
+    const userIdRaw = req.user._id || req.user.id;
 
-    // 2. Parallel fetching (Task 6.1 & 6.2)
-    // Using Promise.all ensures we don't wait for one query to finish before starting the next
+    // STRICT FIX: Convert the string ID into a formal MongoDB ObjectId
+    // This ensures the query matches the "userId" field in your database exactly.
+    const currentUserId = new mongoose.Types.ObjectId(userIdRaw);
+
+    // 2. Parallel fetching for high performance
     const [user, orders, reservations] = await Promise.all([
-      // info from User collection (Task 5)
+      // Fetch user and exclude password
       User.findById(currentUserId).select("-password"),
 
-      // info from Order collection (Task 8)
-      // ENSURE your Order schema uses 'userId' field name
+      // ✅ UPDATED: Searching the "userId" field (per your new Order Schema)
       Order.find({ userId: currentUserId }).sort({ createdAt: -1 }),
 
-      // info from Reservation collection (Task 7)
-      // FIXED: Matches your ReservationSchema field name 'userId'
+      // ✅ UPDATED: Searching the "userId" field for reservations to keep it consistent
       Reservation.find({ userId: currentUserId }).sort({ date: 1 })
     ]);
 
-    // 3. Validation: If user doesn't exist in DB anymore
+    // 3. Validation: If user doesn't exist
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 4. Final Response (Matches Profile.jsx destructuring)
-    // Structure: { user, orders, reservations }
+    // --- CRITICAL DEBUG LOGS ---
+    // Check your VS Code terminal after you refresh the profile page
+    console.log(`-------------------------------------------`);
+    console.log(`DEBUG: Logged in User ID: ${currentUserId}`);
+    console.log(`DEBUG: Orders found in DB: ${orders.length}`);
+    console.log(`DEBUG: Reservations found: ${reservations.length}`);
+    console.log(`-------------------------------------------`);
+
+    // 4. Final Response
     res.status(200).json({ 
+      success: true,
       user, 
       orders: orders || [], 
       reservations: reservations || [] 
@@ -48,6 +56,7 @@ router.get("/", protect, async (req, res) => {
   } catch (err) {
     console.error("Profile Router Error:", err.message);
     res.status(500).json({ 
+      success: false,
       message: "Could not load profile data.", 
       error: err.message 
     });
@@ -56,17 +65,17 @@ router.get("/", protect, async (req, res) => {
 
 /**
  * @route   PUT /api/profile/update
- * @desc    Professional Touch: Update user details (Task 6.1)
+ * @desc    Update user details
  * @access  Private
  */
 router.put("/update", protect, async (req, res) => {
   try {
     const { name, phone, address } = req.body;
+    const userId = req.user._id || req.user.id;
 
     const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
+      userId,
       { $set: { name, phone, address } },
-      // new: true returns updated doc; runValidators ensures data is valid
       { new: true, runValidators: true } 
     ).select("-password");
 
@@ -74,10 +83,13 @@ router.put("/update", protect, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(updatedUser);
+    res.status(200).json({
+      success: true,
+      user: updatedUser
+    });
   } catch (err) {
     console.error("Update Profile Error:", err.message);
-    res.status(500).json({ message: "Update failed", error: err.message });
+    res.status(500).json({ success: false, message: "Update failed", error: err.message });
   }
 });
 
