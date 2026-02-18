@@ -66,6 +66,26 @@ const CartDrawer = () => {
     // Call the professional placeOrder logic from Context
     await placeOrder(user, deliveryDetails);
   };
+ const handleCheckout = () => {
+  if (orderType === "delivery" && (!platform || !userAddressState)) {
+    alert("Please select a platform and enter your address.");
+    return;
+  }
+
+  navigate("/order-summary", {
+    state: {
+      items: cartItems,
+      total: totalPrice,
+      details: {
+        type: orderType,
+        platform,
+        address: userAddressState,
+        phone: userPhoneState,
+        time: preferredTime
+      }
+    }
+  });
+};
 
   return (
     <div className="min-h-screen pt-28 bg-[#0a0a0a] text-white flex flex-col items-center px-4">
@@ -194,20 +214,10 @@ const CartDrawer = () => {
         className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white"
       />
     </div>
-
-    {/* PAYMENT METHOD - Now inside the delivery block */}
-    <div className="mt-4">
-      <h4 className="font-semibold text-gray-300 mb-2">Payment Method</h4>
-      <select className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg text-white outline-none focus:ring-2 focus:ring-orange-400">
-        <option value="cod">Cash on Delivery</option>
-        <option value="online">Online Payment</option>
-      </select>
-    </div>
+    
   </div> 
 )}
-
-
-            {/* PICKUP FIELDS */}
+        {/* PICKUP FIELDS */}
             {orderType === "pickup" && (
               <div className="mt-5">
                 <input
@@ -229,26 +239,20 @@ const CartDrawer = () => {
             </span>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-row gap-4 w-full">
             <button
-              onClick={clearCart}
-              className="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white font-semibold px-6 py-3 rounded-md flex-1 transition"
-            >
-              Clear Cart
-            </button>
+                onClick={clearCart}
+                className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-lg transition-all shadow-lg shadow-red-900/20"
+              >
+                Clear Cart
+              </button>
             <button
-  onClick={handlePlaceOrder}
-  disabled={isPlacingOrder}
-  className={`font-bold px-6 py-3 rounded-md flex-1 transition-all duration-300 shadow-lg ${
-    isPlacingOrder 
-      ? "bg-gray-700 text-gray-500 cursor-not-allowed" 
-      : "bg-yellow-400 hover:bg-yellow-500 text-black active:scale-95"
-  }`}
->
-  {isPlacingOrder ? "Processing..." : "Proceed to Checkout"}
-</button>
-
-          </div>
+                onClick={handleCheckout}
+                className="w-full py-4 bg-yellow-400 hover:bg-yellow-500 text-black rounded-xl font-bold text-lg transition-all shadow-lg shadow-yellow-900/20"
+              >
+                Proceed to Checkout
+              </button>
+            </div>
         </div>
       )}
     </div>

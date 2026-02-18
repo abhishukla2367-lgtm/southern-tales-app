@@ -1,199 +1,158 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import LiveTrackingMap from "../components/LiveTrackingMap";
+import { FaMapMarkerAlt, FaClock, FaCreditCard, FaChevronLeft, FaPhoneAlt, FaCheckCircle } from "react-icons/fa";
 
 const OrderSummaryPage = () => {
-  const { cartItems, orderType, setOrderType } = useCart();
-  const [address, setAddress] = useState("");
-  const [time, setTime] = useState("");
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const { cartItems } = useCart();
+  
+  const [address, setAddress] = useState(state?.details?.address || "");
+  const [phone, setPhone] = useState(state?.details?.phone || "");
+  const [time, setTime] = useState(state?.details?.time || "");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [orderConfirmed, setOrderConfirmed] = useState(false);
 
   const trackingRef = useRef(null);
+  const isDelivery = state?.details?.type === "delivery";
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const totalAmount = cartItems.reduce(
-    (sum, item) => sum + Number(item.price) * item.quantity,
-    0
-  );
+  const totalAmount = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(amount);
+    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount);
 
   const handleConfirmOrder = () => {
-    if (orderType === "delivery" && !address) {
-      alert("Please enter your delivery address!");
-      return;
-    }
-    if (!time || !paymentMethod) {
-      alert("Please fill in all details!");
-      return;
-    }
-
-    alert(`Order Confirmed!
-Order Type: ${orderType}
-${orderType === "delivery" ? "Address: " + address + "\n" : ""}
-Time: ${time}
-Payment: ${paymentMethod}`);
+    if (isDelivery && !address) return alert("Please enter your delivery address!");
+    if (!phone || !time || !paymentMethod) return alert("Please fill in all details!");
 
     setOrderConfirmed(true);
-
-    // ✅ AUTO SCROLL TO LIVE TRACKING
     setTimeout(() => {
-      trackingRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      trackingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 200);
   };
 
   return (
-    <div
-      className="min-h-screen flex justify-center p-6 pt-28 bg-cover bg-center"
-      style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1470&q=80')",
-      }}
+    <div 
+      className="min-h-screen relative flex flex-col items-center p-6 pt-28 bg-fixed bg-cover bg-center"
+      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1470&q=80')" }}
     >
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl bg-white/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden flex flex-col">
-        <div className="p-6 border-b">
-          <h1 className="text-3xl font-bold text-orange-600">Order Summary</h1>
-          <p className="text-gray-700 mt-1">Review your selections</p>
+      <div className="absolute inset-0 bg-black/70 z-0"></div>
+
+      <div className="relative z-10 w-full max-w-2xl">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-6">
+          <FaChevronLeft /> Back to Cart
+        </button>
+
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-white">Order Summary</h1>
+          <div className="flex items-center gap-3 mt-2">
+             <span className="px-3 py-1 bg-yellow-400 text-black text-xs font-bold rounded-full uppercase">
+               {state?.details?.type || "Order"}
+             </span>
+             <p className="text-gray-300 italic">Finalize your {state?.details?.type} details</p>
+          </div>
         </div>
 
-        <div className="p-6 space-y-4 flex-1 overflow-y-auto max-h-[400px]">
-          {cartItems.length === 0 ? (
-            <p className="text-center text-gray-400">Your cart is empty</p>
-          ) : (
-            cartItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex justify-between items-center border-b pb-2"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-16 h-16 rounded-lg object-cover transition-transform duration-200 hover:scale-110"
-                  />
-                  <div>
-                    <h2 className="font-semibold text-gray-800">{item.name}</h2>
-                    <p className="text-gray-500">Qty: {item.quantity}</p>
+        <div className="space-y-6">
+          {/* 1. ITEMS LIST */}
+          <div className="bg-black/80 backdrop-blur-md border border-gray-800 rounded-2xl p-6 shadow-xl">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Your Selections</h3>
+            <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+              {cartItems.map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center border-b border-gray-800 pb-4">
+                  <div className="flex items-center gap-4">
+                    <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-gray-700" />
+                    <div>
+                      <h2 className="font-semibold text-gray-100">{item.name}</h2>
+                      <p className="text-gray-500 text-sm">Qty: {item.quantity}</p>
+                    </div>
                   </div>
+                  <span className="font-bold text-gray-100">{formatCurrency(item.price * item.quantity)}</span>
                 </div>
-                <span className="font-semibold text-gray-800">
-                  {formatCurrency(item.price * item.quantity)}
-                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. DYNAMIC FORM FIELDS */}
+          <div className="bg-black/80 backdrop-blur-md border border-gray-800 rounded-2xl p-6 shadow-xl space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                  <FaMapMarkerAlt /> {isDelivery ? "Delivery Address" : "Pickup From Store"}
+                </label>
+                {isDelivery ? (
+                  <input type="text" placeholder="Enter location" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
+                ) : (
+          
+          <div className="w-full bg-gray-900/50 border border-dashed border-gray-700 p-3 rounded-xl text-yellow-500 text-sm">
+                    Sector 15, CBD Belapur,Navi Mumbai, Maharashtra 400614
+                  </div>
+                )}
               </div>
-            ))
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><FaPhoneAlt /> Phone Number</label>
+                <input type="text" placeholder="Enter mobile" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><FaClock /> Preferred Time</label>
+                <input type="text" placeholder="e.g. 30 mins" value={time} onChange={(e) => setTime(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><FaCreditCard /> Payment</label>
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition">
+                  <option value="">Select Method</option>
+                  <option value="UPI">UPI/GPay/Paypal</option>
+                  <option value="UPI">Credit Card</option>
+                  <option value="COD">{isDelivery ? "Cash on Delivery" : "Pay at Store"}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. TOTAL & ACTIONS */}
+          <div className="bg-black/90 backdrop-blur-lg border border-gray-800 rounded-2xl p-6 shadow-2xl space-y-6">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-lg">Payable Amount</span>
+              <span className="text-3xl font-black text-yellow-500">{formatCurrency(totalAmount)}</span>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => navigate("/cart")} className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all">Cancel</button>
+              <button onClick={handleConfirmOrder} className="flex-1 py-4 bg-yellow-400 hover:bg-yellow-500 text-black rounded-xl font-black transition-all">Confirm Order</button>
+            </div>
+          </div>
+
+          {/* LIVE TRACKING (DELIVERY ONLY) */}
+          {orderConfirmed && isDelivery && (
+            <div ref={trackingRef} className="w-full bg-black/90 border-2 border-yellow-500 rounded-2xl p-6 mt-10 animate-fade-in">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <span className="h-3 w-3 bg-yellow-400 rounded-full animate-ping"></span> Live Tracking
+              </h2>
+              <div className="rounded-xl overflow-hidden border border-gray-800">
+                <LiveTrackingMap />
+              </div>
+            </div>
+          )}
+
+          {/* PICKUP SUCCESS MESSAGE (PICKUP ONLY) */}
+          {orderConfirmed && !isDelivery && (
+            <div ref={trackingRef} className="w-full bg-black/90 border-2 border-green-500 rounded-2xl p-8 mt-10 text-center animate-fade-in">
+              <FaCheckCircle className="text-green-500 text-5xl mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">Order Confirmed!</h2>
+              <p className="text-gray-400">Please arrive at the store in <span className="text-yellow-400 font-bold">{time}</span>.</p>
+              <p className="text-xs text-gray-500 mt-2">Order ID: #EAT-{Math.floor(1000 + Math.random() * 9000)}</p>
+            </div>
           )}
         </div>
-
-        <div className="p-6 border-b space-y-2">
-          <h3 className="font-semibold text-gray-700">Order Type</h3>
-          <div className="flex gap-4 mt-2">
-            <button
-              onClick={() => setOrderType("delivery")}
-              className={`flex-1 py-2 rounded-lg font-semibold ${
-                orderType === "delivery"
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              Delivery
-            </button>
-            <button
-              onClick={() => setOrderType("pickup")}
-              className={`flex-1 py-2 rounded-lg font-semibold ${
-                orderType === "pickup"
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              Pickup
-            </button>
-          </div>
-        </div>
-
-        {orderType === "delivery" && (
-          <div className="p-6 border-b space-y-3">
-            <h3 className="font-semibold text-gray-700">Delivery Details</h3>
-            <input
-              type="text"
-              placeholder="Enter your address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
-            <input
-              type="text"
-              placeholder="Preferred delivery time (e.g., 30-45 min)"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
-          </div>
-        )}
-
-        {orderType === "pickup" && (
-          <div className="p-6 border-b space-y-3">
-            <h3 className="font-semibold text-gray-700">Pickup Details</h3>
-            <input
-              type="text"
-              placeholder="Preferred pickup time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
-          </div>
-        )}
-
-        <div className="p-6 border-b space-y-3">
-          <h3 className="font-semibold text-gray-700">Payment Method</h3>
-          <input
-            type="text"
-            placeholder="Enter payment method (e.g., Visa ****1234)"
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
-        </div>
-
-        {cartItems.length > 0 && (
-          <div className="p-6 flex flex-col gap-4">
-            <div className="flex justify-between text-lg font-semibold text-gray-800">
-              <span>Total</span>
-              <span>{formatCurrency(totalAmount)}</span>
-            </div>
-            <button
-              onClick={handleConfirmOrder}
-              className="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold hover:bg-orange-600 transition"
-            >
-              Confirm Order
-            </button>
-          </div>
-        )}
-
-        <div className="h-6" />
       </div>
-
-      {orderConfirmed && (
-        <div
-          ref={trackingRef}
-          className="w-full max-w-4xl mt-10 bg-white rounded-2xl shadow-xl p-6"
-        >
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Live Delivery Tracking
-          </h2>
-          <LiveTrackingMap />
-        </div>
-      )}
     </div>
   );
 };

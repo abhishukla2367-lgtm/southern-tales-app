@@ -115,12 +115,10 @@ const Profile = () => {
                             #{o._id.slice(-6).toUpperCase()}
                           </td>
                           <td className="px-6 py-4 text-sm font-bold text-white">
-                            ₹{o.totalAmount?.toFixed(2) || "0.00"}
+                            ₹{o.total?.toFixed(2) || o.totalAmount?.toFixed(2) || "0.00"}
                           </td>
 
-                          <td className="px-6 py-4 text-sm font-bold text-white">
-                            ${o.totalAmount?.toFixed(2) || "0.00"}
-                          </td>
+                          
                           <td className="px-6 py-4">
                             <span className={`inline-block rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
                               o.status?.toLowerCase() === 'delivered' 
