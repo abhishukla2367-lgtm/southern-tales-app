@@ -115,7 +115,7 @@ const Profile = () => {
                             #{o._id.slice(-6).toUpperCase()}
                           </td>
                           <td className="px-6 py-4 text-sm font-bold text-white">
-                            ₹{o.total?.toFixed(2) || o.totalAmount?.toFixed(2) || "0.00"}
+                            ₹{o.totalAmount?.toFixed(2) || "0.00"}
                           </td>
 
                           

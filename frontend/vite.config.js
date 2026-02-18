@@ -8,7 +8,8 @@ export default defineConfig({
             '/api': {
                 target: 'http://localhost:5000',
                 changeOrigin: true,
-                secure: false,
+                // ✅ REMOVED rewrite: (path) => path.replace(/^\/api/, '')
+                // This ensures /api/auth/login stays /api/auth/login when hitting Express
             }
         }
     }

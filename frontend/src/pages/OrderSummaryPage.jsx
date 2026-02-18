@@ -27,15 +27,52 @@ const OrderSummaryPage = () => {
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount);
 
-  const handleConfirmOrder = () => {
-    if (isDelivery && !address) return alert("Please enter your delivery address!");
-    if (!phone || !time || !paymentMethod) return alert("Please fill in all details!");
-
-    setOrderConfirmed(true);
-    setTimeout(() => {
-      trackingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 200);
+  const handleConfirmOrder = async () => {
+  if (isDelivery && !address) return alert("Please enter your delivery address!");
+  if (!phone || !time || !paymentMethod) return alert("Please fill in all details!");
+  const orderData = {
+    items: cartItems.map(item => ({
+      productId: item._id || item.id, // REQUIRED by your schema
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price
+    })),
+    totalAmount: totalAmount,
+    // 2. Wrap address/phone in the deliveryInfo object
+    deliveryInfo: {
+      address: isDelivery ? address : "Sector 15, CBD Belapur",
+      phone: phone
+    }
   };
+
+  try {
+    const token = localStorage.getItem("token"); // Get your JWT
+    const response = await fetch("http://localhost:5000/api/orders", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      setOrderConfirmed(true);
+      alert("Order Placed Successfully!");
+      // Task 6: Redirect to profile so they can see "My Orders"
+      setTimeout(() => {
+        navigate("/profile"); 
+      }, 2000);
+    } else {
+      alert(`Order Failed: ${result.error || result.message}`);
+    }
+  } catch (err) {
+    console.error("Network Error:", err);
+  }
+};
+
+
 
   return (
     <div 

@@ -13,10 +13,8 @@ const OrderSchema = new mongoose.Schema(
     items: [
       {
         productId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product", // Helpful if you need to link back to the Menu item later
-          required: true,
-        },
+       type: String, 
+      },
         name: { type: String, required: true },
         quantity: { 
           type: Number, 
@@ -28,8 +26,8 @@ const OrderSchema = new mongoose.Schema(
     ],
     // Professional Detail: Required for Task 8 checkout flow
     deliveryInfo: {
-      address: { type: String, required: true, trim: true },
-      phone: { type: String, required: true, trim: true }
+      address: { type: String, required: true },
+      phone: { type: String, required: true }
     },
     // Task 8: Validation to prevent negative billing
     totalAmount: { 
