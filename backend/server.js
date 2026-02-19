@@ -34,37 +34,33 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
-// --- 3. ROUTE MOUNTING ---
+const otpRoutes = require("./routes/otpRoutes");
+app.use("/api/otp", otpRoutes);
 
-// Task 5 & 6: Authentication and User Profile
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
-// Task 8: Cart operations
 const cartRoutes = require("./routes/cartRoutes");
 app.use("/api/cart", cartRoutes);
 
-// Task 2 & 7: Menu items
+
 const menuRoutes = require("./routes/menuRoutes");
 app.use("/api/menu", menuRoutes);
 
-// Task 8: Order placement and clearing cart
 const orderRoutes = require("./routes/orderRoutes");
 app.use("/api/orders", orderRoutes);
 
-// Task 7: Table Reservations
+
 const reservationRoutes = require("./routes/reservationRoutes");
 app.use("/api/reservations", reservationRoutes);
 
-// Task 7 & 8.3: Admin Dashboard
+
 const adminRoutes = require("./routes/adminRoutes");
 app.use("/api/admin", adminRoutes);
 
-// Task 3: Reports & Analytics
+
 const reportRoutes = require("./routes/reportRoutes");
 app.use("/api/reports", reportRoutes);
-
-// --- 4. UTILITY ROUTES ---
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({

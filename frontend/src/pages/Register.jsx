@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import API from "../api/axiosConfig"; 
 
 const Register = () => {
@@ -10,12 +11,11 @@ const Register = () => {
     phone: "",      
     address: ""     
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // STRICT AUTOCOMPLETE KILL: Generate stable random names once per mount
-  // This prevents focus loss while keeping the field names unique to the browser
   const fieldKeys = useMemo(() => ({
     name: `n_${Math.random().toString(36).substring(7)}`,
     email: `e_${Math.random().toString(36).substring(7)}`,
@@ -30,27 +30,41 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      await API.post("/auth/register", formData);
-      navigate("/login", { state: { message: "Registration successful! Please login." } });
+      await API.post("/otp/send-otp", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      navigate("/verify-otp", {
+        state: {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          address: formData.address,
+        },
+      });
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Try again.");
+      setError(err.response?.data?.message || "Failed to send OTP. Try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black p-6">
+    <div className="flex min-h-screen items-center justify-center bg-black p-6 pt-28">
       <form 
         onSubmit={handleSubmit} 
-        className="w-full max-w-lg rounded-xl bg-black p-8 shadow-2xl border border-gray-800"
+        className="w-full max-w-2xl rounded-xl bg-black p-8 shadow-2xl border border-gray-800"
         autoComplete="off"
       >
-        {/* HONEYPOT: Catches initial browser autofill attempts */}
         <input style={{ display: 'none' }} type="text" name="prevent_autofill_user" />
         <input style={{ display: 'none' }} type="password" name="prevent_autofill_pass" />
 
-        <h2 className="mb-6 text-center text-3xl font-bold text-white">Join Us</h2>
+        <h2 className="mb-2 text-center text-3xl font-bold text-white">Join Us</h2>
+        <p className="mb-6 text-center text-sm text-gray-500">
+          An OTP will be sent to your email for verification
+        </p>
         
         {error && (
           <div className="mb-4 rounded-md border border-red-900 bg-red-900/20 p-3 text-center text-sm text-red-400">
@@ -59,7 +73,6 @@ const Register = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Full Name */}
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-semibold text-gray-400">Full Name</label>
             <input
@@ -73,7 +86,6 @@ const Register = () => {
             />
           </div>
 
-          {/* Email Address - FIXED SYNTAX */}
           <div>
             <label className="mb-1 block text-sm font-semibold text-gray-400">Email Address</label>
             <input
@@ -87,13 +99,12 @@ const Register = () => {
             />
           </div>
 
-          {/* Phone Number */}
           <div>
             <label className="mb-1 block text-sm font-semibold text-gray-400">Phone Number</label>
             <input
               name={fieldKeys.phone}
               type="tel"
-              placeholder="+91"
+              placeholder=""
               className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
               required
               autoComplete="new-password"
@@ -102,7 +113,6 @@ const Register = () => {
             />
           </div>
 
-          {/* Address */}
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-semibold text-gray-400">Residential Address</label>
             <textarea
@@ -116,18 +126,28 @@ const Register = () => {
             />
           </div>
 
-          {/* Password */}
+          {/* Password with Show/Hide toggle */}
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-semibold text-gray-400">Password</label>
-            <input
-              name={fieldKeys.pass}
-              type="password"
-              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
-              required
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
+            <div className="relative">
+              <input
+                name={fieldKeys.pass}
+                type={showPassword ? "text" : "password"}
+                className="w-full rounded-lg border border-gray-700 bg-black p-3 pr-12 text-white outline-none focus:border-[#f5c27a]"
+                required
+                autoComplete="new-password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-500 hover:text-[#f5c27a] transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -136,10 +156,10 @@ const Register = () => {
           disabled={isLoading}
           className="mt-8 w-full rounded-lg bg-[#f5c27a] py-3 text-lg font-bold text-black hover:bg-[#e0b06b] transition-all disabled:opacity-50"
         >
-          {isLoading ? "Creating Account..." : "Register"}
+          {isLoading ? "Sending OTP..." : "Send OTP & Continue"}
         </button>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-4 mb-4 text-center text-sm text-gray-500">
           Already have an account? <Link to="/login" className="font-bold text-[#f5c27a] hover:underline">Login</Link>
         </p>
       </form>

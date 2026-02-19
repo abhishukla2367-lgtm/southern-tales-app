@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false, 
+      select: false,
     },
     phone: {
       type: String,
@@ -34,14 +34,15 @@ const UserSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
-      default: function() {
-        return `https://ui-avatars.com{encodeURIComponent(this.name)}&background=random`;
+      default: function () {
+        // FIX: Correct UI Avatars URL
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.name)}&background=random`;
       },
     },
     role: {
       type: String,
       enum: ["user", "admin"],
-      default: "admin",
+      default: "user", 
     },
   },
   {
@@ -51,11 +52,10 @@ const UserSchema = new mongoose.Schema(
 
 /**
  * PASSWORD HASHING
- * Modern async/await implementation without 'next'
+ * Runs before every save — hashes plain password automatically
  */
 UserSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
@@ -64,7 +64,6 @@ UserSchema.pre("save", async function () {
  * PASSWORD VERIFICATION
  */
 UserSchema.methods.matchPassword = async function (enteredPassword) {
-  // Defensive check: ensure this.password is present (requires .select("+password") in controller)
   if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };

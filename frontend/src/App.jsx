@@ -23,6 +23,7 @@ import Reservation from "./pages/Reservation";
 import Gallery from "./pages/Gallery";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import OTPVerification from "./pages/otpVerification"; // Task 1: OTP Verification
 import ForgotPassword from "./pages/ForgotPassword";
 import Profile from "./pages/Profile";
 
@@ -33,7 +34,7 @@ import OrdersList from "./components/admin/OrdersList";
 import ReservationsList from "./components/admin/ReservationsList";
 
 // Admin Pages
-import ReportsPage from "./pages/admin/ReportsPage"; // Task 3: Reports & Analytics
+import ReportsPage from "./pages/admin/ReportsPage";
 
 // Contexts
 import { CartProvider } from "./context/CartContext";
@@ -66,7 +67,7 @@ const Layout = ({ children }) => {
   const { pathname } = location;
 
   const isAdminRoute = pathname.startsWith("/admin");
-  const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
+  const isAuthPage = ["/login", "/register", "/forgot-password", "/verify-otp"].includes(pathname);
   const isCartRoute = pathname === "/cart";
 
   return (
@@ -78,9 +79,7 @@ const Layout = ({ children }) => {
       }
     >
       {!isAdminRoute && <Header />}
-
       <main className={isAdminRoute ? "" : "min-h-screen"}>{children}</main>
-
       {!isAdminRoute && !isAuthPage && !isCartRoute && <Footer />}
     </div>
   );
@@ -110,44 +109,20 @@ export default function App() {
               {/* AUTH ROUTES */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/verify-otp" element={<OTPVerification />} /> {/* Task 1 */}
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* PROTECTED USER ROUTES */}
-              <Route
-                path="/reservation"
-                element={<ProtectedRoute><Reservation /></ProtectedRoute>}
-              />
-              <Route
-                path="/order-summary"
-                element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>}
-              />
-              <Route
-                path="/profile"
-                element={<ProtectedRoute><Profile /></ProtectedRoute>}
-              />
+              <Route path="/reservation" element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
+              <Route path="/order-summary" element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
               {/* PROTECTED ADMIN ROUTES */}
-              <Route
-                path="/admin"
-                element={<AdminRoute><AdminDashboard /></AdminRoute>}
-              />
-              <Route
-                path="/admin/menu"
-                element={<AdminRoute><MenuList /></AdminRoute>}
-              />
-              <Route
-                path="/admin/orders"
-                element={<AdminRoute><OrdersList /></AdminRoute>}
-              />
-              <Route
-                path="/admin/reservations"
-                element={<AdminRoute><ReservationsList /></AdminRoute>}
-              />
-              {/* Task 3: Reports & Analytics */}
-              <Route
-                path="/admin/reports"
-                element={<AdminRoute><ReportsPage /></AdminRoute>}
-              />
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/menu" element={<AdminRoute><MenuList /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><OrdersList /></AdminRoute>} />
+              <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute><ReportsPage /></AdminRoute>} />
 
               {/* Fallback to Home */}
               <Route path="*" element={<Navigate to="/" />} />
