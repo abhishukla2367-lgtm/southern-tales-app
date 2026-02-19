@@ -4,15 +4,14 @@ import DashboardCards from "./DashboardCards";
 import MenuList from "./MenuList";
 import OrdersList from "./OrdersList";
 import ReservationsList from "./ReservationsList";
+import ReportsPage from "../../pages/admin/ReportsPage";
 import { AuthContext } from "../../context/AuthContext";
-import { Bell, Search, Plus, ChevronDown, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Bell, Search, Plus, ChevronDown } from "lucide-react";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [tabLoading, setTabLoading] = useState(false);
-  const { user, logout, loading } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { user, loading } = useContext(AuthContext);
 
   const handleTabChange = (tab) => {
     setTabLoading(true);
@@ -22,40 +21,31 @@ export default function AdminDashboard() {
     }, 600);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   const getInitials = (name = "") =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
-  // Auth loading screen
-  if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center gap-4" style={{ background: "#0a0a0a" }}>
-      <div
-        className="w-10 h-10 rounded-full border-2 animate-spin"
-        style={{ borderColor: "#f5c27a", borderTopColor: "transparent" }}
-      />
-      <p className="text-sm font-bold" style={{ color: "#aaa" }}>Loading dashboard...</p>
-    </div>
-  );
-
-  const renderContent = () => {
-    if (tabLoading) return (
-      <div className="flex flex-col items-center justify-center py-32 gap-4">
-        <div
-          className="w-10 h-10 rounded-full border-2 animate-spin"
-          style={{ borderColor: "#f5c27a", borderTopColor: "transparent" }}
-        />
-        <p className="text-sm font-bold" style={{ color: "#aaa" }}>Loading...</p>
+  if (loading)
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4" style={{ background: "#0a0a0a" }}>
+        <div className="w-10 h-10 rounded-full border-2 animate-spin" style={{ borderColor: "#f5c27a", borderTopColor: "transparent" }} />
+        <p className="text-sm font-bold" style={{ color: "#aaa" }}>Loading dashboard...</p>
       </div>
     );
+
+  const renderContent = () => {
+    if (tabLoading)
+      return (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <div className="w-10 h-10 rounded-full border-2 animate-spin" style={{ borderColor: "#f5c27a", borderTopColor: "transparent" }} />
+          <p className="text-sm font-bold" style={{ color: "#aaa" }}>Loading...</p>
+        </div>
+      );
 
     switch (activeTab) {
       case "menu":         return <MenuList />;
       case "orders":       return <OrdersList />;
       case "reservations": return <ReservationsList />;
+      case "reports":      return <ReportsPage />;
       default:             return <DashboardCards />;
     }
   };
@@ -74,11 +64,7 @@ export default function AdminDashboard() {
         {/* HEADER */}
         <header
           className="h-20 px-6 md:px-10 flex items-center justify-between sticky top-0 z-30"
-          style={{
-            background: "rgba(10,10,10,0.85)",
-            backdropFilter: "blur(16px)",
-            borderBottom: "1px solid #1f1f1f",
-          }}
+          style={{ background: "rgba(10,10,10,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid #1f1f1f" }}
         >
           <div className="flex items-center gap-6 flex-1">
             <div className="flex items-center gap-3 pr-6" style={{ borderRight: "1px solid #1f1f1f" }}>
@@ -95,12 +81,8 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="hidden sm:block leading-none">
-                <span className="font-black text-base tracking-tight block" style={{ color: "#f1f1f1" }}>
-                  Southern Tales
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.25em]" style={{ color: "#f5c27a" }}>
-                  Management
-                </span>
+                <span className="font-black text-base tracking-tight block" style={{ color: "#f1f1f1" }}>Southern Tales</span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.25em]" style={{ color: "#f5c27a" }}>Management</span>
               </div>
             </div>
 
@@ -117,6 +99,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* Right side — Bell + User only, NO logout button */}
           <div className="flex items-center gap-3">
             <button
               className="p-2 rounded-full relative transition-all"
@@ -138,31 +121,10 @@ export default function AdminDashboard() {
               </div>
               <div className="hidden lg:block leading-none">
                 <p className="text-xs font-bold" style={{ color: "#f1f1f1" }}>{user?.name || "Admin"}</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest mt-1" style={{ color: "#666" }}>
-                  Owner / Admin
-                </p>
+                <p className="text-[9px] font-bold uppercase tracking-widest mt-1" style={{ color: "#666" }}>Owner / Admin</p>
               </div>
               <ChevronDown size={13} style={{ color: "#555" }} />
             </div>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
-              style={{ background: "#1a1a1a", border: "1px solid #2a2a2a", color: "#aaa" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#ef444420";
-                e.currentTarget.style.borderColor = "#ef4444";
-                e.currentTarget.style.color = "#ef4444";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#1a1a1a";
-                e.currentTarget.style.borderColor = "#2a2a2a";
-                e.currentTarget.style.color = "#aaa";
-              }}
-            >
-              <LogOut size={14} />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
           </div>
         </header>
 
@@ -170,15 +132,12 @@ export default function AdminDashboard() {
         <main className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ background: "#0a0a0a" }}>
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
             <div>
-              <div
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] mb-2"
-                style={{ color: "#f5c27a" }}
-              >
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] mb-2" style={{ color: "#f5c27a" }}>
                 <span className="w-5 h-[2px]" style={{ background: "#f5c27a", display: "inline-block" }} />
                 Admin Management
               </div>
               <h1 className="text-3xl md:text-4xl font-black capitalize tracking-tight" style={{ color: "#f1f1f1" }}>
-                {activeTab} Overview
+                {activeTab === "reports" ? "Reports & Analytics" : `${activeTab} Overview`}
               </h1>
             </div>
 
@@ -194,14 +153,16 @@ export default function AdminDashboard() {
                   Add New Item
                 </button>
               )}
-              <button
-                className="px-5 py-3 rounded-xl text-sm font-bold transition-all"
-                style={{ background: "#181818", border: "1px solid #2a2a2a", color: "#aaa" }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#f5c27a")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
-              >
-                Download Report
-              </button>
+              {activeTab !== "reports" && (
+                <button
+                  className="px-5 py-3 rounded-xl text-sm font-bold transition-all"
+                  style={{ background: "#181818", border: "1px solid #2a2a2a", color: "#aaa" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#f5c27a")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#2a2a2a")}
+                >
+                  Download Report
+                </button>
+              )}
             </div>
           </div>
 

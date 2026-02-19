@@ -10,8 +10,8 @@ import {
 // Components
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import CartDrawer from "./components/CartDrawer"; 
-import ProtectedRoute from "./components/ProtectedRoute"; 
+import CartDrawer from "./components/CartDrawer";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Pages
 import Home from "./pages/Home";
@@ -24,7 +24,7 @@ import Gallery from "./pages/Gallery";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
-import Profile from "./pages/Profile"; 
+import Profile from "./pages/Profile";
 
 // Admin Components
 import AdminDashboard from "./components/admin/AdminDashboard";
@@ -32,14 +32,22 @@ import MenuList from "./components/admin/MenuList";
 import OrdersList from "./components/admin/OrdersList";
 import ReservationsList from "./components/admin/ReservationsList";
 
+// Admin Pages
+import ReportsPage from "./pages/admin/ReportsPage"; // Task 3: Reports & Analytics
+
 // Contexts
 import { CartProvider } from "./context/CartContext";
-import { AuthProvider, AuthContext } from "./context/AuthContext"; 
+import { AuthProvider, AuthContext } from "./context/AuthContext";
 
 /* Admin Route Protector */
 const AdminRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
-  if (loading) return <div className="h-screen flex items-center justify-center bg-black text-white">Loading...</div>;
+  if (loading)
+    return (
+      <div className="h-screen flex items-center justify-center bg-black text-white">
+        Loading...
+      </div>
+    );
   return user && user.role === "admin" ? children : <Navigate to="/login" />;
 };
 
@@ -56,37 +64,34 @@ const ScrollToTop = () => {
 const Layout = ({ children }) => {
   const location = useLocation();
   const { pathname } = location;
-  
+
   const isAdminRoute = pathname.startsWith("/admin");
   const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
   const isCartRoute = pathname === "/cart";
 
   return (
-    // FIX: Force bg-black here for the entire site theme (Requirement #1)
-    <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-black text-white"}>
-      
-      {!isAdminRoute && <Header />} 
-      
-      <main className={isAdminRoute ? "" : "min-h-screen"}>
-        {children}
-      </main>
+    <div
+      className={
+        isAdminRoute
+          ? "min-h-screen bg-gray-100"
+          : "min-h-screen bg-black text-white"
+      }
+    >
+      {!isAdminRoute && <Header />}
+
+      <main className={isAdminRoute ? "" : "min-h-screen"}>{children}</main>
 
       {!isAdminRoute && !isAuthPage && !isCartRoute && <Footer />}
-      
-      {/* 
-          FIX: Removed the duplicate CartDrawer call from here. 
-          It will now ONLY render when called by the Route below.
-      */}
     </div>
   );
 };
 
 export default function App() {
   return (
-    <Router 
-      future={{ 
-        v7_startTransition: true, 
-        v7_relativeSplatPath: true 
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
       }}
     >
       <AuthProvider>
@@ -100,28 +105,49 @@ export default function App() {
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/gallery" element={<Gallery />} />
-              
-              {/* 
-                  REQUIREMENT #8: Single Cart Page Logic
-                  We render the CartDrawer as a standalone page here.
-              */}
               <Route path="/cart" element={<CartDrawer />} />
-              
+
               {/* AUTH ROUTES */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* PROTECTED USER ROUTES */}
-              <Route path="/reservation" element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
-              <Route path="/order-summary" element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route
+                path="/reservation"
+                element={<ProtectedRoute><Reservation /></ProtectedRoute>}
+              />
+              <Route
+                path="/order-summary"
+                element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>}
+              />
+              <Route
+                path="/profile"
+                element={<ProtectedRoute><Profile /></ProtectedRoute>}
+              />
 
               {/* PROTECTED ADMIN ROUTES */}
-              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/menu" element={<AdminRoute><MenuList /></AdminRoute>} />
-              <Route path="/admin/orders" element={<AdminRoute><OrdersList /></AdminRoute>} />
-              <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
+              <Route
+                path="/admin"
+                element={<AdminRoute><AdminDashboard /></AdminRoute>}
+              />
+              <Route
+                path="/admin/menu"
+                element={<AdminRoute><MenuList /></AdminRoute>}
+              />
+              <Route
+                path="/admin/orders"
+                element={<AdminRoute><OrdersList /></AdminRoute>}
+              />
+              <Route
+                path="/admin/reservations"
+                element={<AdminRoute><ReservationsList /></AdminRoute>}
+              />
+              {/* Task 3: Reports & Analytics */}
+              <Route
+                path="/admin/reports"
+                element={<AdminRoute><ReportsPage /></AdminRoute>}
+              />
 
               {/* Fallback to Home */}
               <Route path="*" element={<Navigate to="/" />} />

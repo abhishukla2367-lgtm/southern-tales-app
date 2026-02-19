@@ -5,15 +5,17 @@ import {
   Utensils,
   ClipboardList,
   CalendarDays,
+  BarChart2,
   LogOut,
 } from "lucide-react";
 import { AuthContext } from "../../context/AuthContext";
 
 const menuItems = [
-  { id: "dashboard",    label: "Dashboard",       icon: LayoutDashboard },
-  { id: "menu",         label: "Menu Management", icon: Utensils },
-  { id: "orders",       label: "Live Orders",     icon: ClipboardList },
-  { id: "reservations", label: "Reservations",    icon: CalendarDays },
+  { id: "dashboard",    label: "Dashboard",          icon: LayoutDashboard },
+  { id: "menu",         label: "Menu Management",    icon: Utensils },
+  { id: "orders",       label: "Live Orders",        icon: ClipboardList },
+  { id: "reservations", label: "Reservations",       icon: CalendarDays },
+  { id: "reports",      label: "Reports & Analytics", icon: BarChart2 }, // Task 3
 ];
 
 export default function Sidebar({ active, onChange }) {
@@ -116,7 +118,9 @@ export default function Sidebar({ active, onChange }) {
                 style={{
                   background: isActive ? "rgba(245,194,122,0.10)" : "transparent",
                   color: isActive ? "#f5c27a" : "#aaa",
-                  border: isActive ? "1px solid rgba(245,194,122,0.15)" : "1px solid transparent",
+                  border: isActive
+                    ? "1px solid rgba(245,194,122,0.15)"
+                    : "1px solid transparent",
                   animationDelay: `${i * 60}ms`,
                 }}
                 onMouseEnter={(e) => {
