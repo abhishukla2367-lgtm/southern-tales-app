@@ -24,9 +24,9 @@ exports.getAdminReservations = async (req, res) => {
  */
 exports.getAdminOrders = async (req, res) => {
     try {
-        // Requirement: Show order details + customer info
+        // FIX: populate "userId" to match Order.js schema (not "user")
         const orders = await Order.find()
-            .populate("user", "name email")
+            .populate("userId", "name email")
             .sort({ createdAt: -1 });
 
         res.status(200).json({ success: true, data: orders });

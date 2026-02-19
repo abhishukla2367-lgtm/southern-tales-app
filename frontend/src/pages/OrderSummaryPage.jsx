@@ -7,7 +7,7 @@ import { FaMapMarkerAlt, FaClock, FaCreditCard, FaChevronLeft, FaPhoneAlt, FaChe
 const OrderSummaryPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { cartItems } = useCart();
+  const { cartItems, clearCart } = useCart();
   
   const [address, setAddress] = useState(state?.details?.address || "");
   const [phone, setPhone] = useState(state?.details?.phone || "");
@@ -58,6 +58,7 @@ const OrderSummaryPage = () => {
 
     const result = await response.json();
     if (response.ok) {
+      clearCart();
       setOrderConfirmed(true);
       alert("Order Placed Successfully!");
       // Task 6: Redirect to profile so they can see "My Orders"
@@ -148,7 +149,7 @@ const OrderSummaryPage = () => {
                 <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition">
                   <option value="">Select Method</option>
                   <option value="UPI">UPI/GPay/Paypal</option>
-                  <option value="UPI">Credit Card</option>
+                  <option value="Credit">Credit Card</option>
                   <option value="COD">{isDelivery ? "Cash on Delivery" : "Pay at Store"}</option>
                 </select>
               </div>

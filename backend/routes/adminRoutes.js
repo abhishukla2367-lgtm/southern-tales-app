@@ -16,7 +16,7 @@ router.get("/reservations", protect, admin, async (req, res) => {
   try {
     // Populate user details (name/email) from the User model for a professional UI
     const allReservations = await Reservation.find()
-      .populate("user", "name email phone")
+      .populate("userId", "name email phone")
       .sort({ createdAt: -1 }); // Show newest bookings first
       
     res.status(200).json(allReservations);
@@ -33,7 +33,7 @@ router.get("/reservations", protect, admin, async (req, res) => {
 router.get("/orders", protect, admin, async (req, res) => {
   try {
     const allOrders = await Order.find()
-      .populate("user", "name email")
+      .populate("userId", "name email")
       .sort({ createdAt: -1 });
       
     res.status(200).json(allOrders);

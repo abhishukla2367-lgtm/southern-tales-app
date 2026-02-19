@@ -38,7 +38,7 @@ router.post("/", protect, async (req, res) => {
     // --- 3. CREATE ORDER ---
     // FIX: Using req.user.id to match your protect middleware exactly
     const newOrder = new Order({
-      user: req.user.id, 
+      userId: req.user.id, 
       items: formattedItems, 
       totalAmount: Number(totalAmount),
       deliveryInfo, 
@@ -50,7 +50,7 @@ router.post("/", protect, async (req, res) => {
 
     // --- 4. CLEAR CART (Task 8.2) ---
     // FIX: Using req.user.id to ensure the correct cart is deleted
-    await Cart.findOneAndDelete({ user: req.user.id }); 
+    await Cart.findOneAndDelete({ userId: req.user.id }); 
     
     res.status(201).json({ 
         success: true,
@@ -78,7 +78,7 @@ router.get("/my-orders", protect, async (req, res) => {
     const userId = new mongoose.Types.ObjectId(req.user.id);
 
     // Task 6: Fetch orders specifically for the logged-in user
-    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 });
     
     res.status(200).json({ 
       success: true, 
@@ -99,7 +99,7 @@ router.get("/my-orders", protect, async (req, res) => {
 router.get("/admin/all", protect, admin, async (req, res) => {
   try {
     const allOrders = await Order.find()
-      .populate("user", "name email") 
+      .populate("userId", "name email") 
       .sort({ createdAt: -1 });
       
     res.status(200).json(allOrders);

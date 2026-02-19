@@ -3,9 +3,8 @@ const User = require("../models/User");
 const Order = require("../models/Order"); 
 const Reservation = require("../models/Reservation");
 const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose"); // Added for ObjectId casting
+const mongoose = require("mongoose");
 
-// Use a consistent secret key name from your .env file
 const JWT_SECRET = process.env.JWT_SECRET || process.env.JWT_SEC;
 
 /**
@@ -74,10 +73,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    // FIX: Added missing comma after payload object
     const token = jwt.sign(
-      { id: user._id, role: user.role || "user" },
+      { id: user._id, role: user.role || "user", isAdmin: user.role === "admin" },
       JWT_SECRET,
-      { expiresIn: "1d" } // Changed to 1d for standard internship practice
+      { expiresIn: "1d" }
     );
 
     const userObject = user.toObject();
@@ -95,22 +95,16 @@ router.post("/login", async (req, res) => {
  */
 router.get("/profile", verifyToken, async (req, res) => {
   try {
-    // 1. Convert the string ID from the token to a MongoDB ObjectId
     const currentUserId = new mongoose.Types.ObjectId(req.user.id);
 
     const user = await User.findById(currentUserId).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // 2. Task 6: Fetch history using the new 'userId' key
     const [orders, reservations] = await Promise.all([
-      // ✅ Corrected: Querying by 'userId'
       Order.find({ userId: currentUserId }).sort({ createdAt: -1 }),
-      
-      // ✅ Corrected: Querying by 'userId' for Reservations
       Reservation.find({ userId: currentUserId }).sort({ date: -1 })
     ]);
 
-    // 3. Log results for easier debugging in your terminal
     console.log(`📊 Profile Sync [${user.email}]: Orders(${orders.length}) Res(${reservations.length})`);
 
     res.status(200).json({ 

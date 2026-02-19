@@ -8,16 +8,16 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // ✅ FIX: Attach both 'id' and '_id' to prevent undefined errors in controllers
       const userId = decoded.id || decoded._id;
       
       req.user = {      
-        _id: userId,       // For MongoDB compatibility
+        id: userId,        // ✅ For controllers using req.user.id
+        _id: userId,       // ✅ For controllers using req.user._id
         role: decoded.role,
         isAdmin: decoded.isAdmin
       };
 
-      return next(); // Use return to stop execution here
+      return next();
     } catch (error) {
       console.error("Token verification error:", error.message);
       return res.status(401).json({ message: "Session expired. Please login again." });

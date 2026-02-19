@@ -2,14 +2,11 @@ const mongoose = require("mongoose");
 
 const ReservationSchema = new mongoose.Schema(
   {
-    // TASK 2 & 6: Links reservation to a specific User
-    // Changed 'user' to 'userId' to match your Profile Controller query
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    // TASK 7: Admin needs these details visible on the Admin Side
     customerName: {
       type: String,
       required: true
@@ -17,6 +14,9 @@ const ReservationSchema = new mongoose.Schema(
     customerEmail: {
       type: String,
       required: true
+    },
+    phone: {
+      type: String,  // ✅ Added to store phone from Reservation form
     },
     date: { 
       type: Date, 
@@ -33,9 +33,8 @@ const ReservationSchema = new mongoose.Schema(
     },
     tableNumber: { 
       type: String,
-      default: "TBD" // Set to To Be Decided initially
+      default: "TBD"
     }, 
-    // TASK 7: Helps Admin manage the reservation flow
     status: {
       type: String,
       default: "Confirmed",
@@ -47,7 +46,6 @@ const ReservationSchema = new mongoose.Schema(
       default: ""
     }
   },
-  // TASK 6: Timestamps allow sorting "My Reservations" by newest first
   { timestamps: true }
 );
 

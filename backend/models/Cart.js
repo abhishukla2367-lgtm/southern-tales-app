@@ -1,27 +1,24 @@
 const mongoose = require('mongoose');
 
 const cartSchema = new mongoose.Schema({
-    // Requirement #2: Link to User in MongoDB Atlas
-    user: {
+    // FIX 1: Changed 'user' to 'userId' to match cartController.js
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
     items: [
         {
-            // Task 8: Added items should appear in Cart
+            // FIX 3: Added productId and image to match cartController.js
+            productId: { type: String },
             name: { type: String, required: true },
             price: { type: Number, required: true },
             quantity: { type: Number, required: true, default: 1 },
-            // Optional: Link to a Product model if you have one
-            product: { 
-                type: mongoose.Schema.Types.ObjectId, 
-                ref: 'Product' 
-            }
+            image: { type: String }
         }
     ],
-    // Total price of all items in the cart
-    totalPrice: {
+    // FIX 2: Changed 'totalPrice' to 'totalBill' to match cartController.js
+    totalBill: {
         type: Number,
         default: 0
     }

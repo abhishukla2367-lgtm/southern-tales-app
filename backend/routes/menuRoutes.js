@@ -1,30 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
+const MenuItem = require("../models/Menu"); // FIX: Import from dedicated model file
+const { protect, admin } = require("../middleware/protect"); // FIX: Import middleware
 
-// --- 1. DEFINE THE MENU SCHEMA (Requirement #2) ---
-const menuSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  category: { 
-    type: String, 
-    required: true,
-    enum: ["Breakfast", "Starters", "Main Course", "Desserts", "Beverages"] // Matches Frontend
-  },
-  price: { type: Number, required: true }, // Must be Number for Frontend filters
-  veg: { type: Boolean, default: true },
-  description: { type: String },
-  image: { type: String, required: true }, // Matches frontend imageMap keys
-  available: { type: Boolean, default: true }
-}, { 
-  timestamps: true,
-  collection: "menu" // 👈 CRITICAL: This forces Mongoose to use your 'menu' collection in Atlas
-});
-
-// Prevent model overwrite error in development
-const MenuItem = mongoose.models.MenuItem || mongoose.model("MenuItem", menuSchema);
-
-// --- 2. PUBLIC ROUTE: GET ALL MENU ITEMS (Task #4) ---
-// Requirement: Allow users to browse website without login
+// --- PUBLIC ROUTE: GET ALL MENU ITEMS ---
+// No auth required — users can browse without login
 router.get("/", async (req, res) => {
   try {
     const items = await MenuItem.find();
@@ -36,14 +16,25 @@ router.get("/", async (req, res) => {
   }
 });
 
-// --- 3. ADMIN ROUTE: UPDATE ITEM (Task #7 & #8) ---
-// Used for Admin Dashboard to manage Menu items
-router.patch("/:id", async (req, res) => {
+// --- ADMIN ROUTE: ADD NEW ITEM ---
+// FIX: Added protect + admin middleware
+router.post("/add", protect, admin, async (req, res) => {
   try {
-    const { id } = req.params;
+    const newItem = new MenuItem(req.body);
+    await newItem.save();
+    res.status(201).json({ success: true, message: "Item added successfully!" });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// --- ADMIN ROUTE: UPDATE ITEM ---
+// FIX: Added protect + admin middleware
+router.patch("/:id", protect, admin, async (req, res) => {
+  try {
     const updatedItem = await MenuItem.findByIdAndUpdate(
-      id,
-      { $set: req.body }, // Can update price, availability, or category
+      req.params.id,
+      { $set: req.body },
       { new: true }
     );
 
@@ -58,19 +49,9 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-// --- 4. ADMIN ROUTE: ADD NEW ITEM (Task #7) ---
-router.post("/add", async (req, res) => {
-  try {
-    const newItem = new MenuItem(req.body);
-    await newItem.save();
-    res.status(201).json({ success: true, message: "Item added to Atlas successfully!" });
-  } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-});
-
-// --- 5. ADMIN ROUTE: DELETE ITEM (Task #7) ---
-router.delete("/:id", async (req, res) => {
+// --- ADMIN ROUTE: DELETE ITEM ---
+// FIX: Added protect + admin middleware
+router.delete("/:id", protect, admin, async (req, res) => {
   try {
     await MenuItem.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: "Item deleted" });

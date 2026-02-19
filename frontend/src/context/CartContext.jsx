@@ -1,78 +1,104 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import API from "../api/axiosConfig";
 
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  // FIX: Default to empty string so Delivery apps are hidden until clicked
-  const [orderType, setOrderType] = useState(""); 
+  const [orderType, setOrderType] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Load cart from localStorage on mount
+  // Load cart from MongoDB on mount (only if user is logged in)
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    setCartItems(savedCart);
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchCart();
+    }
   }, []);
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
-
-  // FIX: Multi-item Logic (Appends new items, updates quantity for existing)
-  const addToCart = (newItem) => {
-    setCartItems((prevItems) => {
-      const exists = prevItems.find((item) => item._id === newItem._id);
-      if (exists) {
-        return prevItems.map((item) =>
-          item._id === newItem._id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      // If item is new, append it to the array
-      return [...prevItems, { ...newItem, quantity: 1 }];
-    });
+  // Fetch cart from MongoDB
+  const fetchCart = async () => {
+    try {
+      setLoading(true);
+      const { data } = await API.get("/cart");
+      setCartItems(data.items || []);
+    } catch (error) {
+      console.error("Failed to fetch cart:", error.message);
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateQuantity = (id, newQuantity) => {
+  // Add item to MongoDB cart
+  const addToCart = async (newItem) => {
+    try {
+      const { data } = await API.post("/cart/add", {
+        productId: newItem._id,
+        name: newItem.name,
+        price: newItem.price,
+        quantity: 1,
+        image: newItem.image,
+      });
+      setCartItems(data.items || []);
+    } catch (error) {
+      console.error("Failed to add to cart:", error.message);
+      alert("Failed to add item to cart. Please try again.");
+    }
+  };
+
+  // Update quantity - re-add with new quantity
+  const updateQuantity = async (id, newQuantity) => {
     if (newQuantity < 1) return removeFromCart(id);
-    setCartItems((prev) =>
-      prev.map((item) => (item._id === id ? { ...item, quantity: newQuantity } : item))
-    );
+    try {
+      // Update local state immediately for responsive UI
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.productId === id || item._id === id
+            ? { ...item, quantity: newQuantity }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error("Failed to update quantity:", error.message);
+    }
   };
 
-  const removeFromCart = (id) => {
-    setCartItems((prev) => prev.filter((item) => item._id !== id));
+  // Remove item from MongoDB cart
+  const removeFromCart = async (id) => {
+    try {
+      const { data } = await API.delete(`/cart/item/${id}`);
+      setCartItems(data.items || []);
+    } catch (error) {
+      console.error("Failed to remove item:", error.message);
+      alert("Failed to remove item. Please try again.");
+    }
   };
 
-  const clearCart = () => {
-    setCartItems([]);
-    setOrderType(""); // Reset order type on clear
+  // Clear entire cart from MongoDB
+  const clearCart = async () => {
+    try {
+      await API.delete("/cart/clear");
+      setCartItems([]);
+      setOrderType("");
+    } catch (error) {
+      console.error("Failed to clear cart:", error.message);
+      // Still clear local state even if API fails
+      setCartItems([]);
+      setOrderType("");
+    }
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    return cartItems.reduce(
+      (total, item) => total + Number(item.price) * item.quantity,
+      0
+    );
   };
 
-  // Header Count Logic: Sum of all quantities
   const getCartCount = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const placeOrder = async (user, deliveryDetails) => {
-    setIsPlacingOrder(true);
-    try {
-      // Replace with your actual [API endpoint](https://developer.mozilla.org) logic
-      console.log("Placing Order for:", user.name, deliveryDetails);
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
-      alert("Order Placed Successfully!");
-      clearCart();
-    } catch (error) {
-      console.error("Order Failed", error);
-    } finally {
-      setIsPlacingOrder(false);
-    }
   };
 
   return (
@@ -87,8 +113,9 @@ export const CartProvider = ({ children }) => {
         getCartCount,
         orderType,
         setOrderType,
-        placeOrder,
         isPlacingOrder,
+        loading,
+        fetchCart,
       }}
     >
       {children}
