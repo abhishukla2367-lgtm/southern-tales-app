@@ -3,20 +3,22 @@ import API from "../../api/axiosConfig";
 import EmptyState from "./EmptyState";
 import ErrorState from "./ErrorState";
 
-const statusStyles = {
-  Pending:    { color: "#f5c27a", bg: "rgba(245,194,122,0.1)" },
-  Processing: { color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
-  Preparing:  { color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
-  Shipped:    { color: "#a78bfa", bg: "rgba(167,139,250,0.1)" },
-  Delivered:  { color: "#34d399", bg: "rgba(52,211,153,0.1)" },
-  Completed:  { color: "#34d399", bg: "rgba(52,211,153,0.1)" },
-  Cancelled:  { color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+const STATUS_STYLES = {
+  Pending:    "bg-[#f5c27a]/10 text-[#f5c27a] border border-[#f5c27a]/30",
+  Processing: "bg-blue-400/10 text-blue-400 border border-blue-400/30",
+  Preparing:  "bg-blue-400/10 text-blue-400 border border-blue-400/30",
+  Shipped:    "bg-violet-400/10 text-violet-400 border border-violet-400/30",
+  Delivered:  "bg-emerald-400/10 text-emerald-400 border border-emerald-400/30",
+  Completed:  "bg-emerald-400/10 text-emerald-400 border border-emerald-400/30",
+  Cancelled:  "bg-red-400/10 text-red-400 border border-red-400/30",
 };
 
+const STATUS_OPTIONS = ["Pending", "Processing", "Preparing", "Shipped", "Delivered", "Completed", "Cancelled"];
+
 export default function OrdersList() {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError]     = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -33,37 +35,35 @@ export default function OrdersList() {
     fetchOrders();
   }, []);
 
+  const updateStatus = async (id, status) => {
+    try {
+      await API.patch(`/orders/${id}/status`, { status });
+      setOrders((prev) =>
+        prev.map((o) => (o._id === id ? { ...o, status } : o))
+      );
+    } catch (err) {
+      console.error("Status update failed:", err.message);
+      alert("Failed to update order status.");
+    }
+  };
+
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div
-          className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: "#f5c27a", borderTopColor: "transparent" }}
-        />
-        <p className="text-sm font-bold" style={{ color: "#aaa" }}>
-          Loading orders...
-        </p>
+        <div className="w-10 h-10 rounded-full border-2 border-[#f5c27a] border-t-transparent animate-spin" />
+        <p className="text-sm font-bold text-[#aaa]">Loading orders...</p>
       </div>
     );
+
   if (error) return <ErrorState />;
   if (!orders.length) return <EmptyState />;
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{ background: "#111111", border: "1px solid #1f1f1f" }}
-    >
+    <div className="rounded-2xl overflow-hidden bg-[#111111] border border-[#1f1f1f]">
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr
-              className="text-[10px] uppercase tracking-[0.2em] font-black"
-              style={{
-                background: "#161616",
-                color: "#aaa",
-                borderBottom: "1px solid #1f1f1f",
-              }}
-            >
+            <tr className="text-[10px] uppercase tracking-[0.2em] font-black bg-[#161616] text-[#aaa] border-b border-[#1f1f1f]">
               <th className="px-6 py-4">Order ID</th>
               <th className="px-6 py-4">Customer</th>
               <th className="px-6 py-4">Items</th>
@@ -74,60 +74,54 @@ export default function OrdersList() {
           </thead>
           <tbody>
             {orders.map((order) => {
-              const style = statusStyles[order.status] || { color: "#aaa", bg: "#1a1a1a" };
+              const statusClass = STATUS_STYLES[order.status] || "bg-zinc-800 text-zinc-400 border border-zinc-600";
               return (
                 <tr
                   key={order._id}
-                  style={{ borderBottom: "1px solid #1a1a1a" }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#161616")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors"
                 >
-                  <td
-                    className="px-6 py-4 text-xs font-black"
-                    style={{ color: "#f5c27a" }}
-                  >
+                  {/* Order ID */}
+                  <td className="px-6 py-4 text-xs font-black text-[#f5c27a]">
                     #{order._id?.slice(-6).toUpperCase()}
                   </td>
+
+                  {/* Customer */}
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold" style={{ color: "#f1f1f1" }}>
+                    <p className="text-sm font-bold text-[#f1f1f1]">
                       {order.userId?.name || "Guest"}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: "#555" }}>
+                    <p className="text-xs mt-0.5 text-[#555]">
                       {order.userId?.email || "—"}
                     </p>
                   </td>
-                  <td
-                    className="px-6 py-4 text-sm"
-                    style={{ color: "#aaa" }}
-                  >
+
+                  {/* Items */}
+                  <td className="px-6 py-4 text-sm text-[#aaa]">
                     {order.items?.length || 0} item{order.items?.length !== 1 ? "s" : ""}
                   </td>
-                  <td
-                    className="px-6 py-4 font-black text-sm"
-                    style={{ color: "#34d399" }}
-                  >
+
+                  {/* Total */}
+                  <td className="px-6 py-4 font-black text-sm text-emerald-400">
                     ₹{order.totalAmount}
                   </td>
+
+                  {/* Status — inline editable dropdown */}
                   <td className="px-6 py-4">
-                    <span
-                      className="px-2.5 py-1 rounded-lg text-xs font-bold"
-                      style={{ background: style.bg, color: style.color }}
+                    <select
+                      className={`${statusClass} rounded-lg px-2.5 py-1 text-xs font-bold outline-none cursor-pointer bg-transparent`}
+                      value={order.status || "Pending"}
+                      onChange={(e) => updateStatus(order._id, e.target.value)}
                     >
-                      {order.status}
-                    </span>
+                      {STATUS_OPTIONS.map((s) => (
+                        <option key={s} value={s} className="bg-[#111111] text-white">{s}</option>
+                      ))}
+                    </select>
                   </td>
-                  <td
-                    className="px-6 py-4 text-xs"
-                    style={{ color: "#555" }}
-                  >
+
+                  {/* Date */}
+                  <td className="px-6 py-4 text-xs text-[#555]">
                     {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
+                      day: "2-digit", month: "short", year: "numeric",
                     })}
                   </td>
                 </tr>
