@@ -9,17 +9,13 @@ import API from "../../api/axiosConfig";
 const REFRESH_INTERVAL = 15000;
 const CHART_HEIGHT = 240;
 
-// ✅ Measures its own width and passes explicit px dimensions to Recharts.
-// This permanently eliminates the ResponsiveContainer width=-1 warning.
 function ChartBox({ children }) {
   const ref = useRef(null);
   const [width, setWidth] = useState(0);
 
   useEffect(() => {
     if (!ref.current) return;
-    // Set initial width
     setWidth(ref.current.offsetWidth);
-    // Update on resize
     const ro = new ResizeObserver(() => {
       if (ref.current) setWidth(ref.current.offsetWidth);
     });
@@ -29,7 +25,6 @@ function ChartBox({ children }) {
 
   return (
     <div ref={ref} className="w-full" style={{ height: CHART_HEIGHT }}>
-      {/* Only render chart once we have a real positive width */}
       {width > 0 ? children(width) : null}
     </div>
   );
@@ -39,13 +34,11 @@ export default function DashboardCards() {
   const [data, setData]               = useState({ todayOrders: 0, pendingOrders: 0, reservations: 0, revenue: 0 });
   const [history, setHistory]         = useState([]);
   const [loading, setLoading]         = useState(true);
-  const [refreshing, setRefreshing]   = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isLive, setIsLive]           = useState(true);
   const [error, setError]             = useState(null);
 
-  const fetchDashboardData = useCallback(async (isManual = false) => {
-    if (isManual) setRefreshing(true);
+  const fetchDashboardData = useCallback(async () => {
     setError(null);
     try {
       const [ordersRes, reservationsRes] = await Promise.allSettled([
@@ -84,7 +77,6 @@ export default function DashboardCards() {
       setIsLive(false);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
@@ -95,9 +87,9 @@ export default function DashboardCards() {
   }, [fetchDashboardData]);
 
   const stats = [
-    { label: "Today's Orders",       value: data.todayOrders,   icon: ShoppingBag, color: "text-blue-400",    iconBg: "bg-blue-400/10 border border-blue-400/20",    accent: "bg-blue-400",    hover: "hover:border-blue-400/40" },
-    { label: "Pending Orders",       value: data.pendingOrders, icon: Timer,        color: "text-[#f5c27a]",   iconBg: "bg-[#f5c27a]/10 border border-[#f5c27a]/20",  accent: "bg-[#f5c27a]",   hover: "hover:border-[#f5c27a]/40" },
-    { label: "Today's Reservations", value: data.reservations,  icon: Calendar,     color: "text-violet-400",  iconBg: "bg-violet-400/10 border border-violet-400/20", accent: "bg-violet-400",  hover: "hover:border-violet-400/40" },
+    { label: "Today's Orders",       value: data.todayOrders,   icon: ShoppingBag,  color: "text-blue-400",    iconBg: "bg-blue-400/10 border border-blue-400/20",    accent: "bg-blue-400",    hover: "hover:border-blue-400/40" },
+    { label: "Pending Orders",       value: data.pendingOrders, icon: Timer,         color: "text-[#f5c27a]",   iconBg: "bg-[#f5c27a]/10 border border-[#f5c27a]/20",  accent: "bg-[#f5c27a]",   hover: "hover:border-[#f5c27a]/40" },
+    { label: "Today's Reservations", value: data.reservations,  icon: Calendar,      color: "text-violet-400",  iconBg: "bg-violet-400/10 border border-violet-400/20", accent: "bg-violet-400",  hover: "hover:border-violet-400/40" },
     { label: "Today's Revenue",      value: `₹${data.revenue.toLocaleString("en-IN")}`, icon: IndianRupee, color: "text-emerald-400", iconBg: "bg-emerald-400/10 border border-emerald-400/20", accent: "bg-emerald-400", hover: "hover:border-emerald-400/40" },
   ];
 
@@ -138,35 +130,27 @@ export default function DashboardCards() {
         .recharts-tooltip-wrapper { outline: none !important; }
       `}</style>
 
-      {/* Status bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          {isLive ? (
-            <>
-              <span className="live-dot w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Live</span>
-              <Wifi size={13} className="text-emerald-400" />
-            </>
-          ) : (
-            <>
-              <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
-              <span className="text-xs font-bold text-red-400 uppercase tracking-widest">Offline</span>
-              <WifiOff size={13} className="text-red-400" />
-            </>
-          )}
-          {lastUpdated && (
-            <span className="text-xs text-zinc-600 ml-2">Updated {lastUpdated.toLocaleTimeString("en-IN")}</span>
-          )}
-          <span className="text-xs text-zinc-700 ml-1">· auto-refreshes every 15s</span>
-        </div>
-        <button
-          onClick={() => fetchDashboardData(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 border border-zinc-800 text-zinc-400 hover:border-[#f5c27a] hover:text-[#f5c27a] transition-all disabled:opacity-50"
-        >
-          <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
-          {refreshing ? "Refreshing…" : "Refresh Now"}
-        </button>
+      {/* Status bar — live indicator only, NO Refresh Now button */}
+      <div className="flex items-center gap-2">
+        {isLive ? (
+          <>
+            <span className="live-dot w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Live</span>
+            <Wifi size={13} className="text-emerald-400" />
+          </>
+        ) : (
+          <>
+            <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+            <span className="text-xs font-bold text-red-400 uppercase tracking-widest">Offline</span>
+            <WifiOff size={13} className="text-red-400" />
+          </>
+        )}
+        {lastUpdated && (
+          <span className="text-xs text-zinc-400 ml-2">
+            Updated {lastUpdated.toLocaleTimeString("en-IN")}
+          </span>
+        )}
+        <span className="text-xs text-zinc-500 ml-1">· auto-refreshes every 15s</span>
       </div>
 
       {/* Error */}
@@ -202,18 +186,17 @@ export default function DashboardCards() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart */}
         <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800">
           <h3 className="text-base font-bold text-zinc-100">Live Snapshot</h3>
-          <p className="text-xs text-zinc-600 mt-1 mb-5">Current counts right now</p>
+          <p className="text-xs text-zinc-500 mt-1 mb-5">Current counts right now</p>
           <ChartBox>
             {(w) => (
               <BarChart width={w} height={CHART_HEIGHT} data={barData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                <XAxis dataKey="name" stroke="#52525b" tick={{ fill: "#71717a", fontSize: 12 }} />
-                <YAxis stroke="#52525b" tick={{ fill: "#71717a", fontSize: 12 }} />
+                <XAxis dataKey="name" stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                <YAxis stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                 <Tooltip {...tooltipStyle} />
-                <Legend wrapperStyle={{ paddingTop: "16px", fontSize: "12px" }} />
+                <Legend wrapperStyle={{ paddingTop: "16px", fontSize: "12px", color: "#d4d4d8" }} />
                 <Bar dataKey="Orders"       fill="#60a5fa" radius={[4,4,0,0]} />
                 <Bar dataKey="Pending"      fill="#f5c27a" radius={[4,4,0,0]} />
                 <Bar dataKey="Reservations" fill="#a78bfa" radius={[4,4,0,0]} />
@@ -222,14 +205,13 @@ export default function DashboardCards() {
           </ChartBox>
         </div>
 
-        {/* Line Chart */}
         <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800">
           <h3 className="text-base font-bold text-zinc-100">Activity Trend</h3>
-          <p className="text-xs text-zinc-600 mt-1 mb-5">Last {history.length} snapshots</p>
+          <p className="text-xs text-zinc-500 mt-1 mb-5">Last {history.length} snapshots</p>
           <ChartBox>
             {(w) =>
               history.length < 2 ? (
-                <div className="h-full flex flex-col items-center justify-center gap-2 text-zinc-600">
+                <div className="h-full flex flex-col items-center justify-center gap-2 text-zinc-500">
                   <RefreshCw size={20} className="animate-spin opacity-40" />
                   <p className="text-sm">Collecting trend data…</p>
                   <p className="text-xs">auto-refreshes every 15s</p>
@@ -237,10 +219,10 @@ export default function DashboardCards() {
               ) : (
                 <LineChart width={w} height={CHART_HEIGHT} data={history} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                  <XAxis dataKey="time" stroke="#52525b" tick={{ fill: "#71717a", fontSize: 9 }} />
-                  <YAxis stroke="#52525b" tick={{ fill: "#71717a", fontSize: 12 }} />
+                  <XAxis dataKey="time" stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 9 }} />
+                  <YAxis stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
                   <Tooltip {...tooltipStyle} />
-                  <Legend wrapperStyle={{ paddingTop: "16px", fontSize: "12px" }} />
+                  <Legend wrapperStyle={{ paddingTop: "16px", fontSize: "12px", color: "#d4d4d8" }} />
                   <Line type="monotone" dataKey="todayOrders"   stroke="#60a5fa" strokeWidth={2} dot={false} name="Orders" />
                   <Line type="monotone" dataKey="pendingOrders" stroke="#f5c27a" strokeWidth={2} dot={false} name="Pending" />
                   <Line type="monotone" dataKey="reservations"  stroke="#a78bfa" strokeWidth={2} dot={false} name="Reservations" />
@@ -257,7 +239,7 @@ export default function DashboardCards() {
           <h3 className="text-base font-bold text-zinc-100">Today's Revenue</h3>
           <span className="text-xs font-mono text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full">Live</span>
         </div>
-        <p className="text-xs text-zinc-600 mb-5">From today's completed orders</p>
+        <p className="text-xs text-zinc-500 mb-5">From today's completed orders</p>
         <p className="text-5xl font-black text-emerald-400 tabular-nums">
           ₹{data.revenue.toLocaleString("en-IN")}
         </p>
@@ -267,7 +249,7 @@ export default function DashboardCards() {
             style={{ width: `${Math.min((data.revenue / 50000) * 100, 100)}%` }}
           />
         </div>
-        <p className="text-xs text-zinc-600 mt-2">
+        <p className="text-xs text-zinc-500 mt-2">
           {Math.min(Math.round((data.revenue / 50000) * 100), 100)}% of daily target · ₹50,000
         </p>
       </div>
