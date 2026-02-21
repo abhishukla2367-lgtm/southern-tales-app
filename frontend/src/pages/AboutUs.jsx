@@ -33,7 +33,7 @@ export default function About() {
           <div className="inline-flex items-center gap-3 mb-6">
             <div className="h-[1px] w-12 bg-orange-500"></div>
             <span className="text-xs uppercase tracking-[0.4em] text-orange-500 font-black">
-              ESTABLISHED 2015
+              ESTABLISHED 2010
             </span>
             <div className="h-[1px] w-12 bg-orange-500"></div>
           </div>

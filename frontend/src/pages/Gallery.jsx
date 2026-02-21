@@ -43,7 +43,7 @@ function Gallery() {
             : images.filter((img) => img.category === activeCategory);
 
     return (
-        <section className="bg-black text-white py-24 px-4 min-h-screen">
+        <section className="bg-black text-white pt-28 pb-24 px-4 min-h-screen">
             <div className="max-w-7xl mx-auto">
 
                 {/* Header */}
@@ -107,8 +107,10 @@ function Gallery() {
                     onClick={() => setSelectedImage(null)}
                 >
                     {/* Close Button */}
-                    <button className="absolute top-8 right-8 text-white text-3xl font-light hover:text-orange-500 transition-colors">
-                        &times;
+                    <button onClick={() => setSelectedImage(null)}
+                    className="absolute top-8 right-8 text-white text-3xl font-light hover:text-orange-500 transition-colors"
+                    >
+                    &times;
                     </button>
 
                     <img

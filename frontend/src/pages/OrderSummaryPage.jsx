@@ -61,10 +61,8 @@ const OrderSummaryPage = () => {
       clearCart();
       setOrderConfirmed(true);
       alert("Order Placed Successfully!");
+      navigate("/");
       // Task 6: Redirect to profile so they can see "My Orders"
-      setTimeout(() => {
-        navigate("/profile"); 
-      }, 2000);
     } else {
       alert(`Order Failed: ${result.error || result.message}`);
     }
@@ -141,7 +139,7 @@ const OrderSummaryPage = () => {
 
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><FaClock /> Preferred Time</label>
-                <input type="text" placeholder="e.g. 30 mins" value={time} onChange={(e) => setTime(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
+                <input type="text" placeholder="e.g. 40-50 minuntes" value={time} onChange={(e) => setTime(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
               </div>
 
               <div className="space-y-2">
@@ -163,7 +161,7 @@ const OrderSummaryPage = () => {
               <span className="text-3xl font-black text-yellow-500">{formatCurrency(totalAmount)}</span>
             </div>
             <div className="flex gap-4">
-              <button onClick={() => navigate("/cart")} className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all">Cancel</button>
+              <button onClick={() => { clearCart(); navigate("/"); }} className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all">Cancel</button>
               <button onClick={handleConfirmOrder} className="flex-1 py-4 bg-yellow-400 hover:bg-yellow-500 text-black rounded-xl font-black transition-all">Confirm Order</button>
             </div>
           </div>

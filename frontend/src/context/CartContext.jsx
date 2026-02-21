@@ -48,11 +48,10 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Update quantity - re-add with new quantity
+  // Update quantity
   const updateQuantity = async (id, newQuantity) => {
     if (newQuantity < 1) return removeFromCart(id);
     try {
-      // Update local state immediately for responsive UI
       setCartItems((prev) =>
         prev.map((item) =>
           item.productId === id || item._id === id
@@ -67,11 +66,17 @@ export const CartProvider = ({ children }) => {
 
   // Remove item from MongoDB cart
   const removeFromCart = async (id) => {
+    const previousItems = cartItems;
+    // Optimistically remove from UI immediately
+    setCartItems((prev) =>
+      prev.filter((item) => item.productId !== id && item._id !== id)
+    );
     try {
       const { data } = await API.delete(`/cart/item/${id}`);
       setCartItems(data.items || []);
     } catch (error) {
       console.error("Failed to remove item:", error.message);
+      setCartItems(previousItems); // Revert on failure
       alert("Failed to remove item. Please try again.");
     }
   };
@@ -84,7 +89,6 @@ export const CartProvider = ({ children }) => {
       setOrderType("");
     } catch (error) {
       console.error("Failed to clear cart:", error.message);
-      // Still clear local state even if API fails
       setCartItems([]);
       setOrderType("");
     }

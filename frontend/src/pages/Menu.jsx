@@ -84,8 +84,7 @@ const menuItems = [
 
 const categories = ["All", "Breakfast", "Starters", "Main Course", "Desserts", "Beverages"];
 export default function Menu() {
-  // Cart context
-  const user = JSON.parse(localStorage.getItem("user"));
+  const navigate = useNavigate();
   const { isLoggedIn } = useAuth(); 
   const { addToCart } = useCart();
   const handleAddToCartWithLogin = (item) => {
@@ -97,7 +96,6 @@ export default function Menu() {
   // Proceed normally if already logged in
   addToCart(item);
 };
-  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVeg, setSelectedVeg] = useState("All");

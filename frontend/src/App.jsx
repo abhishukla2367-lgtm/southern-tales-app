@@ -66,14 +66,12 @@ const Layout = ({ children }) => {
   const { pathname } = useLocation();
 
   const isAdminRoute = pathname.startsWith("/admin");
-  const isAuthPage   = ["/login", "/register", "/forgot-password", "/verify-otp"].includes(pathname);
 
   return (
     <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-black text-white"}>
       {!isAdminRoute && <Header />}
       <main className={isAdminRoute ? "" : "min-h-screen"}>{children}</main>
-      {/* Footer shown on all non-admin, non-auth pages (including /cart) */}
-      {!isAdminRoute && !isAuthPage && <Footer />}
+      {!isAdminRoute && <Footer />}
     </div>
   );
 };

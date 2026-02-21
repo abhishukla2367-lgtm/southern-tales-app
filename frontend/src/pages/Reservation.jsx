@@ -34,9 +34,10 @@ export default function Reservation() {
     const validate = () => {
         const newErrors = {};
         if (!form.name) newErrors.name = "Name is required";
-        if (!form.email) newErrors.email = "Email is required";
-        if (!form.phone || form.phone.length < 10)
-            newErrors.phone = "Valid phone number required";
+        if (!form.email || !/^\S+@\S+\.\S+$/.test(form.email))
+            newErrors.email = "Valid email required";
+        if (!form.phone || !/^\d{10}$/.test(form.phone))
+            newErrors.phone = "10-digit phone number required";
         if (!form.date) newErrors.date = "Date is required";
         if (!form.time) newErrors.time = "Time is required";
         if (!form.guests) newErrors.guests = "Select number of guests";
@@ -66,7 +67,7 @@ export default function Reservation() {
             alert("Table reserved successfully!");
             setForm({ name: "", email: "", phone: "", date: "", time: "", guests: "" });
             setErrors({});
-            navigate("/profile");
+            navigate("/");
         } catch (err) {
             console.error("Reservation Error:", err);
             alert(err.response?.data?.message || "Failed to book table.");
@@ -159,6 +160,7 @@ export default function Reservation() {
                                 autoComplete="off"
                                 value={form.date}
                                 onChange={handleChange}
+                                min={new Date().toISOString().split('T')[0]}
                                 className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none [color-scheme:dark]"
                             />
                             {errors.date && <p className="text-red-400 text-xs mt-1 font-medium">{errors.date}</p>}

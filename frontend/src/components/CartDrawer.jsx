@@ -100,10 +100,10 @@ const CartDrawer = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="bg-gray-800 px-2 rounded hover:bg-gray-700 text-white">-</button>
+                  <button onClick={() => updateQuantity(item.productId || item._id, item.quantity - 1)} className="bg-gray-800 px-2 rounded hover:bg-gray-700 text-white">-</button>
                   <span className="px-2">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item._id, item.quantity + 1)} className="bg-gray-800 px-2 rounded hover:bg-gray-700 text-white">+</button>
-                  <button onClick={() => removeFromCart(item._id)} className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 ml-2 text-sm">Remove</button>
+                  <button onClick={() => updateQuantity(item.productId || item._id, item.quantity + 1)} className="bg-gray-800 px-2 rounded hover:bg-gray-700 text-white">+</button>
+                  <button onClick={() => removeFromCart(item.productId || item._id)} className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 ml-2 text-sm">Remove</button>
                 </div>
               </div>
             ))}
@@ -144,16 +144,16 @@ const CartDrawer = () => {
                     ))}
                   </div>
                   <div className="mt-5 space-y-3">
-                    <input type="text" placeholder="Enter delivery address" value={userAddressState} onChange={(e) => setUserAddressState(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
-                    <input type="text" placeholder="Preferred delivery time" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
-                    <input type="text" placeholder="Enter phone number" value={userPhoneState} onChange={(e) => setUserPhoneState(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
+                    <input type="text" placeholder="CBD Belapur,Navi Mumbai" value={userAddressState} onChange={(e) => setUserAddressState(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
+                    <input type="text" placeholder="eg. 30-45 minutes" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
+                    <input type="text" placeholder="Enter 10 digit phone number" value={userPhoneState} onChange={(e) => setUserPhoneState(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
                   </div>
                 </div>
               )}
 
               {orderType === "pickup" && (
                 <div className="mt-5">
-                  <input type="text" placeholder="Preferred pickup time" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
+                  <input type="text" placeholder="eg. 40-50 minutes" value={preferredTime} onChange={(e) => setPreferredTime(e.target.value)} className="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-400 outline-none text-white" />
                 </div>
               )}
             </div>
