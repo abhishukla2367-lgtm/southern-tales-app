@@ -2,82 +2,132 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaFacebookF, FaInstagram } from "react-icons/fa";
 import { SiX } from "react-icons/si";
+import { MapPin, Phone, Mail, Clock } from "lucide-react";
 
 const Footer = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const scrollToSection = (path, sectionId) => {
+  const handleNav = (path) => {
+    window.scrollTo({ top: 0, behavior: "instant" });
     if (location.pathname === path) {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      navigate(path, { state: { scrollToId: sectionId } });
+      navigate(path);
     }
   };
 
   const links = [
-    { label: "Home", action: () => scrollToSection("/", "home") },
-    { label: "Menu", action: () => scrollToSection("/menu", "hero-section") },
-    { label: "Reservation", action: () => scrollToSection("/", "reservation") },
-    { label: "Contact", action: () => scrollToSection("/", "contact") },
+    { label: "Home",        path: "/" },
+    { label: "Menu",        path: "/menu" },
+    { label: "About Us",    path: "/about" },
+    { label: "Gallery",     path: "/gallery" },
+    { label: "Reservation", path: "/reservation" },
+    { label: "Contact",     path: "/contactus" },
   ];
 
   const socialLinks = [
     { icon: <FaFacebookF />, href: "https://facebook.com" },
     { icon: <FaInstagram />, href: "https://instagram.com" },
-    { icon: <SiX />, href: "https://x.com" },
+    { icon: <SiX />,         href: "https://x.com" },
   ];
 
+  const contactInfo = [
+    { Icon: MapPin, text: "CBD Belapur, Navi Mumbai, Maharashtra" },
+    { Icon: Phone,  text: "+91 98765 43210" },
+    { Icon: Mail,   text: "hello@southerntales.in" },
+    { Icon: Clock,  text: "Mon – Fri: 7 AM – 10:30 PM\nSat – Sun: 8 AM – 11 PM" },
+  ];
+
+  const services = ["Dine In", "Takeaway", "Online Order", "Reservation", "Catering", "Events"];
+
   return (
-    <footer className="bg-gray-800 text-gray-300">
-      <div className="max-w-7xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8">
-        {/* Left: Logo + Description + Social */}
-        <div>
-          <h3 className="text-xl font-bold text-white mb-2">Southern Tales</h3>
-          <p className="mb-4">Authentic South Indian dining experience.</p>
-          <div className="flex gap-4">
-            {socialLinks.map((social, index) => (
-              <a
-                key={index}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-300 hover:text-orange-400 text-xl transition"
-              >
-                {social.icon}
-              </a>
-            ))}
+    <footer className="bg-[#0a0a0a] border-t border-white/10 pt-20 pb-8 px-6">
+      <div className="max-w-6xl mx-auto">
+
+        {/* ── Top Grid ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+
+          {/* Brand */}
+          <div>
+            <div className="mb-5">
+              <h3 className="text-2xl font-bold text-white">
+                Southern <span className="text-orange-500">Tales</span>
+              </h3>
+              <p className="text-xs tracking-[3px] uppercase text-[#C9A84C] mt-1">
+                Authentic Southern Cuisine
+              </p>
+            </div>
+            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              An authentic South Indian dining experience crafted with heritage recipes and the finest spices from across the Deccan.
+            </p>
+            <div className="flex gap-3">
+              {socialLinks.map(({ icon, href }, i) => (
+                <a key={i} href={href} target="_blank" rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-gray-400 text-sm hover:border-orange-500 hover:text-orange-500 transition-all duration-300"
+                >
+                  {icon}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="text-sm tracking-[3px] uppercase text-white font-semibold mb-6">
+              Quick Links
+            </h4>
+            <ul className="flex flex-col gap-4">
+              {links.map(({ label, path }) => (
+                <li key={label}>
+                  <button onClick={() => handleNav(path)}
+                    className="group flex items-center gap-2 text-gray-400 text-base hover:text-orange-500 transition-colors duration-200 text-left bg-transparent border-none cursor-pointer p-0 w-full"
+                  >
+                    <span className="w-0 h-px bg-orange-500 group-hover:w-4 transition-all duration-300 flex-shrink-0" />
+                    {label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Services */}
+          <div>
+            <h4 className="text-sm tracking-[3px] uppercase text-white font-semibold mb-6">
+              Services
+            </h4>
+            <ul className="flex flex-col gap-4">
+              {services.map((s) => (
+                <li key={s} className="text-gray-400 text-base">{s}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact Info */}
+          <div>
+            <h4 className="text-sm tracking-[3px] uppercase text-white font-semibold mb-6">
+              Contact Us
+            </h4>
+            <div className="flex flex-col gap-5">
+              {contactInfo.map(({ Icon, text }) => (
+                <div key={text} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Icon size={15} className="text-orange-500" />
+                  </div>
+                  <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">{text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Center: Quick Links */}
-        <div>
-          <h4 className="font-semibold text-white mb-3">Quick Links</h4>
-          <ul className="space-y-2">
-            {links.map((link, index) => (
-              <li key={index}>
-                <button
-                  onClick={link.action}
-                  className="block w-full text-left px-4 py-2 rounded hover:bg-orange-500 hover:text-white transition"
-                >
-                  {link.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+        {/* ── Bottom Bar ── */}
+        <div className="border-t border-white/10 pt-8 text-center">
+          <p className="text-gray-500 text-sm">
+            © {new Date().getFullYear()}{" "}
+            <span className="text-orange-500">Southern Tales</span>. All rights reserved.
+          </p>
         </div>
-
-        {/* Right: Working Hours */}
-        <div>
-          <h4 className="font-semibold text-white mb-3">Working Hours</h4>
-          <p>Mon - Fri: 10:00 AM - 10:00 PM</p>
-          <p>Sat - Sun: 9:00 AM - 11:00 PM</p>
-        </div>
-      </div>
-
-      <div className="text-center text-sm py-4 border-t border-gray-700">
-        © {new Date().getFullYear()} Southern Tales. All rights reserved.
       </div>
     </footer>
   );

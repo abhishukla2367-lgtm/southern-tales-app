@@ -78,7 +78,8 @@ const Register = () => {
             <input
               name={fieldKeys.name}
               type="text"
-              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
+              placeholder="e.g. Arjun Sharma"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white placeholder-gray-600 outline-none focus:border-[#f5c27a]"
               required
               autoComplete="one-time-code"
               value={formData.name}
@@ -91,7 +92,8 @@ const Register = () => {
             <input
               name={fieldKeys.email}
               type="email"
-              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
+              placeholder="e.g. arjun@gmail.com"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white placeholder-gray-600 outline-none focus:border-[#f5c27a]"
               required
               autoComplete="new-password"
               value={formData.email}
@@ -104,8 +106,8 @@ const Register = () => {
             <input
               name={fieldKeys.phone}
               type="tel"
-              placeholder=""
-              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
+              placeholder="e.g. +91 98765 43210"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white placeholder-gray-600 outline-none focus:border-[#f5c27a]"
               required
               autoComplete="new-password"
               value={formData.phone}
@@ -118,7 +120,8 @@ const Register = () => {
             <textarea
               name={fieldKeys.address}
               rows="2"
-              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white outline-none focus:border-[#f5c27a]"
+              placeholder="e.g. 12, MG Road, Koramangala, Bengaluru – 560034"
+              className="w-full rounded-lg border border-gray-700 bg-black p-3 text-white placeholder-gray-600 outline-none focus:border-[#f5c27a]"
               required
               autoComplete="new-password"
               value={formData.address}
@@ -126,14 +129,14 @@ const Register = () => {
             />
           </div>
 
-          {/* Password with Show/Hide toggle */}
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-semibold text-gray-400">Password</label>
             <div className="relative">
               <input
                 name={fieldKeys.pass}
                 type={showPassword ? "text" : "password"}
-                className="w-full rounded-lg border border-gray-700 bg-black p-3 pr-12 text-white outline-none focus:border-[#f5c27a]"
+                placeholder="Min. 8 characters"
+                className="w-full rounded-lg border border-gray-700 bg-black p-3 pr-12 text-white placeholder-gray-600 outline-none focus:border-[#f5c27a]"
                 required
                 autoComplete="new-password"
                 value={formData.password}

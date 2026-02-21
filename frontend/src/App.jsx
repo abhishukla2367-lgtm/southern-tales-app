@@ -23,7 +23,7 @@ import Reservation from "./pages/Reservation";
 import Gallery from "./pages/Gallery";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import OTPVerification from "./pages/otpVerification"; // Task 1: OTP Verification
+import OTPVerification from "./pages/otpVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import Profile from "./pages/Profile";
 
@@ -40,7 +40,7 @@ import ReportsPage from "./pages/admin/ReportsPage";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 
-/* Admin Route Protector */
+/* ── Admin Route Protector ── */
 const AdminRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
   if (loading)
@@ -52,35 +52,28 @@ const AdminRoute = ({ children }) => {
   return user && user.role === "admin" ? children : <Navigate to="/login" />;
 };
 
-/* Scroll to top on route change */
+/* ── Scroll to top on every route change ── */
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
   return null;
 };
 
-/* Main Layout Logic */
+/* ── Main Layout ── */
 const Layout = ({ children }) => {
-  const location = useLocation();
-  const { pathname } = location;
+  const { pathname } = useLocation();
 
   const isAdminRoute = pathname.startsWith("/admin");
-  const isAuthPage = ["/login", "/register", "/forgot-password", "/verify-otp"].includes(pathname);
-  const isCartRoute = pathname === "/cart";
+  const isAuthPage   = ["/login", "/register", "/forgot-password", "/verify-otp"].includes(pathname);
 
   return (
-    <div
-      className={
-        isAdminRoute
-          ? "min-h-screen bg-gray-100"
-          : "min-h-screen bg-black text-white"
-      }
-    >
+    <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-black text-white"}>
       {!isAdminRoute && <Header />}
       <main className={isAdminRoute ? "" : "min-h-screen"}>{children}</main>
-      {!isAdminRoute && !isAuthPage && !isCartRoute && <Footer />}
+      {/* Footer shown on all non-admin, non-auth pages (including /cart) */}
+      {!isAdminRoute && !isAuthPage && <Footer />}
     </div>
   );
 };
@@ -99,32 +92,32 @@ export default function App() {
           <Layout>
             <Routes>
               {/* PUBLIC ROUTES */}
-              <Route path="/" element={<Home />} />
-              <Route path="/menu" element={<Menu />} />
-              <Route path="/about" element={<AboutUs />} />
+              <Route path="/"         element={<Home />} />
+              <Route path="/menu"     element={<Menu />} />
+              <Route path="/about"    element={<AboutUs />} />
               <Route path="/contactus" element={<ContactUs />} />
-              <Route path="/gallery" element={<Gallery />} />
-              <Route path="/cart" element={<CartDrawer />} />
+              <Route path="/gallery"  element={<Gallery />} />
+              <Route path="/cart"     element={<CartDrawer />} />
 
               {/* AUTH ROUTES */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify-otp" element={<OTPVerification />} /> {/* Task 1 */}
+              <Route path="/login"           element={<Login />} />
+              <Route path="/register"        element={<Register />} />
+              <Route path="/verify-otp"      element={<OTPVerification />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* PROTECTED USER ROUTES */}
-              <Route path="/reservation" element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
+              <Route path="/reservation"   element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
               <Route path="/order-summary" element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/profile"       element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
               {/* PROTECTED ADMIN ROUTES */}
-              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/menu" element={<AdminRoute><MenuList /></AdminRoute>} />
-              <Route path="/admin/orders" element={<AdminRoute><OrdersList /></AdminRoute>} />
-              <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
-              <Route path="/admin/reports" element={<AdminRoute><ReportsPage /></AdminRoute>} />
+              <Route path="/admin"               element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/menu"          element={<AdminRoute><MenuList /></AdminRoute>} />
+              <Route path="/admin/orders"        element={<AdminRoute><OrdersList /></AdminRoute>} />
+              <Route path="/admin/reservations"  element={<AdminRoute><ReservationsList /></AdminRoute>} />
+              <Route path="/admin/reports"       element={<AdminRoute><ReportsPage /></AdminRoute>} />
 
-              {/* Fallback to Home */}
+              {/* Fallback */}
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </Layout>
