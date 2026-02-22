@@ -35,14 +35,23 @@ const UserSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: function () {
-        // FIX: Correct UI Avatars URL
         return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.name)}&background=random`;
       },
     },
     role: {
       type: String,
       enum: ["user", "admin"],
-      default: "user", 
+      default: "user",
+    },
+
+    // ── Password Reset Fields ──────────────────────────────────
+    resetPasswordToken: {
+      type: String,
+      default: undefined,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: undefined,
     },
   },
   {

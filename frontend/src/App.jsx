@@ -25,6 +25,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import OTPVerification from "./pages/otpVerification";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 
 // Admin Components
@@ -102,6 +103,7 @@ export default function App() {
               <Route path="/register"        element={<Register />} />
               <Route path="/verify-otp"      element={<OTPVerification />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
 
               {/* PROTECTED USER ROUTES */}
               <Route path="/reservation"   element={<ProtectedRoute><Reservation /></ProtectedRoute>} />

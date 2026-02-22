@@ -8,11 +8,24 @@ const ForgotPassword = () => {
   // STRICT AUTOCOMPLETE KILL: Unique field name on every mount
   const fieldKey = useMemo(() => `reset_em_${Math.random().toString(36).substring(7)}`, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logic for sending reset link goes here
-    setIsSent(true);
-    setEmail("");
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setIsSent(true);
+        setEmail("");
+      } else {
+        alert(data.message || "Something went wrong.");
+      }
+    } catch (err) {
+      alert("Server error. Please try again.");
+    }
   };
 
   return (

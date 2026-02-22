@@ -77,7 +77,7 @@ export default function Reservation() {
     };
 
     return (
-        <section id="reservation" className="py-20 bg-black px-6 min-h-screen">
+        <section id="reservation" className="py-20 mt-16 bg-black px-6 min-h-screen">
             <div className="max-w-4xl mx-auto text-center">
                 <h2 className="text-4xl font-bold mb-4 text-white">Book Your Table</h2>
                 <p className="text-zinc-400 mb-10">Join us for an unforgettable dining experience.</p>
