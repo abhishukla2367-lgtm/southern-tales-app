@@ -57,11 +57,21 @@ export default function DashboardCards() {
           .reduce((sum, o) => sum + (o.totalAmount || o.total || 0), 0);
       }
 
+      // FIX: date is stored as type:Date in MongoDB (UTC midnight).
+      // "2026-02-22" from the form becomes 2026-02-22T00:00:00.000Z in MongoDB.
+      // In IST (UTC+5:30), that UTC midnight is actually the previous day at 5:30 AM,
+      // so we manually shift by +5:30 before extracting the date string to compare.
       let reservations = 0;
       if (reservationsRes.status === "fulfilled") {
-        const res   = reservationsRes.value.data?.data || reservationsRes.value.data || [];
-        const today = new Date().toDateString();
-        reservations  = res.filter((r) => new Date(r.date || r.createdAt).toDateString() === today).length;
+        const res = reservationsRes.value.data?.data || reservationsRes.value.data || [];
+        const todayStr = new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local IST
+        const IST_OFFSET = 5.5 * 60 * 60 * 1000; // +5:30 in milliseconds
+        reservations = res.filter((r) => {
+          const d = new Date(r.date || r.createdAt);
+          const istDate = new Date(d.getTime() + IST_OFFSET);
+          const dateStr = istDate.toISOString().split("T")[0]; // "YYYY-MM-DD"
+          return dateStr === todayStr;
+        }).length;
       }
 
       const newData = { todayOrders, pendingOrders, reservations, revenue };
@@ -130,7 +140,7 @@ export default function DashboardCards() {
         .recharts-tooltip-wrapper { outline: none !important; }
       `}</style>
 
-      {/* Status bar — live indicator only, NO Refresh Now button */}
+      {/* Status bar */}
       <div className="flex items-center gap-2">
         {isLive ? (
           <>
