@@ -34,5 +34,4 @@ Southern Tales celebrates rich flavors, traditional recipes, and warm hospitalit
 
 ---
 
-## 📁 Project Structure
 

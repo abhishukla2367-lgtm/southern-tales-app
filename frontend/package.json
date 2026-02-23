@@ -8,6 +8,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudinary/react": "^1.14.4",
+    "@cloudinary/url-gen": "^1.22.0",
     "@fontsource/inter": "^5.2.8",
     "@react-google-maps/api": "^2.20.8",
     "axios": "^1.13.5",

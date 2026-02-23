@@ -1,29 +1,29 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../api/axiosConfig"; 
+import API from "../api/axiosConfig";
 
 export default function Reservation() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
-        name: "",
-        email: "",
-        phone: "",
-        date: "",
-        time: "",
-        guests: "",
+        customerName:  "",   // ✅ matches schema field
+        customerEmail: "",   // ✅ matches schema field
+        phone:         "",
+        date:          "",
+        time:          "",
+        guests:        "",
     });
 
-    const [errors, setErrors] = useState({});
+    const [errors, setErrors]       = useState({});
     const [submitting, setSubmitting] = useState(false);
 
-    // MAPPING: Scrambled names to actual form keys to trick Chrome/Safari
+    // MAPPING: Scrambled names to actual form keys to trick Chrome/Safari autocomplete
     const nameMap = {
-        "ux_user_fullname": "name",
-        "ux_user_contact_email": "email",
-        "ux_user_phone_num": "phone",
-        "ux_booking_date": "date",
-        "ux_booking_time": "time",
-        "ux_guest_count": "guests"
+        "ux_user_fullname":      "customerName",   // ✅ updated
+        "ux_user_contact_email": "customerEmail",  // ✅ updated
+        "ux_user_phone_num":     "phone",
+        "ux_booking_date":       "date",
+        "ux_booking_time":       "time",
+        "ux_guest_count":        "guests",
     };
 
     const handleChange = (e) => {
@@ -33,23 +33,27 @@ export default function Reservation() {
 
     const validate = () => {
         const newErrors = {};
-        if (!form.name) newErrors.name = "Name is required";
-        if (!form.email || !/^\S+@\S+\.\S+$/.test(form.email))
-            newErrors.email = "Valid email required";
+        if (!form.customerName)
+            newErrors.customerName = "Name is required";
+        if (!form.customerEmail || !/^\S+@\S+\.\S+$/.test(form.customerEmail))
+            newErrors.customerEmail = "Valid email required";
         if (!form.phone || !/^\d{10}$/.test(form.phone))
             newErrors.phone = "10-digit phone number required";
-        if (!form.date) newErrors.date = "Date is required";
-        if (!form.time) newErrors.time = "Time is required";
-        if (!form.guests) newErrors.guests = "Select number of guests";
+        if (!form.date)
+            newErrors.date = "Date is required";
+        if (!form.time)
+            newErrors.time = "Time is required";
+        if (!form.guests)
+            newErrors.guests = "Select number of guests";
         return newErrors;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const token = localStorage.getItem("token");
         if (!token) {
-            alert("Login required to reserve a table (Requirement #4)");
+            alert("Login required to reserve a table");
             navigate("/login");
             return;
         }
@@ -62,10 +66,13 @@ export default function Reservation() {
 
         try {
             setSubmitting(true);
-            // Task 7: Sending real data to MongoDB Atlas
+            // Sends customerName, customerEmail — matches Reservation schema exactly
             await API.post("/reservations", form);
             alert("Table reserved successfully!");
-            setForm({ name: "", email: "", phone: "", date: "", time: "", guests: "" });
+            setForm({
+                customerName: "", customerEmail: "", phone: "",
+                date: "", time: "", guests: "",
+            });
             setErrors({});
             navigate("/");
         } catch (err) {
@@ -89,37 +96,44 @@ export default function Reservation() {
                     onSubmit={handleSubmit}
                 >
                     {/* HONEYPOT: Browser targets these first, leaving real inputs alone */}
-                    <input type="text" name="name" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
-                    <input type="email" name="email" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+                    <input type="text"  name="name"  style={{ display: "none" }} tabIndex="-1" autoComplete="off" />
+                    <input type="email" name="email" style={{ display: "none" }} tabIndex="-1" autoComplete="off" />
 
+                    {/* Full Name */}
                     <div>
                         <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Full Name</label>
                         <input
                             type="text"
                             name="ux_user_fullname"
-                            autoComplete="new-password" 
-                            value={form.name}
+                            autoComplete="new-password"
+                            value={form.customerName}
                             onChange={handleChange}
                             className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
                             placeholder="Your Name"
                         />
-                        {errors.name && <p className="text-red-400 text-xs mt-1 font-medium">{errors.name}</p>}
+                        {errors.customerName && (
+                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.customerName}</p>
+                        )}
                     </div>
 
+                    {/* Email */}
                     <div>
                         <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Email Address</label>
                         <input
                             type="email"
                             name="ux_user_contact_email"
                             autoComplete="new-password"
-                            value={form.email}
+                            value={form.customerEmail}
                             onChange={handleChange}
                             className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
                             placeholder="hello@example.com"
                         />
-                        {errors.email && <p className="text-red-400 text-xs mt-1 font-medium">{errors.email}</p>}
+                        {errors.customerEmail && (
+                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.customerEmail}</p>
+                        )}
                     </div>
 
+                    {/* Phone */}
                     <div>
                         <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Phone Number</label>
                         <input
@@ -131,9 +145,12 @@ export default function Reservation() {
                             className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
                             placeholder="9876543210"
                         />
-                        {errors.phone && <p className="text-red-400 text-xs mt-1 font-medium">{errors.phone}</p>}
+                        {errors.phone && (
+                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.phone}</p>
+                        )}
                     </div>
 
+                    {/* Guests */}
                     <div>
                         <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Number of Guests</label>
                         <select
@@ -144,13 +161,18 @@ export default function Reservation() {
                             className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none"
                         >
                             <option value="" className="bg-[#111111]">Select people</option>
-                            {[1, 2, 3, 4, 5, 6].map(num => (
-                                <option key={num} value={num} className="bg-[#111111]">{num} {num === 1 ? 'Person' : 'People'}</option>
+                            {[1, 2, 3, 4, 5, 6].map((num) => (
+                                <option key={num} value={num} className="bg-[#111111]">
+                                    {num} {num === 1 ? "Person" : "People"}
+                                </option>
                             ))}
                         </select>
-                        {errors.guests && <p className="text-red-400 text-xs mt-1 font-medium">{errors.guests}</p>}
+                        {errors.guests && (
+                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.guests}</p>
+                        )}
                     </div>
 
+                    {/* Date & Time */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Date</label>
@@ -160,10 +182,12 @@ export default function Reservation() {
                                 autoComplete="off"
                                 value={form.date}
                                 onChange={handleChange}
-                                min={new Date().toISOString().split('T')[0]}
+                                min={new Date().toISOString().split("T")[0]}
                                 className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none [color-scheme:dark]"
                             />
-                            {errors.date && <p className="text-red-400 text-xs mt-1 font-medium">{errors.date}</p>}
+                            {errors.date && (
+                                <p className="text-red-400 text-xs mt-1 font-medium">{errors.date}</p>
+                            )}
                         </div>
 
                         <div>
@@ -176,14 +200,18 @@ export default function Reservation() {
                                 onChange={handleChange}
                                 className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none [color-scheme:dark]"
                             />
-                            {errors.time && <p className="text-red-400 text-xs mt-1 font-medium">{errors.time}</p>}
+                            {errors.time && (
+                                <p className="text-red-400 text-xs mt-1 font-medium">{errors.time}</p>
+                            )}
                         </div>
                     </div>
 
                     <button
                         type="submit"
                         disabled={submitting}
-                        className={`w-full ${submitting ? 'bg-zinc-700' : 'bg-orange-600 hover:bg-orange-500'} text-white py-3 rounded-lg font-black shadow-lg transition-all active:scale-[0.98] uppercase tracking-wider`}
+                        className={`w-full ${
+                            submitting ? "bg-zinc-700" : "bg-orange-600 hover:bg-orange-500"
+                        } text-white py-3 rounded-lg font-black shadow-lg transition-all active:scale-[0.98] uppercase tracking-wider`}
                     >
                         {submitting ? "Booking..." : "Confirm Reservation"}
                     </button>

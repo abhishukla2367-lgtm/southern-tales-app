@@ -447,12 +447,6 @@ const Home = () => {
               <VideoCard key={i} {...v} delay={["delay-100","delay-200","delay-300"][i]} />
             ))}
           </div>
-
-          <Reveal dir="up" className="text-center mt-10">
-            <p className="text-neutral-700 text-xs tracking-[2px] uppercase">
-              ✦ Click any card to start playing · No page navigation required ✦
-            </p>
-          </Reveal>
         </div>
       </section>
 

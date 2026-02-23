@@ -11,6 +11,7 @@ const STATUS_STYLES = {
   Seated:     { badge: "bg-violet-900/40 text-violet-400 border border-violet-700",   select: "bg-violet-900/40 text-violet-400 border border-violet-700" },
 };
 
+// Completed is excluded from options — once completed, status is locked
 const STATUS_OPTIONS = ["Confirmed", "Waiting", "Seated", "Completed", "Cancelled"];
 
 export default function ReservationsList() {
@@ -22,7 +23,8 @@ export default function ReservationsList() {
     const fetchReservations = async () => {
       try {
         const { data } = await API.get("/reservations/admin/all");
-        setReservations(data.data);
+        // Only show online/customer bookings (not walk-ins — those go to WalkInReservation)
+        setReservations(data.data.filter((r) => r.type !== "walk-in"));
       } catch (err) {
         console.error("Failed to fetch reservations:", err.message);
         setError(true);
@@ -73,13 +75,16 @@ export default function ReservationsList() {
           </thead>
           <tbody>
             {reservations.map((res) => {
-              const styles  = STATUS_STYLES[res.status] || { badge: "bg-zinc-800 text-zinc-400 border border-zinc-600", select: "bg-zinc-800 text-zinc-400 border border-zinc-600" };
+              const styles   = STATUS_STYLES[res.status] || { badge: "bg-zinc-800 text-zinc-400 border border-zinc-600", select: "bg-zinc-800 text-zinc-400 border border-zinc-600" };
               const isWalkIn = res.type === "walk-in";
+              // ── Requirement a & f: Completed status is locked — shown as a static badge ──
+              const isCompleted = res.status === "Completed";
 
               return (
                 <tr
                   key={res._id}
                   className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors"
+                  style={{ opacity: isCompleted ? 0.75 : 1 }}
                 >
                   {/* Customer */}
                   <td className="px-6 py-4">
@@ -129,17 +134,23 @@ export default function ReservationsList() {
                     </span>
                   </td>
 
-                  {/* Status — inline editable dropdown */}
+                  {/* Status — locked as static badge when Completed (Requirement a & f) */}
                   <td className="px-6 py-4">
-                    <select
-                      className={`${styles.select} rounded-lg px-2.5 py-1 text-xs font-bold outline-none cursor-pointer bg-transparent`}
-                      value={res.status || "Confirmed"}
-                      onChange={(e) => updateStatus(res._id, e.target.value)}
-                    >
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s} className="bg-[#111111] text-white">{s}</option>
-                      ))}
-                    </select>
+                    {isCompleted ? (
+                      <span className={`${styles.badge} px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5`}>
+                        ✓ Completed
+                      </span>
+                    ) : (
+                      <select
+                        className={`${styles.select} rounded-lg px-2.5 py-1 text-xs font-bold outline-none cursor-pointer bg-transparent`}
+                        value={res.status || "Confirmed"}
+                        onChange={(e) => updateStatus(res._id, e.target.value)}
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s} className="bg-[#111111] text-white">{s}</option>
+                        ))}
+                      </select>
+                    )}
                   </td>
                 </tr>
               );

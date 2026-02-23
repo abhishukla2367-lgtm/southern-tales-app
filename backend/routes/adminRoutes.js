@@ -6,26 +6,13 @@ const User = require("../models/User");
 
 const { protect, admin } = require("../middleware/protect");
 
-/**
- * @route   GET /api/admin/reservations
- * @desc    Task 7: Display reservations on Admin side Reservation page
- * @access  Private (Admin only)
- */
-router.get("/reservations", protect, admin, async (req, res) => {
-  try {
-    const allReservations = await Reservation.find()
-      .populate("userId", "name email phone")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json(allReservations);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch reservations", error: err.message });
-  }
-});
+// NOTE: All reservation routes (fetch, create, update status, delete, walk-in)
+// are handled in reservationRoutes.js — /api/reservations/...
+// Do NOT add reservation routes here to avoid duplication.
 
 /**
  * @route   GET /api/admin/orders
- * @desc    Task 8.3: Show order on Admin side Orders page
+ * @desc    Get all customer orders for Admin Orders page
  * @access  Private (Admin only)
  */
 router.get("/orders", protect, admin, async (req, res) => {
@@ -42,14 +29,14 @@ router.get("/orders", protect, admin, async (req, res) => {
 
 /**
  * @route   GET /api/admin/stats
- * @desc    Summary stats (total counts)
+ * @desc    Summary stats — total counts for orders, reservations, users
  * @access  Private (Admin only)
  */
 router.get("/stats", protect, admin, async (req, res) => {
   try {
-    const totalOrders = await Order.countDocuments();
+    const totalOrders       = await Order.countDocuments();
     const totalReservations = await Reservation.countDocuments();
-    const totalUsers = await User.countDocuments({ role: "user" });
+    const totalUsers        = await User.countDocuments({ role: "user" });
 
     res.status(200).json({ totalOrders, totalReservations, totalUsers });
   } catch (err) {

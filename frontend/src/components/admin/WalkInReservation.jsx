@@ -17,17 +17,17 @@ const formatDate = (iso) =>
 const formatTime = (iso) =>
   new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
-// ─── Blank form (outside component to avoid stale closure) ─────────────────────
 const BLANK_FORM = {
   customerName: "", phone: "", guests: "", tableNumber: "",
   date: "", time: "", status: "Waiting", specialRequests: "",
 };
 
 // ─── Modal ─────────────────────────────────────────────────────────────────────
-function Modal({ open, onClose, onSave }) {
-  const [form, setForm] = useState(BLANK_FORM);
-  const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
+function Modal({ open, onClose, onSave, occupiedTables = [] }) {
+  const [form, setForm]                 = useState(BLANK_FORM);
+  const [errors, setErrors]             = useState({});
+  const [saving, setSaving]             = useState(false);
+  const [tableWarning, setTableWarning] = useState("");
   const firstRef = useRef();
 
   useEffect(() => {
@@ -39,11 +39,22 @@ function Modal({ open, onClose, onSave }) {
         time: now.toTimeString().slice(0, 5),
       });
       setErrors({});
+      setTableWarning("");
       setTimeout(() => firstRef.current?.focus(), 80);
     }
   }, [open]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // ── Task c: Check if selected table is occupied ──
+  const handleTableChange = (value) => {
+    set("tableNumber", value);
+    if (value && occupiedTables.includes(value)) {
+      setTableWarning("This table is occupied, please choose another table number.");
+    } else {
+      setTableWarning("");
+    }
+  };
 
   const validate = () => {
     const e = {};
@@ -51,6 +62,7 @@ function Modal({ open, onClose, onSave }) {
     if (!form.guests || form.guests < 1) e.guests       = "Select number of guests";
     if (!form.date)                      e.date         = "Date is required";
     if (!form.time)                      e.time         = "Time is required";
+    if (tableWarning)                    e.tableNumber  = tableWarning;
     return e;
   };
 
@@ -151,19 +163,35 @@ function Modal({ open, onClose, onSave }) {
             {errors.guests && <span className="text-red-400 text-xs">{errors.guests}</span>}
           </div>
 
-          {/* Table */}
-          <div className="flex flex-col gap-1.5">
+          {/* Table — Task c: shows occupied warning */}
+          <div className="col-span-2 flex flex-col gap-1.5">
             <label className={labelBase}>Table</label>
             <select
-              className={`${inputBase} border-zinc-800`}
+              className={`${inputBase} ${tableWarning ? "border-red-500" : "border-zinc-800"}`}
               value={form.tableNumber}
-              onChange={(e) => set("tableNumber", e.target.value)}
+              onChange={(e) => handleTableChange(e.target.value)}
             >
               <option value="">— Assign later —</option>
-              {TABLES.map((t) => (
-                <option key={t} value={t} className="bg-[#111111]">{t}</option>
-              ))}
+              {TABLES.map((t) => {
+                const isOccupied = occupiedTables.includes(t);
+                return (
+                  <option key={t} value={t} className="bg-[#111111]">
+                    {t}{isOccupied ? " — 🔴 Occupied" : " — 🟢 Available"}
+                  </option>
+                );
+              })}
             </select>
+
+            {/* ── Task c: Occupied warning banner with exact required message ── */}
+            {tableWarning && (
+              <div className="flex items-center gap-2 bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2.5 mt-1">
+                <span className="text-red-400 text-base leading-none">⚠️</span>
+                <p className="text-red-400 text-xs font-bold">{tableWarning}</p>
+              </div>
+            )}
+            {errors.tableNumber && !tableWarning && (
+              <span className="text-red-400 text-xs">{errors.tableNumber}</span>
+            )}
           </div>
 
           {/* Status */}
@@ -227,8 +255,8 @@ function Modal({ open, onClose, onSave }) {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="px-6 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-500 disabled:opacity-60 text-white text-sm font-black transition-colors"
+            disabled={saving || !!tableWarning}
+            className="px-6 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-black transition-colors"
           >
             {saving ? "Saving…" : "✔ Create Reservation"}
           </button>
@@ -262,8 +290,14 @@ export default function WalkInReservation() {
 
   useEffect(() => { fetchReservations(); }, []);
 
-  const showToast = (msg) => {
-    setToast(msg);
+  // ── Task c: derive currently occupied tables from active walk-ins ──
+  const occupiedTables = reservations
+    .filter((r) => r.status === "Seated" || r.status === "Waiting")
+    .map((r) => r.tableNumber)
+    .filter(Boolean);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -272,7 +306,10 @@ export default function WalkInReservation() {
     showToast(`Reservation created for ${record.customerName}`);
   };
 
+  // ── Task b: Status update — blocked server-side & via UI for Completed ──
   const updateStatus = async (id, status) => {
+    const record = reservations.find((r) => r._id === id);
+    if (record?.status === "Completed") return; // guard
     try {
       await API.patch(`/reservations/${id}/status`, { status });
       setReservations((prev) => prev.map((r) => (r._id === id ? { ...r, status } : r)));
@@ -282,15 +319,25 @@ export default function WalkInReservation() {
     }
   };
 
-  const deleteReservation = async (id, customerName) => {
-    if (!window.confirm(`Delete reservation for ${customerName}?`)) return;
+  // ── Task b: Delete — only allowed for non-Completed records ──
+  const handleDelete = async (id) => {
+    const record = reservations.find((r) => r._id === id);
+
+    // Block delete if record is Completed
+    if (record?.status === "Completed") {
+      showToast("Completed records cannot be deleted.", "error");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete this record?")) return;
+
     try {
       await API.delete(`/reservations/${id}`);
       setReservations((prev) => prev.filter((r) => r._id !== id));
-      showToast("Reservation deleted");
+      showToast("Record deleted successfully.");
     } catch (err) {
       console.error("Delete failed:", err);
-      alert("Failed to delete reservation.");
+      showToast("Failed to delete record.", "error");
     }
   };
 
@@ -313,10 +360,10 @@ export default function WalkInReservation() {
     });
 
   const stats = [
-    { label: "Total",     value: reservations.length,                                           color: "text-[#f5c27a]" },
-    { label: "Seated",    value: reservations.filter((r) => r.status === "Seated").length,      color: "text-green-400" },
-    { label: "Waiting",   value: reservations.filter((r) => r.status === "Waiting").length,     color: "text-amber-400" },
-    { label: "Completed", value: reservations.filter((r) => r.status === "Completed").length,   color: "text-zinc-400"  },
+    { label: "Total",     value: reservations.length,                                          color: "text-[#f5c27a]" },
+    { label: "Seated",    value: reservations.filter((r) => r.status === "Seated").length,     color: "text-green-400" },
+    { label: "Waiting",   value: reservations.filter((r) => r.status === "Waiting").length,    color: "text-amber-400" },
+    { label: "Completed", value: reservations.filter((r) => r.status === "Completed").length,  color: "text-slate-400" },
   ];
 
   const selectBase =
@@ -324,10 +371,15 @@ export default function WalkInReservation() {
 
   return (
     <div className="min-h-screen text-zinc-100 font-sans">
+
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 right-6 z-50 bg-green-900 border border-green-600 text-green-300 rounded-xl px-5 py-3 text-sm font-bold shadow-xl">
-          ✔ {toast}
+        <div className={`fixed top-6 right-6 z-50 border rounded-xl px-5 py-3 text-sm font-bold shadow-xl transition-all ${
+          toast.type === "error"
+            ? "bg-red-900 border-red-600 text-red-300"
+            : "bg-green-900 border-green-600 text-green-300"
+        }`}>
+          {toast.type === "error" ? "⚠️" : "✔"} {toast.msg}
         </div>
       )}
 
@@ -405,86 +457,122 @@ export default function WalkInReservation() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((r) => (
-                  <tr key={r._id} className="border-b border-zinc-900 hover:bg-zinc-900/50 transition-colors">
-                    {/* Guest */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="font-bold text-white">{r.customerName}</div>
-                      <div className="text-xs text-[#f5c27a] font-mono mt-0.5">walk-in</div>
-                    </td>
+                filtered.map((r) => {
+                  // ── Task b: lock row interactions if Completed ──
+                  const isCompleted = r.status === "Completed";
 
-                    {/* Phone */}
-                    <td className="px-4 py-3 whitespace-nowrap text-zinc-400 text-xs font-mono">
-                      {r.phone || "—"}
-                    </td>
+                  return (
+                    <tr
+                      key={r._id}
+                      className="border-b border-zinc-900 hover:bg-zinc-900/50 transition-colors"
+                      style={{ opacity: isCompleted ? 0.7 : 1 }}
+                    >
+                      {/* Guest */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="font-bold text-white">{r.customerName}</div>
+                        <div className="text-xs text-[#f5c27a] font-mono mt-0.5">walk-in</div>
+                      </td>
 
-                    {/* Guests */}
-                    <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <span className="bg-zinc-800 border border-zinc-700 rounded-md px-2.5 py-0.5 text-xs font-mono text-zinc-300">
-                        👥 {r.guests}
-                      </span>
-                    </td>
+                      {/* Phone */}
+                      <td className="px-4 py-3 whitespace-nowrap text-zinc-400 text-xs font-mono">
+                        {r.phone || "—"}
+                      </td>
 
-                    {/* Table */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {r.tableNumber && r.tableNumber !== "TBD" ? (
-                        <span className="bg-sky-950 text-sky-400 border border-sky-800 rounded-md px-2.5 py-0.5 text-xs font-mono">
-                          {r.tableNumber}
+                      {/* Guests */}
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <span className="bg-zinc-800 border border-zinc-700 rounded-md px-2.5 py-0.5 text-xs font-mono text-zinc-300">
+                          👥 {r.guests}
                         </span>
-                      ) : (
-                        <span className="text-zinc-600">TBD</span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Date */}
-                    <td className="px-4 py-3 whitespace-nowrap text-zinc-400 text-xs font-mono">
-                      {r.date
-                        ? new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                        : formatDate(r.createdAt)}
-                    </td>
+                      {/* Table */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {r.tableNumber && r.tableNumber !== "TBD" ? (
+                          <span className="bg-sky-950 text-sky-400 border border-sky-800 rounded-md px-2.5 py-0.5 text-xs font-mono">
+                            {r.tableNumber}
+                          </span>
+                        ) : (
+                          <span className="text-zinc-600">TBD</span>
+                        )}
+                      </td>
 
-                    {/* Time */}
-                    <td className="px-4 py-3 whitespace-nowrap text-zinc-400 text-xs font-mono">
-                      {r.time || formatTime(r.createdAt)}
-                    </td>
+                      {/* Date */}
+                      <td className="px-4 py-3 whitespace-nowrap text-zinc-400 text-xs font-mono">
+                        {r.date
+                          ? new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                          : formatDate(r.createdAt)}
+                      </td>
 
-                    {/* Status */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <select
-                        className={`${STATUS[r.status]?.classes} rounded-lg px-2.5 py-1 text-xs font-bold outline-none cursor-pointer bg-transparent`}
-                        value={r.status || "Waiting"}
-                        onChange={(e) => updateStatus(r._id, e.target.value)}
-                      >
-                        {Object.entries(STATUS).map(([k, v]) => (
-                          <option key={k} value={k} className="bg-[#111111] text-white">{v.label}</option>
-                        ))}
-                      </select>
-                    </td>
+                      {/* Time */}
+                      <td className="px-4 py-3 whitespace-nowrap text-zinc-400 text-xs font-mono">
+                        {r.time || formatTime(r.createdAt)}
+                      </td>
 
-                    {/* Notes */}
-                    <td className="px-4 py-3 max-w-xs">
-                      <span className="text-zinc-500 text-xs truncate block">{r.specialRequests || "—"}</span>
-                    </td>
+                      {/* Status
+                          ── Task b: static badge for Completed, dropdown for others ── */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {isCompleted ? (
+                          <span className={`${STATUS["Completed"].classes} rounded-lg px-2.5 py-1 text-xs font-bold inline-flex items-center gap-1`}>
+                            ✓ Completed
+                          </span>
+                        ) : (
+                          <select
+                            className={`${STATUS[r.status]?.classes} rounded-lg px-2.5 py-1 text-xs font-bold outline-none cursor-pointer bg-transparent`}
+                            value={r.status || "Waiting"}
+                            onChange={(e) => updateStatus(r._id, e.target.value)}
+                          >
+                            {Object.entries(STATUS).map(([k, v]) => (
+                              <option key={k} value={k} className="bg-[#111111] text-white">{v.label}</option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
 
-                    {/* Delete */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <button
-                        onClick={() => deleteReservation(r._id, r.customerName)}
-                        className="text-zinc-600 hover:text-red-400 transition-colors text-base px-2"
-                        title="Delete"
-                      >
-                        🗑
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      {/* Notes */}
+                      <td className="px-4 py-3 max-w-xs">
+                        <span className="text-zinc-500 text-xs truncate block">{r.specialRequests || "—"}</span>
+                      </td>
+
+                      {/* Delete
+                          ── Task b: disabled (greyed out, no-drop cursor) for Completed
+                                     functional (red hover) for all other statuses      ── */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {isCompleted ? (
+                          // Locked — Completed records cannot be deleted
+                          <button
+                            disabled
+                            title="Completed records cannot be deleted"
+                            className="text-zinc-700 cursor-not-allowed text-base px-2 opacity-40"
+                          >
+                            🗑
+                          </button>
+                        ) : (
+                          // Active — delete is allowed for non-Completed records
+                          <button
+                            onClick={() => handleDelete(r._id)}
+                            title="Delete record"
+                            className="text-zinc-500 hover:text-red-400 text-base px-2 transition-colors"
+                          >
+                            🗑
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         )}
       </div>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} onSave={handleSave} />
+      {/* Modal — passes occupiedTables for Task c */}
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onSave={handleSave}
+        occupiedTables={occupiedTables}
+      />
     </div>
   );
 }
