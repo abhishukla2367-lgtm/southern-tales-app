@@ -46,7 +46,6 @@ function Modal({ open, onClose, onSave, occupiedTables = [] }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  // ── Task c: Check if selected table is occupied ──
   const handleTableChange = (value) => {
     set("tableNumber", value);
     if (value && occupiedTables.includes(value)) {
@@ -163,7 +162,7 @@ function Modal({ open, onClose, onSave, occupiedTables = [] }) {
             {errors.guests && <span className="text-red-400 text-xs">{errors.guests}</span>}
           </div>
 
-          {/* Table — Task c: shows occupied warning */}
+          {/* Table */}
           <div className="col-span-2 flex flex-col gap-1.5">
             <label className={labelBase}>Table</label>
             <select
@@ -182,7 +181,6 @@ function Modal({ open, onClose, onSave, occupiedTables = [] }) {
               })}
             </select>
 
-            {/* ── Task c: Occupied warning banner with exact required message ── */}
             {tableWarning && (
               <div className="flex items-center gap-2 bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2.5 mt-1">
                 <span className="text-red-400 text-base leading-none">⚠️</span>
@@ -290,7 +288,6 @@ export default function WalkInReservation() {
 
   useEffect(() => { fetchReservations(); }, []);
 
-  // ── Task c: derive currently occupied tables from active walk-ins ──
   const occupiedTables = reservations
     .filter((r) => r.status === "Seated" || r.status === "Waiting")
     .map((r) => r.tableNumber)
@@ -306,10 +303,9 @@ export default function WalkInReservation() {
     showToast(`Reservation created for ${record.customerName}`);
   };
 
-  // ── Task b: Status update — blocked server-side & via UI for Completed ──
   const updateStatus = async (id, status) => {
     const record = reservations.find((r) => r._id === id);
-    if (record?.status === "Completed") return; // guard
+    if (record?.status === "Completed") return;
     try {
       await API.patch(`/reservations/${id}/status`, { status });
       setReservations((prev) => prev.map((r) => (r._id === id ? { ...r, status } : r)));
@@ -319,11 +315,9 @@ export default function WalkInReservation() {
     }
   };
 
-  // ── Task b: Delete — only allowed for non-Completed records ──
   const handleDelete = async (id) => {
     const record = reservations.find((r) => r._id === id);
 
-    // Block delete if record is Completed
     if (record?.status === "Completed") {
       showToast("Completed records cannot be deleted.", "error");
       return;
@@ -458,7 +452,6 @@ export default function WalkInReservation() {
                 </tr>
               ) : (
                 filtered.map((r) => {
-                  // ── Task b: lock row interactions if Completed ──
                   const isCompleted = r.status === "Completed";
 
                   return (
@@ -508,8 +501,7 @@ export default function WalkInReservation() {
                         {r.time || formatTime(r.createdAt)}
                       </td>
 
-                      {/* Status
-                          ── Task b: static badge for Completed, dropdown for others ── */}
+                      {/* Status */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         {isCompleted ? (
                           <span className={`${STATUS["Completed"].classes} rounded-lg px-2.5 py-1 text-xs font-bold inline-flex items-center gap-1`}>
@@ -533,27 +525,49 @@ export default function WalkInReservation() {
                         <span className="text-zinc-500 text-xs truncate block">{r.specialRequests || "—"}</span>
                       </td>
 
-                      {/* Delete
-                          ── Task b: disabled (greyed out, no-drop cursor) for Completed
-                                     functional (red hover) for all other statuses      ── */}
+                      {/* Delete */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         {isCompleted ? (
                           // Locked — Completed records cannot be deleted
-                          <button
-                            disabled
+                          <div
                             title="Completed records cannot be deleted"
-                            className="text-zinc-700 cursor-not-allowed text-base px-2 opacity-40"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                              bg-zinc-900 border border-zinc-800 cursor-not-allowed opacity-30"
                           >
-                            🗑
-                          </button>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" strokeWidth="2"
+                              strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                              <path d="M10 11v6M14 11v6"/>
+                              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                            </svg>
+                          </div>
                         ) : (
-                          // Active — delete is allowed for non-Completed records
+                          // Active — delete allowed for non-Completed records
                           <button
                             onClick={() => handleDelete(r._id)}
                             title="Delete record"
-                            className="text-zinc-500 hover:text-red-400 text-base px-2 transition-colors"
+                            className="group relative inline-flex items-center justify-center w-8 h-8 rounded-lg
+                              bg-zinc-900 border border-zinc-800
+                              hover:bg-red-950/60 hover:border-red-700/70
+                              active:scale-90
+                              transition-all duration-150"
                           >
-                            🗑
+                            {/* Pulse ring on hover */}
+                            <span className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100
+                              ring-1 ring-red-500/30 group-hover:animate-ping
+                              transition-opacity duration-150 pointer-events-none" />
+
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" strokeWidth="2"
+                              strokeLinecap="round" strokeLinejoin="round"
+                              className="text-zinc-500 group-hover:text-red-400 transition-colors duration-150">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                              <path d="M10 11v6M14 11v6"/>
+                              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                            </svg>
                           </button>
                         )}
                       </td>
@@ -566,7 +580,7 @@ export default function WalkInReservation() {
         )}
       </div>
 
-      {/* Modal — passes occupiedTables for Task c */}
+      {/* Modal */}
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
