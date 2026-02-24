@@ -30,7 +30,7 @@ import Profile from "./pages/Profile";
 
 // Admin Components
 import AdminDashboard from "./components/admin/AdminDashboard";
-import MenuList from "./components/admin/MenuList";
+import MenuList from "./components/admin/menu/MenuList";
 import OrdersList from "./components/admin/OrdersList";
 import ReservationsList from "./components/admin/ReservationsList";
 

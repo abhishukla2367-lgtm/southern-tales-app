@@ -1,7 +1,7 @@
 import React, { useState, useContext, useRef, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import DashboardCards from "./DashboardCards";
-import MenuList from "./MenuList";
+import MenuList from "./menu/MenuList";
 import OrdersList from "./OrdersList";
 import ReservationsList from "./ReservationsList";
 import ReportsPage from "../../pages/admin/ReportsPage";
