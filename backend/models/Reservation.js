@@ -37,10 +37,12 @@ const ReservationSchema = new mongoose.Schema(
       type: String,
       default: "TBD"
     },
+    // ✅ FIX: Added "Confirmed" to VALID_STATUSES in reservationController.js as well
+    // to match this default — without it, admin cannot update online reservations
     status: {
       type: String,
       default: "Confirmed",
-      enum: ["Confirmed", "Cancelled", "Completed", "Waiting", "Seated"],
+      enum: ["Confirmed", "Waiting", "Seated", "Completed", "Cancelled"],
     },
     specialRequests: {
       type: String,

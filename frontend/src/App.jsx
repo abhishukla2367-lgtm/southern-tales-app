@@ -31,11 +31,12 @@ import Profile from "./pages/Profile";
 // Admin Components
 import AdminDashboard from "./components/admin/AdminDashboard";
 import MenuList from "./components/admin/menu/MenuList";
-import OrdersList from "./components/admin/OrdersList";
+import OrdersList from "./components/orders/OrdersList";         // 🔄 fixed path
 import ReservationsList from "./components/admin/ReservationsList";
 
 // Admin Pages
 import ReportsPage from "./pages/admin/ReportsPage";
+import LiveOrders from "./pages/LiveOrders";                     // ✅ new
 
 // Contexts
 import { CartProvider } from "./context/CartContext";
@@ -91,18 +92,18 @@ export default function App() {
           <Layout>
             <Routes>
               {/* PUBLIC ROUTES */}
-              <Route path="/"         element={<Home />} />
-              <Route path="/menu"     element={<Menu />} />
-              <Route path="/about"    element={<AboutUs />} />
+              <Route path="/"          element={<Home />} />
+              <Route path="/menu"      element={<Menu />} />
+              <Route path="/about"     element={<AboutUs />} />
               <Route path="/contactus" element={<ContactUs />} />
-              <Route path="/gallery"  element={<Gallery />} />
-              <Route path="/cart"     element={<CartDrawer />} />
+              <Route path="/gallery"   element={<Gallery />} />
+              <Route path="/cart"      element={<CartDrawer />} />
 
               {/* AUTH ROUTES */}
-              <Route path="/login"           element={<Login />} />
-              <Route path="/register"        element={<Register />} />
-              <Route path="/verify-otp"      element={<OTPVerification />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/login"                 element={<Login />} />
+              <Route path="/register"              element={<Register />} />
+              <Route path="/verify-otp"            element={<OTPVerification />} />
+              <Route path="/forgot-password"       element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
 
               {/* PROTECTED USER ROUTES */}
@@ -111,11 +112,12 @@ export default function App() {
               <Route path="/profile"       element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
               {/* PROTECTED ADMIN ROUTES */}
-              <Route path="/admin"               element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/menu"          element={<AdminRoute><MenuList /></AdminRoute>} />
-              <Route path="/admin/orders"        element={<AdminRoute><OrdersList /></AdminRoute>} />
-              <Route path="/admin/reservations"  element={<AdminRoute><ReservationsList /></AdminRoute>} />
-              <Route path="/admin/reports"       element={<AdminRoute><ReportsPage /></AdminRoute>} />
+              <Route path="/admin"              element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/menu"         element={<AdminRoute><MenuList /></AdminRoute>} />
+              <Route path="/admin/orders"       element={<AdminRoute><OrdersList /></AdminRoute>} />
+              <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
+              <Route path="/admin/reports"      element={<AdminRoute><ReportsPage /></AdminRoute>} />
+              <Route path="/admin/live-orders"  element={<AdminRoute><LiveOrders /></AdminRoute>} />  {/* ✅ new */}
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" />} />

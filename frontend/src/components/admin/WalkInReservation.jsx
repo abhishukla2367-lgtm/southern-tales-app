@@ -27,12 +27,13 @@ const BLANK_FORM = {
 // Sat–Sun : 08:00 – 23:00
 const isWithinBusinessHours = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return true; // let other validators catch empty fields
-  const date = new Date(dateStr);
-  const day  = date.getDay(); // 0 = Sun, 6 = Sat
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day); // local time, no UTC shift
+  const dayOfWeek = date.getDay(); // 0 = Sun, 6 = Sat
   const [h, m] = timeStr.split(":").map(Number);
   const totalMinutes = h * 60 + m;
 
-  const isWeekend = day === 0 || day === 6;
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
   if (isWeekend) {
     return totalMinutes >= 480 && totalMinutes <= 1380; // 8:00–23:00
   } else {

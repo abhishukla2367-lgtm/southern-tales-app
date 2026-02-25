@@ -45,6 +45,12 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // ✅ FIX: Guard against missing email or password before calling .toLowerCase()
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email and password are required" });
+    }
+
     const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
 
     if (user && (await user.matchPassword(password))) {
@@ -75,6 +81,8 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const currentId = req.user.id;
+    // ✅ NOTE: Mongoose handles string-to-ObjectId automatically,
+    // but explicit conversion is kept for clarity and safety
     const objectId = new mongoose.Types.ObjectId(currentId);
 
     const [user, orders, reservations] = await Promise.all([
@@ -109,12 +117,17 @@ exports.getProfile = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
+    // ✅ Guard against missing email
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
     const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) {
       return res.status(404).json({ message: "No account found with that email." });
     }
 
-    // Generate & hash token
+    // Generate & hash token — raw token sent to user, hashed version stored in DB
     const token = crypto.randomBytes(32).toString("hex");
     user.resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
     user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
@@ -227,6 +240,11 @@ exports.forgotPassword = async (req, res) => {
  */
 exports.resetPassword = async (req, res) => {
   try {
+    // ✅ Guard against missing password in body
+    if (!req.body.password) {
+      return res.status(400).json({ message: "New password is required." });
+    }
+
     const hashedToken = crypto
       .createHash("sha256")
       .update(req.params.token)

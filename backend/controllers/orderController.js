@@ -14,14 +14,32 @@ exports.placeOrder = async (req, res) => {
             return res.status(401).json({ success: false, message: "Authentication failed. No user found." });
         }
 
-        // 2. Data Validation
-        if (!deliveryInfo || !deliveryInfo.address || !deliveryInfo.phone) {
+        // 2. Validate items array
+        // ✅ FIX: Prevent orders with no items from being saved to DB
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: "Order must contain at least one item." });
+        }
+
+        // 3. Validate totalAmount
+        // ✅ FIX: Prevent zero or missing totalAmount from creating broken orders
+        if (!totalAmount || Number(totalAmount) <= 0) {
+            return res.status(400).json({ success: false, message: "Invalid total amount." });
+        }
+
+        // 4. Validate deliveryInfo with trimming to catch blank strings
+        // ✅ FIX: Use .trim() so empty strings don't pass validation
+        if (
+            !deliveryInfo ||
+            !deliveryInfo.address?.trim() ||
+            !deliveryInfo.phone?.trim()
+        ) {
             return res.status(400).json({ success: false, message: "Delivery address and phone are required." });
         }
 
+        // ✅ FIX: Handle both req.user.id and req.user._id consistently
         const userId = new mongoose.Types.ObjectId(req.user.id || req.user._id);
 
-        // 3. Create Order
+        // 5. Create Order
         const newOrder = await Order.create({
             userId,
             items,
@@ -31,8 +49,8 @@ exports.placeOrder = async (req, res) => {
             paymentStatus: "Unpaid"
         });
 
-        // 4. Clear Cart (Make sure your Cart model uses 'userId' field too!)
-        await Cart.findOneAndDelete({ userId: userId });
+        // 6. Clear Cart (Make sure your Cart model uses 'userId' field too!)
+        await Cart.findOneAndDelete({ userId });
 
         res.status(201).json({
             success: true,
@@ -45,26 +63,27 @@ exports.placeOrder = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
+
 /**
  * @desc    Task 6: Display My Orders in Profile page
  */
 exports.getMyOrders = async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
+        // ✅ FIX: Match same pattern as placeOrder — handle both id and _id
+        if (!req.user || (!req.user.id && !req.user._id)) {
             return res.status(401).json({ success: false, message: "Not authorized" });
         }
 
-        const userId = new mongoose.Types.ObjectId(req.user.id);
-        
-        // ✅ UPDATED: Query now looks for the 'userId' field
-        const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 });
-        
+        const userId = new mongoose.Types.ObjectId(req.user.id || req.user._id);
+
+        const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+
         console.log(`📡 Fetching profile orders for ${userId}: Found ${orders.length}`);
 
         res.status(200).json({
             success: true,
             count: orders.length,
-            orders 
+            orders
         });
     } catch (err) {
         console.error("❌ getMyOrders Error:", err.message);
@@ -74,12 +93,12 @@ exports.getMyOrders = async (req, res) => {
 
 /**
  * @desc    Task 8.3: Show orders on Admin side Orders page
+ * @access  Private (Admin Only) — ensure adminOnly middleware is on this route
  */
 exports.getAllOrders = async (req, res) => {
     try {
-        // ✅ UPDATED: Populate 'userId' instead of 'user'
         const orders = await Order.find()
-            .populate('userId', 'name email phone') 
+            .populate('userId', 'name email phone')
             .sort({ createdAt: -1 });
 
         res.status(200).json({

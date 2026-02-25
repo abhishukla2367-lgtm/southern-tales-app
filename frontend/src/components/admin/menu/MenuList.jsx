@@ -17,44 +17,49 @@ export default function MenuList() {
   const [priceFilter, setPriceFilter]       = useState("All Prices");
   const [showModal, setShowModal]           = useState(false);
   const [editItem, setEditItem]             = useState(null);
+  const [isSaving, setIsSaving]             = useState(false); // New state for upload feedback
 
   const filteredItems = menuItems.filter((item) => {
-    // ── Category ──
     const catMatch = activeCategory === "All" || item.category === activeCategory;
-
-    // ── Search ──
     const q = search.toLowerCase();
-    const searchMatch =
-      !q ||
-      item.name?.toLowerCase().includes(q) ||
-      item.category?.toLowerCase().includes(q) ||
+    const searchMatch = !q || 
+      item.name?.toLowerCase().includes(q) || 
+      item.category?.toLowerCase().includes(q) || 
       item.description?.toLowerCase().includes(q);
 
-    // ── Diet ──
     const dietMatch =
       dietFilter === "all"     ? true :
       dietFilter === "veg"     ? item.veg === true && !item.vegan :
       dietFilter === "non-veg" ? item.veg === false :
       dietFilter === "vegan"   ? item.vegan === true :
-      dietFilter === "dietary" ? item.dietary === true :
-      true;
+      dietFilter === "dietary" ? item.dietary === true : true;
 
-    // ── Price ──
     const p = item.price ?? 0;
     const priceMatch =
       priceFilter === "All Prices"   ? true :
       priceFilter === "Under ₹100"   ? p < 100 :
       priceFilter === "₹100 – ₹200"  ? p >= 100 && p <= 200 :
       priceFilter === "₹200 – ₹500"  ? p > 200 && p <= 500 :
-      priceFilter === "Above ₹500"   ? p > 500 :
-      true;
+      priceFilter === "Above ₹500"   ? p > 500 : true;
 
     return catMatch && searchMatch && dietMatch && priceMatch;
   });
 
-  const handleAdd  = () => { setEditItem(null);  setShowModal(true); };
+  const handleAdd  = () => { setEditItem(null); setShowModal(true); };
   const handleEdit = (item) => { setEditItem(item); setShowModal(true); };
-  const handleSave = (form) => saveItem(form, editItem);
+  
+  // Updated handleSave to handle the asynchronous upload
+  const handleSave = async (formData) => {
+    setIsSaving(true);
+    try {
+      await saveItem(formData, editItem);
+      setShowModal(false);
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (loading)
     return (
@@ -64,17 +69,15 @@ export default function MenuList() {
       </div>
     );
 
-  if (error)
-    return <p className="text-center py-10 text-red-400">Failed to load menu items.</p>;
+  if (error) return <p className="text-center py-10 text-red-400">Failed to load menu items.</p>;
 
   return (
     <div>
-      {/* Top Bar */}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-black text-neutral-100">Menu Management</h2>
         <button
           onClick={handleAdd}
-          className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black text-sm px-4 py-2 rounded-lg border-none cursor-pointer hover:shadow-lg hover:shadow-yellow-900/40 transition-all"
+          className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black text-sm px-4 py-2 rounded-lg hover:shadow-lg hover:shadow-yellow-900/40 transition-all"
         >
           + Add Item
         </button>
@@ -107,6 +110,7 @@ export default function MenuList() {
           categories={categories}
           onSave={handleSave}
           onClose={() => setShowModal(false)}
+          isSaving={isSaving} // Pass saving state to show a spinner in the modal
         />
       )}
     </div>

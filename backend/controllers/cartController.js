@@ -31,6 +31,18 @@ exports.addToCart = async (req, res) => {
   const userId = req.user.id;
 
   try {
+    // ✅ FIX: Validate required fields before processing
+    if (!productId || !name || !price || !quantity) {
+      return res.status(400).json({
+        message: "productId, name, price, and quantity are required",
+      });
+    }
+
+    // ✅ FIX: Prevent zero or negative quantity
+    if (Number(quantity) < 1) {
+      return res.status(400).json({ message: "Quantity must be at least 1" });
+    }
+
     let cart = await Cart.findOne({ userId });
 
     if (cart) {
@@ -91,29 +103,41 @@ exports.addToCart = async (req, res) => {
  * @desc    Requirement #8.2: User can delete cart items
  * @route   DELETE /api/cart/:productId
  * @access  Private
+ *
+ * ⚠️  ROUTER NOTE: In your router file, ensure /clear is registered
+ *     BEFORE /:productId — otherwise Express treats "clear" as a productId
+ *     and clearCart will never be reached:
+ *
+ *     router.delete("/clear", protect, clearCart);       ← must be first
+ *     router.delete("/:productId", protect, removeFromCart);
  */
 exports.removeFromCart = async (req, res) => {
   const { productId } = req.params;
   try {
     const cart = await Cart.findOne({ userId: req.user.id });
 
-    if (cart) {
-      // Remove specific product from the items array
-      cart.items = cart.items.filter(
-        (item) => item.productId.toString() !== productId.toString()
-      );
-
-      // Recalculate bill after removal
-      cart.totalBill = cart.items.reduce(
-        (acc, curr) => acc + curr.price * curr.quantity,
-        0
-      );
-
-      await cart.save();
-      return res.status(200).json(cart);
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
     }
 
-    res.status(404).json({ message: "Cart not found" });
+    // ✅ FIX: Check if the item actually exists in the cart before removing
+    const originalLength = cart.items.length;
+    cart.items = cart.items.filter(
+      (item) => item.productId.toString() !== productId.toString()
+    );
+
+    if (cart.items.length === originalLength) {
+      return res.status(404).json({ message: "Item not found in cart" });
+    }
+
+    // Recalculate bill after removal
+    cart.totalBill = cart.items.reduce(
+      (acc, curr) => acc + curr.price * curr.quantity,
+      0
+    );
+
+    await cart.save();
+    return res.status(200).json(cart);
   } catch (error) {
     console.error("Remove Item Error:", error.message);
     res.status(500).json({ message: "Error deleting item from cart" });
@@ -124,6 +148,9 @@ exports.removeFromCart = async (req, res) => {
  * @desc    Requirement #8.3: Remove items from cart on placing order
  * @route   DELETE /api/cart/clear
  * @access  Private
+ *
+ * ⚠️  ROUTER NOTE: This route MUST be registered before /:productId
+ *     in your router file to avoid Express treating "clear" as a productId.
  */
 exports.clearCart = async (req, res) => {
   try {

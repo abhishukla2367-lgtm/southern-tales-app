@@ -13,7 +13,7 @@ const app = express();
 app.use(cors({
   origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:5174"],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // FIX: Added PATCH for menu toggleAvailability
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -34,6 +34,8 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
+// --- 3. ROUTES ---
+
 const otpRoutes = require("./routes/otpRoutes");
 app.use("/api/otp", otpRoutes);
 
@@ -43,24 +45,28 @@ app.use("/api/auth", authRoutes);
 const cartRoutes = require("./routes/cartRoutes");
 app.use("/api/cart", cartRoutes);
 
-
 const menuRoutes = require("./routes/menuRoutes");
 app.use("/api/menu", menuRoutes);
 
 const orderRoutes = require("./routes/orderRoutes");
 app.use("/api/orders", orderRoutes);
 
-
 const reservationRoutes = require("./routes/reservationRoutes");
 app.use("/api/reservations", reservationRoutes);
-
 
 const adminRoutes = require("./routes/adminRoutes");
 app.use("/api/admin", adminRoutes);
 
-
 const reportRoutes = require("./routes/reportRoutes");
 app.use("/api/reports", reportRoutes);
+
+// ── New routes for Live Orders feature ──────────────────────────────────────
+const walkinRoutes = require("./routes/walkinRoutes");
+app.use("/api/walkin", walkinRoutes);
+
+const billRoutes = require("./routes/billRoutes");
+app.use("/api/bill", billRoutes);
+// ─────────────────────────────────────────────────────────────────────────────
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -69,7 +75,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// --- 5. GLOBAL ERROR HANDLING ---
+// --- 4. GLOBAL ERROR HANDLING ---
 
 app.use((err, req, res, next) => {
   console.error("🔥 Server Error Stack:", err.stack);
@@ -80,7 +86,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- 6. START SERVER ---
+// --- 5. START SERVER ---
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

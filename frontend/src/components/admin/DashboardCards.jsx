@@ -9,6 +9,16 @@ import API from "../../api/axiosConfig";
 const REFRESH_INTERVAL = 15000;
 const CHART_HEIGHT = 240;
 
+// ── Helper: safely extract an array from any API response shape ────────────
+function extractArray(responseData, ...keys) {
+  if (Array.isArray(responseData)) return responseData;
+  for (const key of keys) {
+    if (Array.isArray(responseData?.[key])) return responseData[key];
+  }
+  console.warn("extractArray: unexpected response shape →", responseData);
+  return [];
+}
+
 function ChartBox({ children }) {
   const ref = useRef(null);
   const [width, setWidth] = useState(0);
@@ -48,10 +58,12 @@ export default function DashboardCards() {
 
       let todayOrders = 0, pendingOrders = 0, revenue = 0;
       if (ordersRes.status === "fulfilled") {
-        const orders = ordersRes.value.data?.data || ordersRes.value.data || [];
+        // ✅ Handles: [], { data: [] }, { orders: [] }, { success, orders: [] }
+        const orders = extractArray(ordersRes.value.data, "data", "orders", "items");
         const today  = new Date().toDateString();
+
         todayOrders   = orders.filter((o) => new Date(o.createdAt).toDateString() === today).length;
-        pendingOrders = orders.filter((o) => ["Pending","pending","Processing","processing"].includes(o.status)).length;
+        pendingOrders = orders.filter((o) => ["Pending", "pending", "Processing", "processing"].includes(o.status)).length;
         revenue       = orders
           .filter((o) => new Date(o.createdAt).toDateString() === today)
           .reduce((sum, o) => sum + (o.totalAmount || o.total || 0), 0);
@@ -63,13 +75,15 @@ export default function DashboardCards() {
       // so we manually shift by +5:30 before extracting the date string to compare.
       let reservations = 0;
       if (reservationsRes.status === "fulfilled") {
-        const res = reservationsRes.value.data?.data || reservationsRes.value.data || [];
+        // ✅ Handles: [], { data: [] }, { reservations: [] }, { success, reservations: [] }
+        const res      = extractArray(reservationsRes.value.data, "data", "reservations", "items");
         const todayStr = new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local IST
-        const IST_OFFSET = 5.5 * 60 * 60 * 1000; // +5:30 in milliseconds
+        const IST_OFFSET = 5.5 * 60 * 60 * 1000;
+
         reservations = res.filter((r) => {
-          const d = new Date(r.date || r.createdAt);
+          const d       = new Date(r.date || r.createdAt);
           const istDate = new Date(d.getTime() + IST_OFFSET);
-          const dateStr = istDate.toISOString().split("T")[0]; // "YYYY-MM-DD"
+          const dateStr = istDate.toISOString().split("T")[0];
           return dateStr === todayStr;
         }).length;
       }
