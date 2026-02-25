@@ -1,4 +1,7 @@
 const Reservation = require('../models/Reservation');
+const mongoose = require('mongoose');
+
+const VALID_STATUSES = ["Waiting", "Seated", "Completed", "Cancelled"];
 
 /**
  * @desc    Create a new table reservation (Customer side)
@@ -9,12 +12,17 @@ exports.createReservation = async (req, res) => {
     try {
         const { date, time, guests, tableNumber, specialRequests, customerName, customerEmail } = req.body;
 
+        // ✅ FIX: Validate all required fields including customerName and customerEmail
         if (!date || !time || !guests) {
             return res.status(400).json({ error: "Date, time, and guest count are required." });
         }
 
+        if (!customerName || !customerEmail) {
+            return res.status(400).json({ error: "Customer name and email are required." });
+        }
+
         const newReservation = await Reservation.create({
-            userId:        req.user.id,
+            userId:           req.user.id,
             customerName,
             customerEmail,
             date,
@@ -72,7 +80,9 @@ exports.getAllAdminReservations = async (req, res) => {
             data:    reservations,
         });
     } catch (err) {
-        res.status(500).json({ error: "Admin fetch failed" });
+        // ✅ FIX: Include err.message for better debugging context
+        console.error("Admin Fetch Error:", err.message);
+        res.status(500).json({ error: "Admin fetch failed", details: err.message });
     }
 };
 
@@ -109,6 +119,8 @@ exports.createWalkIn = async (req, res) => {
         }
 
         // ── Task c: Block booking if selected table is already occupied ──
+        // NOTE: Only "Waiting" and "Seated" statuses are treated as occupied
+        // so Cancelled tables remain available for rebooking
         if (tableNumber && tableNumber !== "TBD") {
             const occupied = await Reservation.findOne({
                 tableNumber,
@@ -151,6 +163,18 @@ exports.createWalkIn = async (req, res) => {
  */
 exports.updateStatus = async (req, res) => {
     try {
+        // ✅ FIX: Validate ObjectId format to avoid Mongoose CastError
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: "Invalid reservation ID" });
+        }
+
+        // ✅ FIX: Validate incoming status value against allowed list
+        if (!req.body.status || !VALID_STATUSES.includes(req.body.status)) {
+            return res.status(400).json({
+                error: `Status must be one of: ${VALID_STATUSES.join(", ")}`,
+            });
+        }
+
         const reservation = await Reservation.findById(req.params.id);
 
         if (!reservation) {
@@ -183,6 +207,11 @@ exports.updateStatus = async (req, res) => {
  */
 exports.deleteReservation = async (req, res) => {
     try {
+        // ✅ FIX: Validate ObjectId format to avoid Mongoose CastError
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: "Invalid reservation ID" });
+        }
+
         const reservation = await Reservation.findById(req.params.id);
 
         if (!reservation) {

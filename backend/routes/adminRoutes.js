@@ -6,6 +6,9 @@ const User = require("../models/User");
 
 const { protect, admin } = require("../middleware/protect");
 
+// ✅ FIX: Use existing controller instead of duplicating inline logic
+const { getAllOrders } = require("../controllers/orderController");
+
 // NOTE: All reservation routes (fetch, create, update status, delete, walk-in)
 // are handled in reservationRoutes.js — /api/reservations/...
 // Do NOT add reservation routes here to avoid duplication.
@@ -15,17 +18,9 @@ const { protect, admin } = require("../middleware/protect");
  * @desc    Get all customer orders for Admin Orders page
  * @access  Private (Admin only)
  */
-router.get("/orders", protect, admin, async (req, res) => {
-  try {
-    const allOrders = await Order.find()
-      .populate("userId", "name email")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json(allOrders);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch orders", error: err.message });
-  }
-});
+// ✅ FIX: Replaced inline DB logic with getAllOrders controller
+// to avoid duplication and keep logic in one place
+router.get("/orders", protect, admin, getAllOrders);
 
 /**
  * @route   GET /api/admin/stats
@@ -36,11 +31,18 @@ router.get("/stats", protect, admin, async (req, res) => {
   try {
     const totalOrders       = await Order.countDocuments();
     const totalReservations = await Reservation.countDocuments();
-    const totalUsers        = await User.countDocuments({ role: "user" });
+    // ✅ FIX: Renamed totalUsers → totalCustomers for accuracy
+    // (only counts role: "user" — admins excluded intentionally)
+    const totalCustomers    = await User.countDocuments({ role: "user" });
 
-    res.status(200).json({ totalOrders, totalReservations, totalUsers });
+    res.status(200).json({
+      totalOrders,
+      totalReservations,
+      totalCustomers,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Stats fetch failed" });
+    // ✅ FIX: Added error detail to match all other routes
+    res.status(500).json({ message: "Stats fetch failed", error: err.message });
   }
 });
 
@@ -60,7 +62,14 @@ router.get("/dashboard-stats", protect, admin, async (req, res) => {
         Order.countDocuments({ status: "Pending" }),
         Reservation.countDocuments(),
         Order.aggregate([
-          { $match: { createdAt: { $gte: today } } },
+          {
+            // ✅ FIX: Only count Paid orders in revenue to avoid inflating
+            // numbers with Pending/Unpaid orders
+            $match: {
+              createdAt: { $gte: today },
+              paymentStatus: "Paid",
+            },
+          },
           { $group: { _id: null, total: { $sum: "$totalAmount" } } },
         ]),
       ]);
@@ -73,7 +82,7 @@ router.get("/dashboard-stats", protect, admin, async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Dashboard Stats Error:", err.message);
-    res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    res.status(500).json({ message: "Failed to fetch dashboard stats", error: err.message });
   }
 });
 

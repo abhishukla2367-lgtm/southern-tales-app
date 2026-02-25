@@ -2,58 +2,83 @@ const mongoose = require("mongoose");
 
 const OrderSchema = new mongoose.Schema(
   {
-    // Task 6 & 8: Changed from 'user' to 'userId' for consistency with Reservations
     userId: {
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User',
-      required: true, // Ensuring every order belongs to someone
-      index: true     // Speeds up "My Orders" queries significantly
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      // ✅ FIX: Changed to required: false — walk-in orders have no authenticated userId
+      required: false,
+      index: true,
     },
-    // Task 8: Detailed item tracking
+
+    // "walkin" orders won't have userId from auth — use guestName instead
+    orderType: {
+      type: String,
+      default: "delivery",
+      enum: ["delivery", "walkin"],
+    },
+
+    guestName: {
+      type: String, // Used for walk-in customers
+    },
+
     items: [
       {
+        // ✅ FIX: Changed from String to ObjectId with ref for proper Menu item referencing
         productId: {
-          type: String, 
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Menu"
         },
         name: { type: String, required: true },
-        quantity: { 
-          type: Number, 
-          required: true, 
-          min: [1, "Quantity cannot be less than 1"] 
+        quantity: {
+          type: Number,
+          required: true,
+          min: [1, "Quantity cannot be less than 1"],
         },
-        price: { type: Number, required: true },
+        // ✅ FIX: Added min validator to prevent negative or zero prices
+        price: {
+          type: Number,
+          required: true,
+          min: [0, "Price cannot be negative"]
+        },
       },
     ],
-    // Professional Detail: Required for Task 8 checkout flow
+
+    // Optional for walk-in orders
     deliveryInfo: {
-      address: { type: String, required: true },
-      phone: { type: String, required: true }
+      address: { type: String },
+      phone:   { type: String },
     },
-    // Task 8: Validation to prevent negative billing
-    totalAmount: { 
-      type: Number, 
+
+    totalAmount: {
+      type: Number,
       required: true,
-      min: [0, "Total amount cannot be negative"] 
+      min: [0, "Total amount cannot be negative"],
     },
-    // Task 8.3: Professional status management for Admin Dashboard
+
+    // ✅ FIX: Removed "Shipped" — not applicable for a restaurant system
     status: {
       type: String,
       default: "Pending",
       enum: {
-        values: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"],
-        message: '{VALUE} is not a supported order status'
-      }
+        values: [
+          "Pending",
+          "Processing",
+          "Preparing",
+          "Delivered",
+          "Completed",
+          "Cancelled",
+        ],
+        message: "{VALUE} is not a supported order status",
+      },
     },
+
     paymentStatus: {
       type: String,
       default: "Unpaid",
-      enum: ["Unpaid", "Paid", "Refunded"]
-    }
+      enum: ["Unpaid", "Paid", "Refunded"],
+    },
   },
-  // Requirement #6: Essential for sorting "My Orders" by the newest date
-  { 
-    timestamps: true 
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Order", OrderSchema);

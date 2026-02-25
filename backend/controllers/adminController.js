@@ -18,6 +18,3 @@ exports.getAdminOrders = async (req, res) => {
     }
 };
 
-// NOTE: All reservation logic (create, fetch, update status, delete, walk-in)
-// has been moved to reservationController.js — do not add reservation
-// functions here to avoid duplicate logic.
