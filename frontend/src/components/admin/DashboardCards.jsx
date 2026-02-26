@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { ShoppingBag, Timer, Calendar, IndianRupee, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { ShoppingBag, Timer, Calendar, IndianRupee, RefreshCw } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, LineChart, Line,
@@ -9,13 +9,11 @@ import API from "../../api/axiosConfig";
 const REFRESH_INTERVAL = 15000;
 const CHART_HEIGHT = 240;
 
-// ── Helper: safely extract an array from any API response shape ────────────
 function extractArray(responseData, ...keys) {
   if (Array.isArray(responseData)) return responseData;
   for (const key of keys) {
     if (Array.isArray(responseData?.[key])) return responseData[key];
   }
-  console.warn("extractArray: unexpected response shape →", responseData);
   return [];
 }
 
@@ -58,10 +56,8 @@ export default function DashboardCards() {
 
       let todayOrders = 0, pendingOrders = 0, revenue = 0;
       if (ordersRes.status === "fulfilled") {
-        // ✅ Handles: [], { data: [] }, { orders: [] }, { success, orders: [] }
         const orders = extractArray(ordersRes.value.data, "data", "orders", "items");
         const today  = new Date().toDateString();
-
         todayOrders   = orders.filter((o) => new Date(o.createdAt).toDateString() === today).length;
         pendingOrders = orders.filter((o) => ["Pending", "pending", "Processing", "processing"].includes(o.status)).length;
         revenue       = orders
@@ -69,22 +65,15 @@ export default function DashboardCards() {
           .reduce((sum, o) => sum + (o.totalAmount || o.total || 0), 0);
       }
 
-      // FIX: date is stored as type:Date in MongoDB (UTC midnight).
-      // "2026-02-22" from the form becomes 2026-02-22T00:00:00.000Z in MongoDB.
-      // In IST (UTC+5:30), that UTC midnight is actually the previous day at 5:30 AM,
-      // so we manually shift by +5:30 before extracting the date string to compare.
       let reservations = 0;
       if (reservationsRes.status === "fulfilled") {
-        // ✅ Handles: [], { data: [] }, { reservations: [] }, { success, reservations: [] }
-        const res      = extractArray(reservationsRes.value.data, "data", "reservations", "items");
-        const todayStr = new Date().toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local IST
+        const res        = extractArray(reservationsRes.value.data, "data", "reservations", "items");
+        const todayStr   = new Date().toLocaleDateString("en-CA");
         const IST_OFFSET = 5.5 * 60 * 60 * 1000;
-
         reservations = res.filter((r) => {
           const d       = new Date(r.date || r.createdAt);
           const istDate = new Date(d.getTime() + IST_OFFSET);
-          const dateStr = istDate.toISOString().split("T")[0];
-          return dateStr === todayStr;
+          return istDate.toISOString().split("T")[0] === todayStr;
         }).length;
       }
 
@@ -96,7 +85,6 @@ export default function DashboardCards() {
       setLastUpdated(new Date());
       setIsLive(true);
     } catch (err) {
-      console.error("Dashboard fetch error:", err);
       setError("Could not reach server — showing last known data");
       setIsLive(false);
     } finally {
@@ -111,9 +99,9 @@ export default function DashboardCards() {
   }, [fetchDashboardData]);
 
   const stats = [
-    { label: "Today's Orders",       value: data.todayOrders,   icon: ShoppingBag,  color: "text-blue-400",    iconBg: "bg-blue-400/10 border border-blue-400/20",    accent: "bg-blue-400",    hover: "hover:border-blue-400/40" },
-    { label: "Pending Orders",       value: data.pendingOrders, icon: Timer,         color: "text-[#f5c27a]",   iconBg: "bg-[#f5c27a]/10 border border-[#f5c27a]/20",  accent: "bg-[#f5c27a]",   hover: "hover:border-[#f5c27a]/40" },
-    { label: "Today's Reservations", value: data.reservations,  icon: Calendar,      color: "text-violet-400",  iconBg: "bg-violet-400/10 border border-violet-400/20", accent: "bg-violet-400",  hover: "hover:border-violet-400/40" },
+    { label: "Today's Orders",       value: data.todayOrders,   icon: ShoppingBag,  color: "text-blue-400",   iconBg: "bg-blue-400/10 border border-blue-400/20",    accent: "bg-blue-400",   hover: "hover:border-blue-400/40"   },
+    { label: "Pending Orders",       value: data.pendingOrders, icon: Timer,        color: "text-amber-400",  iconBg: "bg-amber-400/10 border border-amber-400/20",  accent: "bg-amber-400",  hover: "hover:border-amber-400/40"  },
+    { label: "Today's Reservations", value: data.reservations,  icon: Calendar,     color: "text-violet-400", iconBg: "bg-violet-400/10 border border-violet-400/20", accent: "bg-violet-400", hover: "hover:border-violet-400/40" },
     { label: "Today's Revenue",      value: `₹${data.revenue.toLocaleString("en-IN")}`, icon: IndianRupee, color: "text-emerald-400", iconBg: "bg-emerald-400/10 border border-emerald-400/20", accent: "bg-emerald-400", hover: "hover:border-emerald-400/40" },
   ];
 
@@ -124,8 +112,10 @@ export default function DashboardCards() {
     itemStyle: { color: "#f4f4f5" },
   };
 
+  // ── Skeleton ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="space-y-8">
+      <div className="h-11 rounded-xl bg-zinc-900 border border-zinc-800 animate-pulse" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 animate-pulse">
@@ -147,109 +137,123 @@ export default function DashboardCards() {
   return (
     <div className="space-y-8">
       <style>{`
-        @keyframes cardIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes cardIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         .stat-card { animation: cardIn 0.4s ease both; }
-        @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
-        .live-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+
+        @keyframes livePing {
+          0%, 100% { box-shadow: 0 0 0 0   rgba(52,211,153,0.55); }
+          65%      { box-shadow: 0 0 0 6px rgba(52,211,153,0);    }
+        }
+        .live-ring { animation: livePing 1.8s ease-in-out infinite; }
+
         .recharts-tooltip-wrapper { outline: none !important; }
       `}</style>
 
-      {/* Status bar */}
-      <div className="flex items-center gap-2">
-        {isLive ? (
-          <>
-            <span className="live-dot w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Live</span>
-            <Wifi size={13} className="text-emerald-400" />
-          </>
-        ) : (
-          <>
-            <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
-            <span className="text-xs font-bold text-red-400 uppercase tracking-widest">Offline</span>
-            <WifiOff size={13} className="text-red-400" />
-          </>
-        )}
-        {lastUpdated && (
-          <span className="text-xs text-zinc-400 ml-2">
-            Updated {lastUpdated.toLocaleTimeString("en-IN")}
-          </span>
-        )}
-        <span className="text-xs text-zinc-500 ml-1">· auto-refreshes every 15s</span>
+      {/* ── Status Bar ─────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800">
+
+        {/* Left side: last updated timestamp */}
+        <div className="flex items-center gap-2">
+          <span className={`live-ring w-1.5 h-1.5 rounded-full flex-shrink-0 ${isLive ? "bg-emerald-400" : "bg-red-400"}`} />
+          {lastUpdated ? (
+            <span className="text-sm font-mono text-zinc-400">
+              Last updated{" "}
+              <span className="text-zinc-100 font-bold text-base">
+                {lastUpdated.toLocaleTimeString("en-IN")}
+              </span>
+            </span>
+          ) : (
+            <span className="text-sm font-mono text-zinc-500">Fetching data…</span>
+          )}
+        </div>
+
+        {/* Right side: refresh cadence */}
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-600">
+          <RefreshCw size={11} className={isLive ? "text-zinc-600" : "text-red-400 animate-spin"} />
+          <span>auto-refresh · 15s</span>
+        </div>
       </div>
 
-      {/* Error */}
+      {/* ── Error Banner ───────────────────────────────────────────────────── */}
       {error && (
-        <div className="bg-red-900/30 border border-red-800 text-red-400 rounded-xl px-5 py-3 text-sm font-medium">
-          ⚠ {error}
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
+          <span>⚠</span>
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Stat Cards */}
+      {/* ── Stat Cards ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" role="list">
         {stats.map((item, i) => (
           <div
             key={item.label}
             role="listitem"
             tabIndex={0}
-            className={`stat-card p-6 rounded-2xl cursor-default bg-zinc-900 border border-zinc-800 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5c27a] focus-visible:outline-offset-2 ${item.hover}`}
+            className={`stat-card relative overflow-hidden p-6 rounded-2xl cursor-default bg-zinc-900 border border-zinc-800 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 focus-visible:outline-offset-2 ${item.hover}`}
             style={{ animationDelay: `${i * 80}ms` }}
           >
+            {/* Subtle inner shine */}
+            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.025] to-transparent" />
+
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">{item.label}</p>
-                <p className="text-3xl font-black mt-3 tabular-nums text-zinc-100">{item.value}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">{item.label}</p>
+                <p className="text-3xl font-black mt-3 tabular-nums text-zinc-100 tracking-tight">{item.value}</p>
               </div>
-              <div className={`p-3 rounded-xl flex-shrink-0 ${item.iconBg}`}>
-                <item.icon size={20} className={item.color} aria-hidden="true" />
+              <div className={`p-2.5 rounded-xl flex-shrink-0 ${item.iconBg}`}>
+                <item.icon size={18} className={item.color} aria-hidden="true" />
               </div>
             </div>
-            <div className={`mt-5 h-[2px] rounded-full w-1/3 opacity-40 ${item.accent}`} />
+            <div className={`mt-5 h-[2px] rounded-full w-8 opacity-50 ${item.accent}`} />
           </div>
         ))}
       </div>
 
-      {/* Charts */}
+      {/* ── Charts ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800">
-          <h3 className="text-base font-bold text-zinc-100">Live Snapshot</h3>
-          <p className="text-xs text-zinc-500 mt-1 mb-5">Current counts right now</p>
+          <h3 className="text-sm font-bold text-zinc-100">Live Snapshot</h3>
+          <p className="text-xs font-mono text-zinc-500 mt-1 mb-5">Current counts right now</p>
           <ChartBox>
             {(w) => (
               <BarChart width={w} height={CHART_HEIGHT} data={barData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                 <XAxis dataKey="name" stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
-                <YAxis stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                <YAxis stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
                 <Tooltip {...tooltipStyle} />
                 <Legend wrapperStyle={{ paddingTop: "16px", fontSize: "12px", color: "#d4d4d8" }} />
-                <Bar dataKey="Orders"       fill="#60a5fa" radius={[4,4,0,0]} />
-                <Bar dataKey="Pending"      fill="#f5c27a" radius={[4,4,0,0]} />
-                <Bar dataKey="Reservations" fill="#a78bfa" radius={[4,4,0,0]} />
+                <Bar dataKey="Orders"       fill="#60a5fa" radius={[4,4,0,0]} maxBarSize={56} />
+                <Bar dataKey="Pending"      fill="#fbbf24" radius={[4,4,0,0]} maxBarSize={56} />
+                <Bar dataKey="Reservations" fill="#a78bfa" radius={[4,4,0,0]} maxBarSize={56} />
               </BarChart>
             )}
           </ChartBox>
         </div>
 
         <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800">
-          <h3 className="text-base font-bold text-zinc-100">Activity Trend</h3>
-          <p className="text-xs text-zinc-500 mt-1 mb-5">Last {history.length} snapshots</p>
+          <h3 className="text-sm font-bold text-zinc-100">Activity Trend</h3>
+          <p className="text-xs font-mono text-zinc-500 mt-1 mb-5">Last {history.length} snapshots</p>
           <ChartBox>
             {(w) =>
               history.length < 2 ? (
                 <div className="h-full flex flex-col items-center justify-center gap-2 text-zinc-500">
                   <RefreshCw size={20} className="animate-spin opacity-40" />
                   <p className="text-sm">Collecting trend data…</p>
-                  <p className="text-xs">auto-refreshes every 15s</p>
+                  <p className="text-xs font-mono">auto-refreshes every 15s</p>
                 </div>
               ) : (
                 <LineChart width={w} height={CHART_HEIGHT} data={history} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis dataKey="time" stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 9 }} />
-                  <YAxis stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
+                  <YAxis stroke="#52525b" tick={{ fill: "#a1a1aa", fontSize: 12 }} allowDecimals={false} />
                   <Tooltip {...tooltipStyle} />
                   <Legend wrapperStyle={{ paddingTop: "16px", fontSize: "12px", color: "#d4d4d8" }} />
-                  <Line type="monotone" dataKey="todayOrders"   stroke="#60a5fa" strokeWidth={2} dot={false} name="Orders" />
-                  <Line type="monotone" dataKey="pendingOrders" stroke="#f5c27a" strokeWidth={2} dot={false} name="Pending" />
-                  <Line type="monotone" dataKey="reservations"  stroke="#a78bfa" strokeWidth={2} dot={false} name="Reservations" />
+                  <Line type="monotone" dataKey="todayOrders"   stroke="#60a5fa" strokeWidth={2} dot={false} name="Orders"       activeDot={{ r: 4, fill: "#60a5fa" }} />
+                  <Line type="monotone" dataKey="pendingOrders" stroke="#fbbf24" strokeWidth={2} dot={false} name="Pending"      activeDot={{ r: 4, fill: "#fbbf24" }} />
+                  <Line type="monotone" dataKey="reservations"  stroke="#a78bfa" strokeWidth={2} dot={false} name="Reservations" activeDot={{ r: 4, fill: "#a78bfa" }} />
                 </LineChart>
               )
             }
@@ -257,25 +261,39 @@ export default function DashboardCards() {
         </div>
       </div>
 
-      {/* Revenue */}
-      <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800">
+      {/* ── Revenue Panel ──────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden p-6 rounded-2xl bg-zinc-900 border border-zinc-800">
+        {/* Top glow accent */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-base font-bold text-zinc-100">Today's Revenue</h3>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full">Live</span>
+          <h3 className="text-sm font-bold text-zinc-100">Today's Revenue</h3>
+          <span className="text-[10px] font-bold font-mono tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full animate-pulse">
+            ● LIVE
+          </span>
         </div>
-        <p className="text-xs text-zinc-500 mb-5">From today's completed orders</p>
-        <p className="text-5xl font-black text-emerald-400 tabular-nums">
+        <p className="text-xs font-mono text-zinc-500 mb-5">From today's completed orders</p>
+
+        <p className="text-5xl font-black text-emerald-400 tabular-nums tracking-tight leading-none">
           ₹{data.revenue.toLocaleString("en-IN")}
         </p>
-        <div className="mt-4 h-[3px] w-full bg-zinc-800 rounded-full overflow-hidden">
+
+        <div className="mt-5 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
           <div
-            className="h-full bg-emerald-400 rounded-full transition-all duration-700"
-            style={{ width: `${Math.min((data.revenue / 50000) * 100, 100)}%` }}
+            className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all duration-700 ease-out"
+            style={{
+              width: `${Math.min((data.revenue / 50000) * 100, 100)}%`,
+              boxShadow: "0 0 10px rgba(52,211,153,0.4)",
+            }}
           />
         </div>
-        <p className="text-xs text-zinc-500 mt-2">
-          {Math.min(Math.round((data.revenue / 50000) * 100), 100)}% of daily target · ₹50,000
-        </p>
+
+        <div className="flex justify-between items-center mt-2.5 text-xs font-mono">
+          <span className="text-zinc-500">
+            {Math.min(Math.round((data.revenue / 50000) * 100), 100)}% of daily target
+          </span>
+          <span className="text-zinc-600">₹50,000 goal</span>
+        </div>
       </div>
     </div>
   );

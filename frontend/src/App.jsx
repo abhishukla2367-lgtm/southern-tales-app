@@ -32,7 +32,7 @@ import Profile from "./pages/Profile";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import MenuList from "./components/admin/menu/MenuList";
 import OrdersList from "./components/orders/OrdersList";         // 🔄 fixed path
-import ReservationsList from "./components/admin/ReservationsList";
+import ReservationsList from "./components/reservations/ReservationsList";
 
 // Admin Pages
 import ReportsPage from "./pages/admin/ReportsPage";

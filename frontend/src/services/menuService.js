@@ -4,22 +4,14 @@ import API from "../api/axiosConfig";
 export const getMenuItems = () => API.get("/menu");
 
 // --- ADMIN: CREATE ITEM ---
-// Note: 'data' is now a FormData object containing the image file
-export const createMenuItem = (data) => 
-  API.post("/menu", data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+// Axios auto-sets multipart/form-data + boundary when body is FormData
+export const createMenuItem = (data) =>
+  API.post("/menu", data, { headers: { "Content-Type": undefined } });
 
 // --- ADMIN: UPDATE ITEM ---
-// This handles both text updates and new image uploads
-export const updateMenuItem = (id, data) => 
-  API.put(`/menu/${id}`, data, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+// Same here — never manually set Content-Type for FormData uploads
+export const updateMenuItem = (id, data) =>
+  API.put(`/menu/${id}`, data, { headers: { "Content-Type": undefined } });
 
 // --- ADMIN: DELETE ITEM ---
 export const deleteMenuItem = (id) => API.delete(`/menu/${id}`);

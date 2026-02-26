@@ -5,11 +5,12 @@ const emptyForm = {
 };
 
 export default function MenuItemModal({ editItem, categories, onSave, onClose }) {
-  const [form, setForm] = useState(emptyForm);
-  const [imageFile, setImageFile] = useState(null); // Store the ACTUAL file here
+  const [form, setForm]             = useState(emptyForm);
+  const [imageFile, setImageFile]   = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [saving, setSaving] = useState(false);
-  const fileRef = useRef();
+  const [saving, setSaving]         = useState(false);
+  const [errors, setErrors]         = useState({});
+  const fileRef                     = useRef();
 
   useEffect(() => {
     if (editItem) {
@@ -21,51 +22,60 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
         available:   editItem.available   ?? true,
       });
       setImagePreview(editItem.image || "");
-      setImageFile(null); // Reset file input on edit
+      setImageFile(null);
     } else {
       setForm({ ...emptyForm, category: categories[1] || "" });
       setImagePreview("");
       setImageFile(null);
     }
+    setErrors({});
   }, [editItem, categories]);
 
   const handleImageFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    setImageFile(file); // 👈 THIS IS CRUCIAL FOR CLOUDINARY
-    
-    // Create a local preview URL
+    setImageFile(file);
+    setErrors((prev) => ({ ...prev, image: null }));
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImagePreview(ev.target.result);
-    };
+    reader.onload = (ev) => setImagePreview(ev.target.result);
     reader.readAsDataURL(file);
   };
 
+  // ── Inline validation ──────────────────────────────────────────────────────
+  const validate = () => {
+    const newErrors = {};
+    if (!form.name.trim())       newErrors.name  = "Dish name is required";
+    if (!form.price)             newErrors.price = "Price is required";
+    if (Number(form.price) <= 0) newErrors.price = "Price must be greater than 0";
+    if (!form.category)          newErrors.category = "Category is required";
+    // Image required only for new items (edit can keep existing image)
+    if (!editItem && !imageFile) newErrors.image = "Please select an image";
+    return newErrors;
+  };
+
   const handleSave = async () => {
-    if (!form.name.trim() || !form.price) return;
-    
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setSaving(true);
+    setErrors({});
     try {
-      // 1. Create FormData to handle the file upload
       const formData = new FormData();
-      formData.append("name", form.name);
-      formData.append("price", form.price);
-      formData.append("category", form.category);
+      formData.append("name",        form.name);
+      formData.append("price",       form.price);
+      formData.append("category",    form.category);
       formData.append("description", form.description);
-      formData.append("available", form.available);
+      formData.append("available",   form.available);
+      if (imageFile) formData.append("image", imageFile);
 
-      // 2. Add the image file if a new one was selected
-      if (imageFile) {
-        formData.append("image", imageFile); // 'image' matches upload.single("image") in backend
-      }
-
-      // 3. Pass the formData to the parent save function
       await onSave(formData);
       onClose();
     } catch (err) {
       console.error("Save failed:", err.message);
+      setErrors({ submit: err.response?.data?.message || "Failed to save. Please try again." });
     } finally {
       setSaving(false);
     }
@@ -80,19 +90,36 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
           <h2 className="text-lg font-black text-yellow-400 uppercase tracking-tight">
             {editItem ? "Edit Menu Item" : "Add New Item"}
           </h2>
-          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-300 text-xl cursor-pointer transition-colors">✕</button>
+          <button
+            onClick={onClose}
+            className="text-neutral-500 hover:text-neutral-300 text-xl cursor-pointer transition-colors"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Image Upload Area */}
+        {/* Submit error */}
+        {errors.submit && (
+          <div className="mb-5 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold">
+            ⚠ {errors.submit}
+          </div>
+        )}
+
+        {/* Image Upload */}
         <div className="mb-6">
           <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-2">
-            Item Image
+            Item Image {!editItem && <span className="text-red-500">*</span>}
           </label>
 
           <div
-            className={`h-44 bg-neutral-900 border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center mb-3 cursor-pointer transition-all
-              ${imagePreview ? "border-neutral-700" : "border-neutral-800 hover:border-yellow-600/50"}`}
             onClick={() => fileRef.current.click()}
+            className={`h-44 bg-neutral-900 border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center mb-2 cursor-pointer transition-all
+              ${errors.image
+                ? "border-red-500/60 hover:border-red-500"
+                : imagePreview
+                  ? "border-neutral-700"
+                  : "border-neutral-800 hover:border-yellow-600/50"
+              }`}
           >
             {imagePreview ? (
               <div className="relative w-full h-full group">
@@ -105,59 +132,88 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
               <div className="text-center text-neutral-600">
                 <div className="text-4xl mb-2">📸</div>
                 <div className="text-[11px] font-bold uppercase tracking-wider">Click to Select Image</div>
-                <p className="text-[10px] mt-1 text-neutral-700">JPG, PNG or WEBP (Max 5MB)</p>
+                <p className="text-[10px] mt-1 text-neutral-700">JPG, PNG or WEBP · Max 5MB</p>
               </div>
             )}
           </div>
 
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
-          
-          {imagePreview && (
-             <button 
-                onClick={() => {setImagePreview(""); setImageFile(null);}} 
-                className="text-[10px] text-red-500 font-bold uppercase tracking-widest hover:text-red-400 transition-colors"
-             >
-                Remove Image
-             </button>
+
+          {errors.image && (
+            <p className="text-[11px] text-red-400 font-semibold mt-1">⚠ {errors.image}</p>
+          )}
+
+          {imagePreview && !errors.image && (
+            <button
+              onClick={() => { setImagePreview(""); setImageFile(null); }}
+              className="text-[10px] text-red-500 font-bold uppercase tracking-widest hover:text-red-400 transition-colors mt-1"
+            >
+              Remove Image
+            </button>
           )}
         </div>
 
         {/* Form Fields */}
         <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* Dish Name */}
           <div className="col-span-2">
-             <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1.5">Dish Name</label>
-             <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                placeholder="e.g. Butter Chicken"
-                className="w-full bg-neutral-900 border border-neutral-800 text-neutral-100 text-sm rounded-lg px-4 py-3 outline-none focus:border-yellow-500 transition-colors"
-             />
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1.5">
+              Dish Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => {
+                setForm((p) => ({ ...p, name: e.target.value }));
+                setErrors((p) => ({ ...p, name: null }));
+              }}
+              placeholder="e.g. Butter Chicken"
+              className={`w-full bg-neutral-900 border text-neutral-100 text-sm rounded-lg px-4 py-3 outline-none transition-colors
+                ${errors.name ? "border-red-500/60 focus:border-red-500" : "border-neutral-800 focus:border-yellow-500"}`}
+            />
+            {errors.name && <p className="text-[11px] text-red-400 font-semibold mt-1">⚠ {errors.name}</p>}
           </div>
 
+          {/* Price */}
           <div>
-             <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1.5">Price (₹)</label>
-             <input
-                type="number"
-                value={form.price}
-                onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
-                placeholder="0.00"
-                className="w-full bg-neutral-900 border border-neutral-800 text-neutral-100 text-sm rounded-lg px-4 py-3 outline-none focus:border-yellow-500 transition-colors"
-             />
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1.5">
+              Price (₹) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={form.price}
+              onChange={(e) => {
+                setForm((p) => ({ ...p, price: e.target.value }));
+                setErrors((p) => ({ ...p, price: null }));
+              }}
+              placeholder="0.00"
+              className={`w-full bg-neutral-900 border text-neutral-100 text-sm rounded-lg px-4 py-3 outline-none transition-colors
+                ${errors.price ? "border-red-500/60 focus:border-red-500" : "border-neutral-800 focus:border-yellow-500"}`}
+            />
+            {errors.price && <p className="text-[11px] text-red-400 font-semibold mt-1">⚠ {errors.price}</p>}
           </div>
 
+          {/* Category */}
           <div>
-             <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1.5">Category</label>
-             <select
-                value={form.category}
-                onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-                className="w-full bg-neutral-900 border border-neutral-800 text-neutral-100 text-sm rounded-lg px-4 py-3 outline-none focus:border-yellow-500 transition-colors"
-             >
-                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-             </select>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1.5">
+              Category <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.category}
+              onChange={(e) => {
+                setForm((p) => ({ ...p, category: e.target.value }));
+                setErrors((p) => ({ ...p, category: null }));
+              }}
+              className={`w-full bg-neutral-900 border text-neutral-100 text-sm rounded-lg px-4 py-3 outline-none transition-colors
+                ${errors.category ? "border-red-500/60 focus:border-red-500" : "border-neutral-800 focus:border-yellow-500"}`}
+            >
+              {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+            {errors.category && <p className="text-[11px] text-red-400 font-semibold mt-1">⚠ {errors.category}</p>}
           </div>
         </div>
 
+        {/* Description */}
         <div className="mb-6">
           <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1.5">Description</label>
           <textarea
@@ -169,31 +225,39 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
           />
         </div>
 
-        {/* Toggle & Buttons */}
+        {/* Availability Toggle */}
         <div className="flex items-center gap-3 mb-8">
           <button
             type="button"
             onClick={() => setForm((f) => ({ ...f, available: !f.available }))}
-            className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer border-none ${form.available ? "bg-yellow-500" : "bg-neutral-800"}`}
+            className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer border-none flex-shrink-0 ${form.available ? "bg-yellow-500" : "bg-neutral-800"}`}
           >
             <span className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${form.available ? "left-6" : "left-1"}`} />
           </button>
           <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">In Stock / Available</span>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 bg-transparent hover:bg-neutral-900 text-neutral-500 py-3 text-xs font-black uppercase tracking-widest transition-colors rounded-xl border border-neutral-800">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-transparent hover:bg-neutral-900 text-neutral-500 py-3 text-xs font-black uppercase tracking-widest transition-colors rounded-xl border border-neutral-800"
+          >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
             className={`flex-[2] rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all
-              ${saving ? "bg-neutral-800 text-neutral-600 cursor-wait" : "bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg shadow-yellow-900/20"}`}
+              ${saving
+                ? "bg-neutral-800 text-neutral-600 cursor-wait"
+                : "bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg shadow-yellow-900/20 hover:shadow-yellow-900/40"
+              }`}
           >
             {saving ? "Uploading to Cloud..." : editItem ? "Update Item" : "Confirm & Add"}
           </button>
         </div>
+
       </div>
     </div>
   );
