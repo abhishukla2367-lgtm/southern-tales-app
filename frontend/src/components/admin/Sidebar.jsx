@@ -16,7 +16,6 @@ const menuItems = [
   { id: "menu",         label: "Menu Management",     icon: Utensils },
   { id: "orders",       label: "Live Orders",         icon: ClipboardList },
   { id: "reservations", label: "Reservations",        icon: CalendarDays },
-  { id: "walkin",       label: "Walk-in",             icon: UserCheck },
   { id: "reports",      label: "Reports & Analytics", icon: BarChart2 },
 ];
 

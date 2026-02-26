@@ -3,9 +3,8 @@ import Sidebar from "./Sidebar";
 import DashboardCards from "./DashboardCards";
 import MenuList from "./menu/MenuList";
 import OrdersList from "../orders/OrdersList";
-import ReservationsList from "./ReservationsList";
+import ReservationsList from "../reservations/ReservationsList";
 import ReportsPage from "../../pages/admin/ReportsPage";
-import WalkInReservation from "./WalkInReservation";
 import { AuthContext } from "../../context/AuthContext";
 import {
   ShoppingBag, CalendarCheck, AlertTriangle, CheckCircle,
@@ -332,7 +331,6 @@ export default function AdminDashboard() {
       case "menu":         return "Menu Management";
       case "orders":       return "Orders Overview";
       case "reservations": return "Reservations Overview";
-      case "walkin":       return "Walk-in Reservations";
       case "reports":      return "Reports & Analytics";
       default:             return "Dashboard Overview";
     }

@@ -1,41 +1,50 @@
 import axios from "axios";
 
 const API = axios.create({
-  // FIX: Use relative path so the Vite proxy can catch it
-  baseURL: "/api", 
-  headers: { "Content-Type": "application/json"}
+  baseURL: "/api",
+  headers: { "Content-Type": "application/json" },
 });
 
 /**
- * REQUEST INTERCEPTOR (Task 4 & 5)
- * Attaches JWT for protected routes (Reservation & Ordering)
+ * REQUEST INTERCEPTOR
+ * - Attaches JWT for protected routes
+ * - Removes Content-Type for FormData so browser sets multipart/form-data + boundary automatically
  */
 API.interceptors.request.use(
   (config) => {
+    // ── JWT ───────────────────────────────────────────────────────────────
     const token = localStorage.getItem("token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`; // Standard Bearer format
+      config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // ── FormData fix ──────────────────────────────────────────────────────
+    // When the body is FormData, delete the Content-Type header entirely.
+    // The browser will then set it automatically as:
+    //   multipart/form-data; boundary=----WebKitFormBoundary...
+    // If we leave "application/json" here, the backend can't parse the body → 400.
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
 /**
- * RESPONSE INTERCEPTOR (Requirement #3 & #4)
+ * RESPONSE INTERCEPTOR
  * Handles session expiration and automatic logout
  */
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 401: Unauthorized (Expired/Invalid Token)
     if (error.response && error.response.status === 401) {
       console.warn("Session expired. Logging out...");
-      
+
       localStorage.removeItem("token");
       localStorage.removeItem("user");
 
-      // Redirect only if not on public pages
       if (window.location.pathname !== "/login" && window.location.pathname !== "/") {
         window.location.href = "/login";
       }

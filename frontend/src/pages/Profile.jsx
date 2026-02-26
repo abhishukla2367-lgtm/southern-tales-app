@@ -18,7 +18,6 @@ const Profile = () => {
       try {
         setLoading(true);
         const res = await API.get("/auth/profile");
-        console.log("DEBUG DATA:", res.data);
         setData(res.data);
       } catch (err) {
         console.error("Profile Fetch Error:", err);
