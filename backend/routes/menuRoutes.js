@@ -30,11 +30,11 @@ const uploadToCloudinary = (fileBuffer) => {
 // --- 1. PUBLIC ROUTE: GET ALL MENU ITEMS (WITH CUSTOM SORT + CATEGORY FILTER) ---
 router.get("/", async (req, res) => {
   try {
-    // ✅ FIX: Support ?category= filter from menuController pattern
     const filter = req.query.category ? { category: req.query.category } : {};
-    const items = await MenuItem.find(filter);
 
-    // Define the professional category sequence
+    // ✅ FIX: .lean() returns plain JS objects, bypassing Mongoose toJSON transforms
+    const items = await MenuItem.find(filter).lean();
+
     const categoryOrder = [
       "breakfast",
       "starters",
@@ -43,17 +43,17 @@ router.get("/", async (req, res) => {
       "beverages",
     ];
 
-    // Sort by category order, then alphabetically by name within same category
-    const sortedItems = items.sort((a, b) => {
-      const indexA = categoryOrder.indexOf(a.category?.toLowerCase());
-      const indexB = categoryOrder.indexOf(b.category?.toLowerCase());
-
-      if (indexA === indexB) return a.name.localeCompare(b.name);
-      if (indexA === -1) return 1;   // unknown categories go to end
-      if (indexB === -1) return -1;
-
-      return indexA - indexB;
-    });
+    const sortedItems = items
+      .sort((a, b) => {
+        const indexA = categoryOrder.indexOf(a.category?.toLowerCase());
+        const indexB = categoryOrder.indexOf(b.category?.toLowerCase());
+        if (indexA === indexB) return a.name.localeCompare(b.name);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      })
+      // ✅ FIX: guarantee _id is always a plain string for frontend compatibility
+      .map((item) => ({ ...item, _id: item._id.toString() }));
 
     res.status(200).json(sortedItems);
   } catch (err) {

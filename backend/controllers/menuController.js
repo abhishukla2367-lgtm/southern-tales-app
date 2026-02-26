@@ -11,8 +11,19 @@ const toBool    = (v) => (v !== undefined && v !== "" ? v !== "false"    : undef
 const getAllMenuItems = async (req, res) => {
   try {
     const filter = req.query.category ? { category: req.query.category } : {};
-    const menuItems = await Menu.find(filter).sort({ createdAt: -1 });
-    res.status(200).json(menuItems);
+
+    // .lean() returns plain JS objects (faster, no Mongoose overhead)
+    const collection = mongoose.connection.db.collection("menu");
+    const menuItems  = await collection.find(filter).sort({ createdAt: -1 }).toArray();
+
+    // ✅ FIX: Safely convert ObjectId to string so _id always arrives on the frontend.
+    // Guards against null _id to prevent 500 crashes.
+    const serialized = menuItems.map((item) => ({
+      ...item,
+      _id: item._id ? item._id.toString() : undefined,
+    }));
+
+    res.status(200).json(serialized);
   } catch (err) {
     console.error("❌ Get Menu Error:", err.message);
     res.status(500).json({ success: false, message: "Failed to fetch menu items", error: err.message });
@@ -24,15 +35,12 @@ const createMenuItem = async (req, res) => {
   try {
     const { name, description, category } = req.body;
 
-    // Coerce FormData strings to correct types
     const price     = toNumber(req.body.price);
     const veg       = toBool(req.body.veg);
     const available = toBool(req.body.available);
 
-    // Image URL comes from multer-cloudinary, not req.body
     const image = req.file?.path;
 
-    // Validate required fields
     if (!name || !price || !category) {
       return res.status(400).json({
         success: false,
@@ -76,15 +84,12 @@ const updateMenuItem = async (req, res) => {
 
     const { name, description, category } = req.body;
 
-    // Coerce FormData strings to correct types
     const price     = toNumber(req.body.price);
     const veg       = toBool(req.body.veg);
     const available = toBool(req.body.available);
 
-    // Use newly uploaded image if provided, otherwise fall back to existing URL in body
     const image = req.file?.path || req.body.image;
 
-    // Build update object — only include fields that were actually sent
     const updates = {
       ...(name        !== undefined && { name }),
       ...(description !== undefined && { description }),

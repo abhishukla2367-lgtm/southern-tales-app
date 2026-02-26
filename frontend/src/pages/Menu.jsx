@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import axios from "axios";
+import API from "../api/axiosConfig"; // ✅ FIX: replaced raw axios with configured API instance
 
 /* ================= HERO IMAGE IMPORTS ================= */
 import southFoodHero  from "../assets/images/hero/south-food.jpg";
@@ -57,9 +57,14 @@ export default function Menu() {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        // Ensure this matches your backend PORT
-        const res = await axios.get("http://localhost:5000/api/menu"); 
-        setMenuItems(res.data);
+        // ✅ FIX: use API instance (includes baseURL, auth headers, interceptors)
+        const res = await API.get("/menu");
+        // ✅ FIX: ensure _id is always a plain string for addToCart compatibility
+        const normalized = res.data.map((item) => ({
+          ...item,
+          _id: item._id ? item._id.toString() : item.id,
+        }));
+        setMenuItems(normalized);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching menu:", err);
@@ -214,7 +219,8 @@ export default function Menu() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredItems.map(item => (
-              <DishCard key={item._id} item={item} onAdd={handleAdd} />
+              // ✅ FIX: fallback chain until we confirm the real ID field from the debug log above
+              <DishCard key={item._id || item.id || item.name} item={item} onAdd={handleAdd} />
             ))}
           </div>
         )}

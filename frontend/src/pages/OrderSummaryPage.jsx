@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import LiveTrackingMap from "../components/LiveTrackingMap";
 import { FaMapMarkerAlt, FaClock, FaCreditCard, FaChevronLeft, FaPhoneAlt, FaCheckCircle } from "react-icons/fa";
+import API from "../api/axiosConfig"; // ✅ FIX: replaced hardcoded fetch with configured API instance
 
 const OrderSummaryPage = () => {
   const { state } = useLocation();
@@ -28,48 +29,38 @@ const OrderSummaryPage = () => {
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount);
 
   const handleConfirmOrder = async () => {
-  if (isDelivery && !address) return alert("Please enter your delivery address!");
-  if (!phone || !time || !paymentMethod) return alert("Please fill in all details!");
-  const orderData = {
-    items: cartItems.map(item => ({
-      productId: item._id || item.id, // REQUIRED by your schema
-      name: item.name,
-      quantity: item.quantity,
-      price: item.price
-    })),
-    totalAmount: totalAmount,
-    // 2. Wrap address/phone in the deliveryInfo object
-    deliveryInfo: {
-      address: isDelivery ? address : "Sector 15, CBD Belapur",
-      phone: phone
-    }
-  };
+    if (isDelivery && !address) return alert("Please enter your delivery address!");
+    if (!phone || !time || !paymentMethod) return alert("Please fill in all details!");
 
-  try {
-    const token = localStorage.getItem("token"); // Get your JWT
-    const response = await fetch("http://localhost:5000/api/orders", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      },
-      body: JSON.stringify(orderData),
-    });
+    const orderData = {
+      items: cartItems.map(item => ({
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      totalAmount: totalAmount,
+      deliveryInfo: {
+        address: isDelivery ? address : "Sector 15, CBD Belapur",
+        phone: phone
+      }
+    };
 
-    const result = await response.json();
-    if (response.ok) {
+    try {
+      // ✅ FIX: use API instance — handles baseURL, auth headers, and interceptors automatically
+      const response = await API.post("/orders", orderData);
+      const result = response.data;
+
       clearCart();
       setOrderConfirmed(true);
       alert("Order Placed Successfully!");
       navigate("/");
-      // Task 6: Redirect to profile so they can see "My Orders"
-    } else {
-      alert(`Order Failed: ${result.error || result.message}`);
+    } catch (err) {
+      console.error("Order Error:", err);
+      const msg = err.response?.data?.error || err.response?.data?.message || "Something went wrong";
+      alert(`Order Failed: ${msg}`);
     }
-  } catch (err) {
-    console.error("Network Error:", err);
-  }
-};
+  };
 
 
 
@@ -125,8 +116,7 @@ const OrderSummaryPage = () => {
                 {isDelivery ? (
                   <input type="text" placeholder="Enter location" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
                 ) : (
-          
-          <div className="w-full bg-gray-900/50 border border-dashed border-gray-700 p-3 rounded-xl text-yellow-500 text-sm">
+                  <div className="w-full bg-gray-900/50 border border-dashed border-gray-700 p-3 rounded-xl text-yellow-500 text-sm">
                     Sector 15, CBD Belapur,Navi Mumbai, Maharashtra 400614
                   </div>
                 )}
