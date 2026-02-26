@@ -1,51 +1,73 @@
 const mongoose = require("mongoose");
 
 const menuSchema = new mongoose.Schema({
-  // ✅ FIX: Removed custom string _id — using Mongoose ObjectId instead
-  // This ensures compatibility with ObjectId.isValid() checks in menuController.js
   name: {
-    type: String,
+    type:     String,
     required: [true, "Dish name is required"],
-    trim: true
+    trim:     true,
   },
   description: {
-    type: String,
-    default: ""          // ✅ FIX: Made optional to avoid unhandled Mongoose errors
-                         // when admin creates item without description
+    type:    String,
+    default: "",
   },
   price: {
-    type: Number,
+    type:     Number,
     required: [true, "Price is required"],
-    min: [0, "Price cannot be negative"]   // ✅ FIX: Prevent negative prices
+    min:      [0, "Price cannot be negative"],
   },
   category: {
-    type: String,
+    type:     String,
     required: true,
-    // no enum — admin can freely add any category from the frontend
   },
   image: {
-    type: String,
-    default: ""          // ✅ FIX: Made optional — controller handles missing images gracefully
+    type:    String,
+    default: "",
   },
   veg: {
-    type: Boolean,
-    default: true
+    type:    Boolean,
+    default: true,
   },
   vegan: {
-    type: Boolean,
-    default: false
+    type:    Boolean,
+    default: false,
   },
   dietary: {
-    type: Boolean,
-    default: false
+    type:    Boolean,
+    default: false,
   },
-  available: {           // matches frontend and menuController.js
-    type: Boolean,
-    default: true
-  }
+
+  // ─── Stock Management ──────────────────────────────────────────────────────
+  stock: {
+    type:     Number,
+    required: [true, "Stock quantity is required"],
+    default:  0,
+    min:      [0, "Stock cannot be negative"],
+  },
+
+  // ─── Availability ──────────────────────────────────────────────────────────
+  available: {
+    type:    Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
-  collection: "menu"     // ✅ _id: false removed — Mongoose now auto-generates ObjectIds
+  collection: "menu",
+  // ✅ No toJSON transform — _id serialization handled in the controller
+});
+
+// ─── Pre-save Hook ────────────────────────────────────────────────────────────
+menuSchema.pre("save", function (next) {
+  this.available = this.stock > 0;
+  next();
+});
+
+// ─── Pre-update Hook ──────────────────────────────────────────────────────────
+menuSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
+  const update = this.getUpdate();
+  if (update && update.stock !== undefined) {
+    update.available = Number(update.stock) > 0;
+  }
+  next();
 });
 
 module.exports = mongoose.model("Menu", menuSchema);

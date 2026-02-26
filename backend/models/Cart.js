@@ -8,9 +8,10 @@ const cartSchema = new mongoose.Schema({
     },
     items: [
         {
-            // ✅ FIX: Changed from String to ObjectId with ref for proper Menu item referencing
+            // ✅ FIX: Changed from ObjectId to Mixed to support both standard ObjectIds
+            // and custom _id values (e.g. "a2", "a3") that exist in the menu collection
             productId: {
-                type: mongoose.Schema.Types.ObjectId,
+                type: mongoose.Schema.Types.Mixed,
                 ref: 'Menu'
             },
             name:     { type: String, required: true },

@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-// ✅ FIX: Import controller functions instead of duplicating logic inline
 const {
   getCart,
   addToCart,
@@ -34,8 +33,16 @@ router.post("/add", protect, addToCart);
 router.delete("/clear", protect, clearCart);
 
 /**
+ * @route   DELETE /api/cart/item/:productId
+ * @desc    Remove a single item from cart (matches frontend: DELETE /cart/item/${id})
+ * @access  Private
+ * ⚠️ Must be defined BEFORE /:productId to avoid route collision
+ */
+router.delete("/item/:productId", protect, removeFromCart);
+
+/**
  * @route   DELETE /api/cart/:productId
- * @desc    Remove a single item from cart
+ * @desc    Remove a single item from cart (legacy / direct route)
  * @access  Private
  */
 router.delete("/:productId", protect, removeFromCart);
