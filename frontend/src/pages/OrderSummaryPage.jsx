@@ -2,74 +2,166 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import LiveTrackingMap from "../components/LiveTrackingMap";
-import { FaMapMarkerAlt, FaClock, FaCreditCard, FaChevronLeft, FaPhoneAlt, FaCheckCircle } from "react-icons/fa";
-import API from "../api/axiosConfig"; // ✅ FIX: replaced hardcoded fetch with configured API instance
+import { FaMapMarkerAlt, FaClock, FaCreditCard, FaChevronLeft, FaPhoneAlt, FaCheckCircle, FaUtensils, FaUsers } from "react-icons/fa";
+import API from "../api/axiosConfig";
 
 const OrderSummaryPage = () => {
-  const { state } = useLocation();
-  const navigate = useNavigate();
+  const { state }  = useLocation();
+  const navigate   = useNavigate();
   const { cartItems, clearCart } = useCart();
-  
-  const [address, setAddress] = useState(state?.details?.address || "");
-  const [phone, setPhone] = useState(state?.details?.phone || "");
-  const [time, setTime] = useState(state?.details?.time || "");
+
+  const details    = state?.details || {};
+  const orderType  = details.type || "delivery";
+  const isDelivery = orderType === "delivery";
+  const isDineIn   = orderType === "dinein";
+  const isPickup   = orderType === "pickup";
+
+  const [address,       setAddress]       = useState(details.address       || "");
+  const [phone,         setPhone]         = useState(details.phone         || "");
+  const [time,          setTime]          = useState(details.time          || "");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [orderConfirmed, setOrderConfirmed] = useState(false);
 
+  // ✅ Dine-in fields — pre-filled from CartDrawer state
+  const [guestName,      setGuestName]      = useState(details.guestName      || "");
+  const [tableNumber,    setTableNumber]    = useState(details.tableNumber    || "");
+  const [numberOfGuests, setNumberOfGuests] = useState(details.numberOfGuests || "");
+
   const trackingRef = useRef(null);
-  const isDelivery = state?.details?.type === "delivery";
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const totalAmount = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  const totalAmount = cartItems.reduce(
+    (sum, item) => sum + Number(item.price) * item.quantity, 0
+  );
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount);
 
   const handleConfirmOrder = async () => {
-    if (isDelivery && !address) return alert("Please enter your delivery address!");
-    if (!phone || !time || !paymentMethod) return alert("Please fill in all details!");
+    // ── Validation ───────────────────────────────────────────────
+    if (!paymentMethod)
+      return alert("Please select a payment method!");
 
+    if (isDelivery && !address.trim())
+      return alert("Please enter your delivery address!");
+
+    if (isDineIn) {
+      if (!guestName.trim())    return alert("Please enter your name!");
+      if (!tableNumber.trim())  return alert("Please enter your table number!");
+      if (!numberOfGuests || numberOfGuests < 1)
+        return alert("Please enter number of guests!");
+    }
+
+    // ── Build order payload ──────────────────────────────────────
     const orderData = {
-      items: cartItems.map(item => ({
+      orderType,
+      items: cartItems.map((item) => ({
         productId: item.productId,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price
+        name:      item.name,
+        quantity:  item.quantity,
+        price:     item.price,
+        unit:      item.unit,
       })),
-      totalAmount: totalAmount,
-      deliveryInfo: {
-        address: isDelivery ? address : "Sector 15, CBD Belapur",
-        phone: phone
-      }
+      totalAmount,
+      paymentMethod,
+      notes: details.notes || "",
     };
 
-    try {
-      // ✅ FIX: use API instance — handles baseURL, auth headers, and interceptors automatically
-      const response = await API.post("/orders", orderData);
-      const result = response.data;
+    // Delivery / Pickup
+    if (isDelivery || isPickup) {
+      orderData.deliveryInfo = {
+        address: isDelivery ? address : "Pickup at store",
+        phone,
+      };
+    }
 
+    // ✅ Dine-in — send table/guest info to backend
+    if (isDineIn) {
+      orderData.guestName      = guestName;
+      orderData.tableNumber    = tableNumber;
+      orderData.numberOfGuests = parseInt(numberOfGuests);
+    }
+
+    try {
+      await API.post("/orders", orderData);
       clearCart();
       setOrderConfirmed(true);
-      alert("Order Placed Successfully!");
-      navigate("/");
+      if (!isDineIn) alert("Order Placed Successfully!");
     } catch (err) {
-      console.error("Order Error:", err);
-      const msg = err.response?.data?.error || err.response?.data?.message || "Something went wrong";
+      const msg = err.response?.data?.message || err.response?.data?.error || "Something went wrong";
       alert(`Order Failed: ${msg}`);
     }
   };
 
+  // ── Post-order confirmation screens ─────────────────────────────
+  if (orderConfirmed) {
+    // Dine-in success
+    if (isDineIn) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-white">
+          <FaCheckCircle className="text-green-500 text-6xl mb-6" />
+          <h2 className="text-3xl font-black mb-2">Order Confirmed!</h2>
+          <p className="text-gray-400 mb-1">
+            Table <span className="text-yellow-400 font-bold">{tableNumber}</span> ·{" "}
+            <span className="text-yellow-400 font-bold">{numberOfGuests}</span> guest{numberOfGuests !== 1 ? "s" : ""}
+          </p>
+          <p className="text-gray-500 text-sm mt-2">Our staff will be with you shortly.</p>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-8 px-8 py-3 bg-yellow-400 text-black rounded-xl font-bold hover:bg-yellow-500 transition"
+          >
+            Back to Home
+          </button>
+        </div>
+      );
+    }
 
+    // Delivery — live tracking
+    if (isDelivery) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-white">
+          <div className="w-full max-w-2xl bg-black/90 border-2 border-yellow-500 rounded-2xl p-6 animate-fade-in">
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+              <span className="h-3 w-3 bg-yellow-400 rounded-full animate-ping"></span> Live Tracking
+            </h2>
+            <div className="rounded-xl overflow-hidden border border-gray-800">
+              <LiveTrackingMap />
+            </div>
+          </div>
+        </div>
+      );
+    }
 
+    // Pickup success
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-white">
+        <FaCheckCircle className="text-green-500 text-6xl mb-6" />
+        <h2 className="text-3xl font-black mb-2">Order Confirmed!</h2>
+        <p className="text-gray-400">
+          Please arrive at the store in{" "}
+          <span className="text-yellow-400 font-bold">{time}</span>.
+        </p>
+        <p className="text-xs text-gray-500 mt-2">
+          Order ID: #EAT-{Math.floor(1000 + Math.random() * 9000)}
+        </p>
+        <button
+          onClick={() => navigate("/")}
+          className="mt-8 px-8 py-3 bg-yellow-400 text-black rounded-xl font-bold hover:bg-yellow-500 transition"
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+
+  // ── Main Order Summary Form ──────────────────────────────────────
   return (
-    <div 
+    <div
       className="min-h-screen relative flex flex-col items-center p-6 pt-28 bg-fixed bg-cover bg-center"
       style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1470&q=80')" }}
     >
-      <div className="absolute inset-0 bg-black/70 z-0"></div>
+      <div className="absolute inset-0 bg-black/70 z-0" />
 
       <div className="relative z-10 w-full max-w-2xl">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-white transition mb-6">
@@ -79,14 +171,15 @@ const OrderSummaryPage = () => {
         <div className="mb-8">
           <h1 className="text-4xl font-extrabold text-white">Order Summary</h1>
           <div className="flex items-center gap-3 mt-2">
-             <span className="px-3 py-1 bg-yellow-400 text-black text-xs font-bold rounded-full uppercase">
-               {state?.details?.type || "Order"}
-             </span>
-             <p className="text-gray-300 italic">Finalize your {state?.details?.type} details</p>
+            <span className="px-3 py-1 bg-yellow-400 text-black text-xs font-bold rounded-full uppercase">
+              {orderType}
+            </span>
+            <p className="text-gray-300 italic">Finalize your {orderType} details</p>
           </div>
         </div>
 
         <div className="space-y-6">
+
           {/* 1. ITEMS LIST */}
           <div className="bg-black/80 backdrop-blur-md border border-gray-800 rounded-2xl p-6 shadow-xl">
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Your Selections</h3>
@@ -106,41 +199,137 @@ const OrderSummaryPage = () => {
             </div>
           </div>
 
-          {/* 2. DYNAMIC FORM FIELDS */}
+          {/* 2. FORM FIELDS */}
           <div className="bg-black/80 backdrop-blur-md border border-gray-800 rounded-2xl p-6 shadow-xl space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
-                  <FaMapMarkerAlt /> {isDelivery ? "Delivery Address" : "Pickup From Store"}
-                </label>
-                {isDelivery ? (
-                  <input type="text" placeholder="Enter location" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
-                ) : (
+
+            {/* ── Delivery fields ── */}
+            {isDelivery && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaMapMarkerAlt /> Delivery Address
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter your delivery address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaPhoneAlt /> Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="10-digit phone number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaClock /> Preferred Time
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 30–45 minutes"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── Pickup fields ── */}
+            {isPickup && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaMapMarkerAlt /> Pickup Location
+                  </label>
                   <div className="w-full bg-gray-900/50 border border-dashed border-gray-700 p-3 rounded-xl text-yellow-500 text-sm">
-                    Sector 15, CBD Belapur,Navi Mumbai, Maharashtra 400614
+                    Sector 15, CBD Belapur, Navi Mumbai, Maharashtra 400614
                   </div>
-                )}
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaClock /> Preferred Pickup Time
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 40–50 minutes"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+                  />
+                </div>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><FaPhoneAlt /> Phone Number</label>
-                <input type="text" placeholder="Enter mobile" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
+            {/* ── Dine-in fields ✅ ── */}
+            {isDineIn && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaUtensils /> Your Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Guest name"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaMapMarkerAlt /> Table Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. T4"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                    <FaUsers /> Number of Guests
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 2"
+                    min="1"
+                    value={numberOfGuests}
+                    onChange={(e) => setNumberOfGuests(e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+                  />
+                </div>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><FaClock /> Preferred Time</label>
-                <input type="text" placeholder="e.g. 40-50 minuntes" value={time} onChange={(e) => setTime(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase"><FaCreditCard /> Payment</label>
-                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition">
-                  <option value="">Select Method</option>
-                  <option value="UPI">UPI/GPay/Paypal</option>
-                  <option value="Credit">Credit Card</option>
-                  <option value="COD">{isDelivery ? "Cash on Delivery" : "Pay at Store"}</option>
-                </select>
-              </div>
+            {/* ── Payment method (all order types) ── */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase">
+                <FaCreditCard /> Payment Method
+              </label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-yellow-500 outline-none text-white transition"
+              >
+                <option value="">Select Method</option>
+                <option value="UPI">UPI / GPay / PhonePe</option>
+                <option value="Card">Credit / Debit Card</option>
+                <option value="Cash">
+                  {isDelivery ? "Cash on Delivery" : isDineIn ? "Pay at Table" : "Pay at Store"}
+                </option>
+              </select>
             </div>
           </div>
 
@@ -151,32 +340,21 @@ const OrderSummaryPage = () => {
               <span className="text-3xl font-black text-yellow-500">{formatCurrency(totalAmount)}</span>
             </div>
             <div className="flex gap-4">
-              <button onClick={() => { clearCart(); navigate("/"); }} className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all">Cancel</button>
-              <button onClick={handleConfirmOrder} className="flex-1 py-4 bg-yellow-400 hover:bg-yellow-500 text-black rounded-xl font-black transition-all">Confirm Order</button>
+              <button
+                onClick={() => { clearCart(); navigate("/"); }}
+                className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmOrder}
+                className="flex-1 py-4 bg-yellow-400 hover:bg-yellow-500 text-black rounded-xl font-black transition-all"
+              >
+                Confirm Order
+              </button>
             </div>
           </div>
 
-          {/* LIVE TRACKING (DELIVERY ONLY) */}
-          {orderConfirmed && isDelivery && (
-            <div ref={trackingRef} className="w-full bg-black/90 border-2 border-yellow-500 rounded-2xl p-6 mt-10 animate-fade-in">
-              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                <span className="h-3 w-3 bg-yellow-400 rounded-full animate-ping"></span> Live Tracking
-              </h2>
-              <div className="rounded-xl overflow-hidden border border-gray-800">
-                <LiveTrackingMap />
-              </div>
-            </div>
-          )}
-
-          {/* PICKUP SUCCESS MESSAGE (PICKUP ONLY) */}
-          {orderConfirmed && !isDelivery && (
-            <div ref={trackingRef} className="w-full bg-black/90 border-2 border-green-500 rounded-2xl p-8 mt-10 text-center animate-fade-in">
-              <FaCheckCircle className="text-green-500 text-5xl mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-2">Order Confirmed!</h2>
-              <p className="text-gray-400">Please arrive at the store in <span className="text-yellow-400 font-bold">{time}</span>.</p>
-              <p className="text-xs text-gray-500 mt-2">Order ID: #EAT-{Math.floor(1000 + Math.random() * 9000)}</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

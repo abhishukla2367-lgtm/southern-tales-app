@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import {
   TrendingUp, TrendingDown, ShoppingBag, CalendarCheck,
-  IndianRupee, Award, BarChart2, ChevronRight, Minus,
+  IndianRupee, Award, BarChart2, ChevronRight, Minus, Package,
 } from "lucide-react";
 
 const TABS = ["Weekly", "Monthly", "Annual"];
@@ -60,10 +60,8 @@ function StatCard({ label, value, sub, icon: Icon, color, bg, border, delay = 0,
         animationDelay: `${delay}ms`,
       }}
     >
-      <div
-        className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-2xl pointer-events-none"
-        style={{ background: color }}
-      />
+      <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-2xl pointer-events-none"
+        style={{ background: color }} />
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#666] mb-3">{label}</p>
@@ -72,31 +70,41 @@ function StatCard({ label, value, sub, icon: Icon, color, bg, border, delay = 0,
           </p>
           <p className="text-[11px] text-[#555] mt-2 font-medium">{sub}</p>
         </div>
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `${color}18`, border: `1px solid ${color}30` }}
-        >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
           <Icon size={18} style={{ color }} />
         </div>
       </div>
+
+      {/* ── Trend row ── */}
       {trend !== undefined && (
         <div className="mt-4 flex items-center gap-1.5">
-          {trend > 0 ? (
-            <TrendingUp size={11} className="text-emerald-400" />
+          {trend === null ? (
+            <>
+              <Minus size={11} className="text-[#444]" />
+              <span className="text-[10px] font-black text-[#444]">No prior data</span>
+            </>
+          ) : trend > 0 ? (
+            <>
+              <TrendingUp size={11} className="text-emerald-400" />
+              <span className="text-[10px] font-black text-emerald-400">+{trend}% vs last period</span>
+            </>
           ) : trend < 0 ? (
-            <TrendingDown size={11} className="text-red-400" />
+            <>
+              <TrendingDown size={11} className="text-red-400" />
+              <span className="text-[10px] font-black text-red-400">{trend}% vs last period</span>
+            </>
           ) : (
-            <Minus size={11} className="text-[#555]" />
+            <>
+              <Minus size={11} className="text-[#555]" />
+              <span className="text-[10px] font-black text-[#555]">0% vs last period</span>
+            </>
           )}
-          <span className={`text-[10px] font-black ${trend > 0 ? "text-emerald-400" : trend < 0 ? "text-red-400" : "text-[#555]"}`}>
-            {trend > 0 ? "+" : ""}{trend}% vs last period
-          </span>
         </div>
       )}
-      <div
-        className="absolute bottom-0 left-0 h-[2px] w-full opacity-40"
-        style={{ background: `linear-gradient(90deg, ${color}, transparent)` }}
-      />
+
+      <div className="absolute bottom-0 left-0 h-[2px] w-full opacity-40"
+        style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
     </div>
   );
 }
@@ -105,11 +113,9 @@ function StatCard({ label, value, sub, icon: Icon, color, bg, border, delay = 0,
 function Section({ title, subtitle, children }) {
   return (
     <div className="rounded-2xl overflow-hidden border border-[#1f1f1f] bg-[#0d0d0d]">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a]">
-        <div>
-          <h3 className="text-sm font-black text-[#f1f1f1]">{title}</h3>
-          {subtitle && <p className="text-[10px] text-[#555] mt-0.5 font-medium uppercase tracking-widest">{subtitle}</p>}
-        </div>
+      <div className="px-6 py-4 border-b border-[#1a1a1a]">
+        <h3 className="text-sm font-black text-[#f1f1f1]">{title}</h3>
+        {subtitle && <p className="text-[10px] text-[#555] mt-0.5 font-medium uppercase tracking-widest">{subtitle}</p>}
       </div>
       {children}
     </div>
@@ -121,15 +127,41 @@ function Skeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-32 rounded-2xl bg-[#111] border border-[#1f1f1f]" />
-        ))}
+        {[...Array(4)].map((_, i) => <div key={i} className="h-32 rounded-2xl bg-[#111] border border-[#1f1f1f]" />)}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="h-64 rounded-2xl bg-[#111] border border-[#1f1f1f]" />
         <div className="h-64 rounded-2xl bg-[#111] border border-[#1f1f1f]" />
       </div>
       <div className="h-72 rounded-2xl bg-[#111] border border-[#1f1f1f]" />
+    </div>
+  );
+}
+
+function TH({ children, align = "left" }) {
+  return (
+    <th className={`px-5 py-3.5 text-[9px] font-black uppercase tracking-[0.25em] text-[#444] text-${align}`}>
+      {children}
+    </th>
+  );
+}
+
+function TD({ children, align = "left", className = "" }) {
+  return (
+    <td className={`px-5 py-4 text-${align} ${className}`}>
+      {children}
+    </td>
+  );
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+function EmptyState({ message = "No data for this period" }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-12 h-12 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center mb-4">
+        <BarChart2 size={20} className="text-[#333]" />
+      </div>
+      <p className="text-sm font-black text-[#333]">{message}</p>
     </div>
   );
 }
@@ -148,6 +180,7 @@ export default function ReportsPage() {
       setData(null);
       try {
         const { data: res } = await API.get(`/reports/${activeTab.toLowerCase()}`);
+        if (res.success === false) throw new Error(res.message || "Report failed");
         setData(res);
       } catch (err) {
         console.error("Failed to fetch report:", err.message);
@@ -161,38 +194,36 @@ export default function ReportsPage() {
 
   const BAR_COLORS = ["#f5c27a", "#60a5fa", "#a78bfa", "#34d399", "#f87171", "#fb923c", "#38bdf8"];
 
-  const stats = data
-    ? [
-        {
-          label: "Total Revenue", icon: IndianRupee,
-          value: `₹${(data.totalRevenue || 0).toLocaleString("en-IN")}`,
-          sub: "from confirmed orders",
-          color: "#34d399", bg: "#0d1f18", border: "#1a3a2a",
-          trend: data.revenueTrend ?? undefined,
-        },
-        {
-          label: "Total Orders", icon: ShoppingBag,
-          value: data.totalOrders || 0,
-          sub: "orders placed",
-          color: "#f5c27a", bg: "#1a1400", border: "#2e2200",
-          trend: data.ordersTrend ?? undefined,
-        },
-        {
-          label: "Reservations", icon: CalendarCheck,
-          value: data.totalReservations || 0,
-          sub: "tables booked",
-          color: "#60a5fa", bg: "#0d1829", border: "#1a2e4a",
-          trend: data.reservationsTrend ?? undefined,
-        },
-        {
-          label: "Avg Order Value", icon: Award,
-          value: `₹${(data.avgOrderValue || 0).toLocaleString("en-IN")}`,
-          sub: "per order",
-          color: "#a78bfa", bg: "#150d29", border: "#2a1a4a",
-          trend: data.avgTrend ?? undefined,
-        },
-      ]
-    : [];
+  const stats = data ? [
+    {
+      label: "Total Revenue", icon: IndianRupee,
+      value: `₹${(data.totalRevenue || 0).toLocaleString("en-IN")}`,
+      sub: "from confirmed orders",
+      color: "#34d399", bg: "#0d1f18", border: "#1a3a2a",
+      trend: data.revenueTrend,
+    },
+    {
+      label: "Total Orders", icon: ShoppingBag,
+      value: data.totalOrders || 0,
+      sub: "orders placed",
+      color: "#f5c27a", bg: "#1a1400", border: "#2e2200",
+      trend: data.ordersTrend,
+    },
+    {
+      label: "Reservations", icon: CalendarCheck,
+      value: data.totalReservations || 0,
+      sub: "tables booked",
+      color: "#60a5fa", bg: "#0d1829", border: "#1a2e4a",
+      trend: data.reservationsTrend,
+    },
+    {
+      label: "Avg Order Value", icon: Award,
+      value: `₹${(data.avgOrderValue || 0).toLocaleString("en-IN")}`,
+      sub: "per order",
+      color: "#a78bfa", bg: "#150d29", border: "#2a1a4a",
+      trend: data.avgTrend,
+    },
+  ] : [];
 
   return (
     <>
@@ -207,28 +238,19 @@ export default function ReportsPage() {
 
       <div className="space-y-7">
 
-        {/* ── Tab pills only — no action buttons ─────────────────────────── */}
+        {/* ── Tab pills ───────────────────────────────────────────────────── */}
         <div className="flex items-center gap-1 p-1 rounded-xl bg-[#111] border border-[#1f1f1f] w-fit">
           {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className="relative px-5 py-2 text-[11px] font-black uppercase tracking-[0.15em] rounded-lg transition-all duration-200"
-              style={
-                activeTab === tab
-                  ? { background: "#f5c27a", color: "#0a0a0a" }
-                  : { color: "#555" }
-              }
-            >
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className="px-5 py-2 text-[11px] font-black uppercase tracking-[0.15em] rounded-lg transition-all duration-200"
+              style={activeTab === tab ? { background: "#f5c27a", color: "#0a0a0a" } : { color: "#555" }}>
               {tab}
             </button>
           ))}
         </div>
 
-        {/* ── Loading ─────────────────────────────────────────────────────── */}
         {loading && <Skeleton />}
 
-        {/* ── Error ───────────────────────────────────────────────────────── */}
         {error && !loading && (
           <div className="rounded-2xl p-10 text-center bg-[#0d0d0d] border border-[#2a1a1a]">
             <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
@@ -239,21 +261,17 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* ── Main content ─────────────────────────────────────────────────── */}
         {!loading && !error && data && (
           <div className="space-y-6 report-fade">
 
-            {/* Stat Cards */}
+            {/* ── Stat Cards ────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {stats.map((s, i) => (
-                <StatCard key={s.label} {...s} delay={i * 80} />
-              ))}
+              {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 80} />)}
             </div>
 
-            {/* Charts row */}
-            {data.breakdown?.length > 0 && (
+            {/* ── Charts ────────────────────────────────────────────────── */}
+            {data.breakdown?.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
                 <Section title="Revenue Trend" subtitle={`${activeTab} breakdown`}>
                   <div className="p-5">
                     <ChartBox height={210}>
@@ -268,14 +286,10 @@ export default function ReportsPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
                           <XAxis dataKey="period" stroke="#2a2a2a" tick={{ fill: "#555", fontSize: 10 }} />
                           <YAxis stroke="#2a2a2a" tick={{ fill: "#555", fontSize: 10 }} width={50}
-                            tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-                          />
+                            tickFormatter={(v) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} />
                           <Tooltip content={<CustomTooltip />} />
                           <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#34d399" strokeWidth={2}
-                            fill="url(#revGrad)"
-                            dot={{ r: 3, fill: "#34d399", strokeWidth: 0 }}
-                            activeDot={{ r: 5, fill: "#34d399" }}
-                          />
+                            fill="url(#revGrad)" dot={{ r: 3, fill: "#34d399", strokeWidth: 0 }} activeDot={{ r: 5, fill: "#34d399" }} />
                         </AreaChart>
                       )}
                     </ChartBox>
@@ -299,80 +313,116 @@ export default function ReportsPage() {
                   </div>
                 </Section>
               </div>
+            ) : (
+              <Section title="Revenue & Orders" subtitle="breakdown">
+                <EmptyState message="No order data for this period" />
+              </Section>
             )}
 
-            {/* Top Items */}
-            {data.topItems?.length > 0 && (
-              <Section
-                title="Top Selling Items"
-                subtitle={`best performers this ${activeTab.toLowerCase()} period`}
-              >
+            {/* ── Top Selling Items ──────────────────────────────────────── */}
+            <Section
+              title="Top Selling Items"
+              subtitle={`best performers this ${activeTab.toLowerCase()} period`}
+            >
+              {data.topItems?.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[#1a1a1a]">
-                        {["#", "Item Name", "Qty Sold", "Revenue", "Share"].map((h) => (
-                          <th key={h}
-                            className={`px-6 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-[#444] ${h === "Revenue" || h === "Share" ? "text-right" : ""}`}
-                          >
-                            {h}
-                          </th>
-                        ))}
+                        <TH align="center">#</TH>
+                        <TH align="center">Image</TH>
+                        <TH align="left">Item Name</TH>
+                        <TH align="center">Qty Sold</TH>
+                        <TH align="right">Revenue</TH>
+                        <TH align="right">Share</TH>
                       </tr>
                     </thead>
                     <tbody>
                       {data.topItems.map((item, idx) => {
                         const maxRev = Math.max(...data.topItems.map((i) => i.totalRevenue));
-                        const pct = maxRev > 0 ? Math.round((item.totalRevenue / maxRev) * 100) : 0;
+                        const pct    = maxRev > 0 ? Math.round((item.totalRevenue / maxRev) * 100) : 0;
+                        const unit   = item.unit || "pcs"; // ← direct from Menu collection via backend
                         return (
                           <tr key={idx}
                             className="border-b border-[#131313] hover:bg-[#111] transition-colors group"
                             style={{ animation: `cardIn 0.4s ease both`, animationDelay: `${idx * 60}ms` }}
                           >
-                            <td className="px-6 py-4">
-                              <span className="w-6 h-6 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[10px] font-black text-[#555]">
-                                {idx + 1}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-8 rounded-full flex-shrink-0"
-                                  style={{ background: BAR_COLORS[idx % BAR_COLORS.length] }}
-                                />
-                                <span className="text-sm font-bold text-[#f1f1f1] group-hover:text-white transition-colors">
-                                  {item.name}
+                            <TD align="center">
+                              <div className="flex justify-center">
+                                <span className="w-6 h-6 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center text-[10px] font-black text-[#555]">
+                                  {idx + 1}
                                 </span>
                               </div>
-                            </td>
-                            <td className="px-6 py-4">
+                            </TD>
+
+                            <TD align="center">
+                              <div className="flex justify-center">
+                                <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#1f1f1f] bg-[#111] flex items-center justify-center">
+                                  {item.image ? (
+                                    <img src={item.image} alt={item.name}
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                                  ) : (
+                                    <Package size={14} className="text-[#333]" />
+                                  )}
+                                </div>
+                              </div>
+                            </TD>
+
+                            <TD align="left">
+                              <div className="flex items-center gap-3">
+                                <div className="w-1.5 h-8 rounded-full flex-shrink-0"
+                                  style={{ background: BAR_COLORS[idx % BAR_COLORS.length] }} />
+                                <div>
+                                  <span className="text-sm font-bold text-[#f1f1f1] group-hover:text-white transition-colors block">
+                                    {item.name}
+                                  </span>
+                                  {item.category && (
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#444] mt-0.5 block">
+                                      {item.category}
+                                    </span>
+                                  )}
+                                  {item.description && (
+                                    <span className="text-[10px] text-[#3a3a3a] mt-0.5 block leading-tight max-w-[200px] truncate group-hover:text-[#555] transition-colors">
+                                      {item.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </TD>
+
+                            {/* Qty Sold — unit comes directly from Menu.unit in DB */}
+                            <TD align="center">
                               <span className="text-sm font-bold text-[#f5c27a]">{item.totalQty}</span>
-                              <span className="text-[10px] text-[#444] ml-1">pcs</span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
+                              <span className="text-[10px] text-[#444] ml-1">{unit}</span>
+                            </TD>
+
+                            <TD align="right">
                               <span className="text-sm font-black text-emerald-400">
                                 ₹{item.totalRevenue.toLocaleString("en-IN")}
                               </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
+                            </TD>
+
+                            <TD align="right">
                               <div className="flex items-center justify-end gap-2">
                                 <div className="w-16 h-1.5 rounded-full bg-[#1a1a1a] overflow-hidden">
                                   <div className="h-full rounded-full transition-all duration-700"
-                                    style={{ width: `${pct}%`, background: BAR_COLORS[idx % BAR_COLORS.length] }}
-                                  />
+                                    style={{ width: `${pct}%`, background: BAR_COLORS[idx % BAR_COLORS.length] }} />
                                 </div>
                                 <span className="text-[10px] font-black text-[#555] w-8 text-right">{pct}%</span>
                               </div>
-                            </td>
+                            </TD>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
-              </Section>
-            )}
+              ) : (
+                <EmptyState message="No items sold in this period" />
+              )}
+            </Section>
 
-            {/* Period Breakdown Table */}
+            {/* ── Period Breakdown Table ─────────────────────────────────── */}
             {data.breakdown?.length > 0 && (
               <Section
                 title={activeTab === "Weekly" ? "Daily Breakdown" : activeTab === "Monthly" ? "Weekly Breakdown" : "Monthly Breakdown"}
@@ -382,76 +432,75 @@ export default function ReportsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-[#1a1a1a]">
-                        {["Period", "Orders", "Reservations", "Revenue", "Avg/Order"].map((h) => (
-                          <th key={h}
-                            className={`px-6 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-[#444] ${h === "Revenue" || h === "Avg/Order" ? "text-right" : ""}`}
-                          >
-                            {h}
-                          </th>
-                        ))}
+                        <TH align="left">Period</TH>
+                        <TH align="center">Orders</TH>
+                        <TH align="center">Reservations</TH>
+                        <TH align="right">Revenue</TH>
+                        <TH align="right">Avg / Order</TH>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.breakdown.map((row, idx) => {
-                        const avg = row.orders > 0 ? Math.round(row.revenue / row.orders) : 0;
-                        const maxOrders = Math.max(...data.breakdown.map((r) => r.orders));
-                        return (
-                          <tr key={idx}
-                            className="border-b border-[#131313] hover:bg-[#111] transition-colors group"
-                            style={{ animation: `cardIn 0.4s ease both`, animationDelay: `${idx * 50}ms` }}
-                          >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <ChevronRight size={12} className="text-[#2a2a2a] group-hover:text-[#f5c27a] transition-colors flex-shrink-0" />
-                                <span className="text-sm font-bold text-[#f1f1f1]">{row.period}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-[#f5c27a]">{row.orders}</span>
-                                <div className="flex-1 h-1 rounded-full bg-[#1a1a1a] max-w-[40px] overflow-hidden">
-                                  <div className="h-full bg-[#f5c27a] rounded-full"
-                                    style={{ width: `${maxOrders > 0 ? Math.round((row.orders / maxOrders) * 100) : 0}%` }}
-                                  />
+                      {(() => {
+                        const maxOrders = Math.max(...data.breakdown.map((r) => r.orders), 1);
+                        return data.breakdown.map((row, idx) => {
+                          const avg = row.orders > 0 ? Math.round(row.revenue / row.orders) : 0;
+                          return (
+                            <tr key={idx}
+                              className="border-b border-[#131313] hover:bg-[#111] transition-colors group"
+                              style={{ animation: `cardIn 0.4s ease both`, animationDelay: `${idx * 50}ms` }}
+                            >
+                              <TD align="left">
+                                <div className="flex items-center gap-2">
+                                  <ChevronRight size={12} className="text-[#2a2a2a] group-hover:text-[#f5c27a] transition-colors flex-shrink-0" />
+                                  <span className="text-sm font-bold text-[#f1f1f1]">{row.period}</span>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-sm font-bold text-blue-400">{row.reservations}</span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <span className="text-sm font-black text-emerald-400">
-                                ₹{row.revenue.toLocaleString("en-IN")}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <span className="text-xs font-bold text-[#888]">
-                                {avg > 0 ? `₹${avg.toLocaleString("en-IN")}` : "—"}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              </TD>
+                              <TD align="center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <span className="text-sm font-bold text-[#f5c27a]">{row.orders}</span>
+                                  <div className="w-10 h-1 rounded-full bg-[#1a1a1a] overflow-hidden">
+                                    <div className="h-full bg-[#f5c27a] rounded-full"
+                                      style={{ width: `${maxOrders > 0 ? Math.round((row.orders / maxOrders) * 100) : 0}%` }} />
+                                  </div>
+                                </div>
+                              </TD>
+                              <TD align="center">
+                                <span className="text-sm font-bold text-blue-400">{row.reservations}</span>
+                              </TD>
+                              <TD align="right">
+                                <span className="text-sm font-black text-emerald-400">
+                                  ₹{row.revenue.toLocaleString("en-IN")}
+                                </span>
+                              </TD>
+                              <TD align="right">
+                                <span className="text-xs font-bold text-[#888]">
+                                  {avg > 0 ? `₹${avg.toLocaleString("en-IN")}` : "—"}
+                                </span>
+                              </TD>
+                            </tr>
+                          );
+                        });
+                      })()}
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-[#2a2a2a] bg-[#0a0a0a]">
-                        <td className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#444]">Total</td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-4 text-[10px] font-black uppercase tracking-widest text-[#444]">Total</td>
+                        <td className="px-5 py-4 text-center">
                           <span className="text-sm font-black text-[#f5c27a]">
                             {data.breakdown.reduce((s, r) => s + r.orders, 0)}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-5 py-4 text-center">
                           <span className="text-sm font-black text-blue-400">
                             {data.breakdown.reduce((s, r) => s + r.reservations, 0)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-5 py-4 text-right">
                           <span className="text-sm font-black text-emerald-400">
                             ₹{data.breakdown.reduce((s, r) => s + r.revenue, 0).toLocaleString("en-IN")}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-5 py-4 text-right">
                           <span className="text-xs font-black text-[#888]">
                             {(() => {
                               const to = data.breakdown.reduce((s, r) => s + r.orders, 0);
@@ -473,8 +522,8 @@ export default function ReportsPage() {
                 {activeTab} Report · Generated {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
               </p>
               <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#555]" />
-                <span className="text-[10px] font-black text-[#333] uppercase tracking-widest">Historical Data</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black text-[#333] uppercase tracking-widest">Live Data</span>
               </div>
             </div>
 

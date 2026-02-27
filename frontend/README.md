@@ -30,7 +30,10 @@ Southern Tales celebrates rich flavors, traditional recipes, and warm hospitalit
 - **React Router DOM v6**
 - **JavaScript (ES6+)**
 - **Tailwind CSS**
-- **Vite / CRA** (depending on setup)
+- **Vite / CRA** 
+- **Node.JS**
+- **MongoDB Atlas**
+
 
 ---
 

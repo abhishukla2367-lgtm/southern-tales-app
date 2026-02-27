@@ -87,7 +87,7 @@ exports.getProfile = async (req, res) => {
 
     const [user, orders, reservations] = await Promise.all([
       User.findById(objectId).select("-password"),
-      Order.find({ userId: objectId }).sort({ createdAt: -1 }),
+      Order.find({ userId: { $in: [objectId, currentId] } }).sort({ createdAt: -1 }),
       Reservation.find({ userId: objectId }).sort({ date: -1 }),
     ]);
 
