@@ -1,104 +1,112 @@
-const Order      = require('../models/Order');
-const Cart       = require('../models/Cart');
-const MenuItem   = require('../models/Menu');
-const mongoose   = require('mongoose');
+const Order    = require('../models/Order');
+const Cart     = require('../models/Cart');
+const mongoose = require('mongoose');
 
-// ─── Helper: Decrement stock atomically for all ordered items ─────────────────
-// ✅ FIX: Use raw MongoDB driver to avoid Mongoose CastError on non-ObjectId _id values (e.g. "a10")
+// ─── Helper: Decrement stock atomically ──────────────────────────────────────
 const decrementStock = async (items) => {
   const collection = mongoose.connection.db.collection("menu");
   await Promise.all(
-    items.map(({ productId, itemId, menuItemId, quantity }) => {
-      const id = productId || itemId || menuItemId;
-      return collection.updateOne(
-        { _id: id },
+    items.map(({ productId, quantity }) =>
+      collection.updateOne(
+        { _id: productId },
         [
-          // Step 1: Subtract quantity, floor at 0
           { $set: { stock: { $max: [0, { $subtract: ["$stock", quantity] }] } } },
-          // Step 2: Sync available flag from updated stock
           { $set: { available: { $gt: ["$stock", 0] } } },
         ]
-      );
-    })
+      )
+    )
   );
 };
 
+// ─── Helper: Validate stock for all items ────────────────────────────────────
+const validateStock = async (items) => {
+  const collection = mongoose.connection.db.collection("menu");
+  const ids        = items.map((i) => i.productId);
+  const menuDocs   = await collection.find({ _id: { $in: ids } }).toArray();
+  const stockMap   = Object.fromEntries(menuDocs.map((m) => [m._id.toString(), m]));
+
+  for (const { productId, quantity, name } of items) {
+    const menuItem = stockMap[productId?.toString()];
+    if (!menuItem) throw { status: 404, message: `Menu item not found: ${name || productId}` };
+    if (menuItem.stock < quantity) throw {
+      status: 400,
+      message: `"${menuItem.name}" only has ${menuItem.stock} unit(s) left.`,
+      itemId: productId,
+      availableStock: menuItem.stock,
+    };
+  }
+};
+
 /**
- * @desc    Place order, validate stock, decrement stock, store in DB, clear cart
+ * @desc    Place order — supports delivery, pickup, walkin, dinein
  * @route   POST /api/orders
- * @access  Private
+ * @access  Private (delivery/pickup) | Admin (walkin/dinein)
  */
 exports.placeOrder = async (req, res) => {
   try {
-    const { items, totalAmount, deliveryInfo } = req.body;
+    const {
+      items, totalAmount, orderType = "delivery",
+      deliveryInfo, guestName, tableNumber,
+      numberOfGuests, reservationId, paymentMethod, notes,
+    } = req.body;
 
-    // ── Auth check ───────────────────────────────────────────────────────────
-    if (!req.user || (!req.user.id && !req.user._id)) {
-      return res.status(401).json({ success: false, message: "Authentication failed. No user found." });
-    }
-
-    // ── Validate items ───────────────────────────────────────────────────────
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0)
       return res.status(400).json({ success: false, message: "Order must contain at least one item." });
-    }
 
-    // ── Validate totalAmount ─────────────────────────────────────────────────
-    if (!totalAmount || Number(totalAmount) <= 0) {
+    if (!totalAmount || Number(totalAmount) <= 0)
       return res.status(400).json({ success: false, message: "Invalid total amount." });
+
+    if (orderType === "delivery") {
+      if (!deliveryInfo?.address?.trim() || !deliveryInfo?.phone?.trim())
+        return res.status(400).json({ success: false, message: "Delivery address and phone are required." });
     }
 
-    // ── Validate deliveryInfo ────────────────────────────────────────────────
-    if (!deliveryInfo?.address?.trim() || !deliveryInfo?.phone?.trim()) {
-      return res.status(400).json({ success: false, message: "Delivery address and phone are required." });
+    if (orderType === "walkin" || orderType === "dinein") {
+      if (!guestName?.trim())
+        return res.status(400).json({ success: false, message: "Guest name is required." });
+      if (!tableNumber?.trim())
+        return res.status(400).json({ success: false, message: "Table number is required." });
+      if (!numberOfGuests || numberOfGuests < 1)
+        return res.status(400).json({ success: false, message: "Number of guests is required." });
     }
 
-    // ── Stock validation: check ALL items BEFORE touching the DB ─────────────
-    // ✅ FIX: Use raw MongoDB driver — avoids CastError for non-ObjectId _id values like "a10"
-    const menuItemIds  = items.map((i) => i.productId || i.itemId || i.menuItemId);
-    const collection   = mongoose.connection.db.collection("menu");
-    const menuItemDocs = await collection.find({ _id: { $in: menuItemIds } }).toArray();
-
-    // Build a quick lookup map
-    const stockMap = Object.fromEntries(menuItemDocs.map((m) => [m._id.toString(), m]));
-
-    for (const { productId, itemId, menuItemId, quantity, name } of items) {
-      // ✅ FIX: support productId (frontend) as well as itemId/menuItemId (legacy)
-      const id       = (productId || itemId || menuItemId)?.toString();
-      const menuItem = stockMap[id];
-
-      if (!menuItem) {
-        return res.status(404).json({
-          success: false,
-          message: `Menu item not found: ${name || id}`,
-        });
-      }
-
-      if (menuItem.stock < quantity) {
-        return res.status(400).json({
-          success: false,
-          message: `"${menuItem.name}" only has ${menuItem.stock} unit(s) left.`,
-          itemId: id,
-          availableStock: menuItem.stock,
-        });
-      }
-    }
-
-    // ── Atomically decrement stock for each ordered item ─────────────────────
+    await validateStock(items);
     await decrementStock(items);
 
-    // ── Create the order ─────────────────────────────────────────────────────
-    const userId   = new mongoose.Types.ObjectId(req.user.id || req.user._id);
-    const newOrder = await Order.create({
-      userId,
+    const userId = req.user?.id || req.user?._id;
+
+    const orderData = {
+      orderType,
       items,
       totalAmount,
-      deliveryInfo,
       status:        "Pending",
       paymentStatus: "Unpaid",
-    });
+      paymentMethod: paymentMethod || "Cash",
+      notes,
+    };
 
-    // ── Clear the cart ────────────────────────────────────────────────────────
-    await Cart.findOneAndDelete({ userId });
+    if (userId && (orderType === "delivery" || orderType === "pickup")) {
+      orderData.userId = new mongoose.Types.ObjectId(userId);
+    }
+
+    if (orderType === "delivery" || orderType === "pickup") {
+      orderData.deliveryInfo = deliveryInfo;
+    }
+
+    if (orderType === "walkin" || orderType === "dinein") {
+      orderData.guestName      = guestName;
+      orderData.tableNumber    = tableNumber;
+      orderData.numberOfGuests = numberOfGuests;
+      if (orderType === "dinein" && reservationId) {
+        orderData.reservationId = reservationId;
+      }
+    }
+
+    const newOrder = await Order.create(orderData);
+
+    if (userId && (orderType === "delivery" || orderType === "pickup")) {
+      await Cart.findOneAndDelete({ userId: orderData.userId });
+    }
 
     return res.status(201).json({
       success: true,
@@ -107,33 +115,31 @@ exports.placeOrder = async (req, res) => {
     });
 
   } catch (err) {
+    if (err.status) return res.status(err.status).json({ success: false, message: err.message, ...err });
     console.error("❌ Order Placement Error:", err);
     return res.status(500).json({ success: false, error: err.message });
   }
 };
 
 /**
- * @desc    Get orders for logged-in user (Profile page)
- * @route   GET /api/orders/my
+ * @desc    Get orders for logged-in user
+ * @route   GET /api/orders/my-orders
  * @access  Private
  */
 exports.getMyOrders = async (req, res) => {
   try {
-    if (!req.user || (!req.user.id && !req.user._id)) {
+    if (!req.user?.id && !req.user?._id)
       return res.status(401).json({ success: false, message: "Not authorized" });
-    }
 
-    const userId = new mongoose.Types.ObjectId(req.user.id || req.user._id);
-    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    const currentId = req.user.id || req.user._id;
+    const objectId  = new mongoose.Types.ObjectId(currentId);
 
-    console.log(`📡 Orders for ${userId}: ${orders.length} found`);
+    // ✅ FIX: Match both ObjectId and string forms of userId
+    const orders = await Order.find({
+      userId: { $in: [objectId, currentId.toString()] },
+    }).sort({ createdAt: -1 });
 
-    return res.status(200).json({
-      success: true,
-      count:   orders.length,
-      orders,
-    });
-
+    return res.status(200).json({ success: true, count: orders.length, orders });
   } catch (err) {
     console.error("❌ getMyOrders Error:", err.message);
     return res.status(500).json({ success: false, error: "Failed to fetch your orders." });
@@ -141,25 +147,91 @@ exports.getMyOrders = async (req, res) => {
 };
 
 /**
- * @desc    Get all orders (Admin panel)
- * @route   GET /api/orders/admin
+ * @desc    Get all orders (Admin)
+ * @route   GET /api/orders/admin/all
  * @access  Private — Admin only
  */
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
+    const { type } = req.query;
+    const filter   = type ? { orderType: type } : {};
+
+    const orders = await Order.find(filter)
       .populate("userId", "name email phone")
+      .populate("reservationId", "date time guests")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({
-      success: true,
-      count:   orders.length,
-      orders,
-    });
-
+    return res.status(200).json({ success: true, count: orders.length, orders });
   } catch (err) {
     console.error("❌ Admin Fetch Error:", err.message);
-    return res.status(500).json({ success: false, error: "Failed to fetch admin order list." });
+    return res.status(500).json({ success: false, error: "Failed to fetch orders." });
+  }
+};
+
+/**
+ * @desc    Update order status (Admin)
+ * @route   PATCH /api/orders/:id/status
+ * @access  Private — Admin only
+ */
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { id }     = req.params;
+    const { status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(400).json({ success: false, message: "Invalid order ID." });
+
+    const validStatuses = ["Pending", "Processing", "Preparing", "Delivered", "Completed", "Cancelled"];
+    if (!status || !validStatuses.includes(status))
+      return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+
+    // ✅ FIX: .save() instead of findByIdAndUpdate — no deprecation warnings,
+    //    works on every Mongoose version
+    const order = await Order.findById(id);
+    if (!order)
+      return res.status(404).json({ success: false, message: "Order not found." });
+
+    order.status = status;
+    await order.save();
+
+    return res.status(200).json({ success: true, message: "Order status updated.", order });
+  } catch (err) {
+    console.error("❌ updateOrderStatus Error:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
+ * @desc    Update order payment status (Admin)
+ * @route   PATCH /api/orders/:id/payment
+ * @access  Private — Admin only
+ */
+exports.updateOrderPayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(400).json({ success: false, message: "Invalid order ID." });
+
+    const { paymentStatus, paymentMethod } = req.body;
+    const validPaymentStatuses = ["Unpaid", "Paid", "Refunded"];
+
+    if (!paymentStatus || !validPaymentStatuses.includes(paymentStatus))
+      return res.status(400).json({ success: false, message: "Invalid payment status." });
+
+    // ✅ FIX: .save() instead of findByIdAndUpdate — no deprecation warnings
+    const order = await Order.findById(id);
+    if (!order)
+      return res.status(404).json({ success: false, message: "Order not found." });
+
+    order.paymentStatus = paymentStatus;
+    if (paymentMethod) order.paymentMethod = paymentMethod;
+    await order.save();
+
+    return res.status(200).json({ success: true, order });
+  } catch (err) {
+    console.error("❌ updateOrderPayment Error:", err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
@@ -172,15 +244,19 @@ exports.restockItem = async (req, res) => {
   const { id }       = req.params;
   const { quantity } = req.body;
 
-  if (!quantity || Number(quantity) <= 0) {
+  if (!quantity || Number(quantity) <= 0)
     return res.status(400).json({ success: false, message: "Quantity must be a positive number." });
-  }
 
   try {
-    // ✅ FIX: Use raw driver to avoid CastError on non-ObjectId _id values
     const collection = mongoose.connection.db.collection("menu");
-    const result     = await collection.findOneAndUpdate(
-      { _id: id },
+
+    // ✅ FIX: Try both ObjectId and string so _id type mismatch doesn't silently fail
+    const objectId = mongoose.Types.ObjectId.isValid(id)
+      ? new mongoose.Types.ObjectId(id)
+      : null;
+
+    const result = await collection.findOneAndUpdate(
+      { _id: { $in: objectId ? [objectId, id] : [id] } },
       [
         { $set: { stock: { $add: ["$stock", Number(quantity)] } } },
         { $set: { available: { $gt: ["$stock", 0] } } },
@@ -188,16 +264,14 @@ exports.restockItem = async (req, res) => {
       { returnDocument: "after" }
     );
 
-    if (!result) {
+    if (!result)
       return res.status(404).json({ success: false, message: "Menu item not found." });
-    }
 
     return res.status(200).json({
       success: true,
       message: `Restocked "${result.name}" by ${quantity} units.`,
       item:    result,
     });
-
   } catch (err) {
     console.error("❌ Restock Error:", err.message);
     return res.status(500).json({ success: false, error: "Failed to restock item." });

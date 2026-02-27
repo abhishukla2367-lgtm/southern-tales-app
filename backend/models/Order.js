@@ -5,58 +5,94 @@ const OrderSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      // ✅ FIX: Changed to required: false — walk-in orders have no authenticated userId
       required: false,
       index: true,
     },
 
-    // "walkin" orders won't have userId from auth — use guestName instead
+    // delivery = online delivery
+    // pickup   = customer picks up from restaurant
+    // walkin   = customer walks in without reservation
+    // dinein   = customer had a reservation and is now ordering
     orderType: {
       type: String,
       default: "delivery",
-      enum: ["delivery", "walkin"],
+      enum: ["delivery", "pickup", "walkin", "dinein"],
     },
 
+    // ── Walk-in / Dine-in fields ──────────────────────────────────────────
     guestName: {
-      type: String, // Used for walk-in customers
+      type: String, // Used when no userId (walk-in / dine-in)
     },
 
+    tableNumber: {
+      type: String, // Table number for walkin / dinein
+    },
+
+    numberOfGuests: {
+      type: Number,
+      min: [1, "At least 1 guest required"],
+    },
+
+    // ── Dine-in only — links to existing reservation ──────────────────────
+    reservationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reservation",
+      required: false,
+    },
+
+    // ── Order Items ───────────────────────────────────────────────────────
     items: [
       {
-        // ✅ FIX: Changed from ObjectId to Mixed to support both standard ObjectIds
-        // and custom _id values (e.g. "a2", "a3") that exist in the menu collection
         productId: {
           type: mongoose.Schema.Types.Mixed,
-          ref: "Menu"
+          ref: "Menu",
         },
-        name: { type: String, required: true },
+        name: {
+          type: String,
+          required: true,
+        },
         quantity: {
           type: Number,
           required: true,
           min: [1, "Quantity cannot be less than 1"],
         },
-        // ✅ FIX: Added min validator to prevent negative or zero prices
         price: {
           type: Number,
           required: true,
-          min: [0, "Price cannot be negative"]
+          min: [0, "Price cannot be negative"],
+        },
+        unit: {
+          type: String, // plate, bowl, glass, pcs — from Menu collection
         },
       },
     ],
 
-    // Optional for walk-in orders
+    // ── Delivery Info (delivery orders only) ─────────────────────────────
     deliveryInfo: {
       address: { type: String },
       phone:   { type: String },
     },
 
+    // ── Financials ────────────────────────────────────────────────────────
     totalAmount: {
       type: Number,
       required: true,
       min: [0, "Total amount cannot be negative"],
     },
 
-    // ✅ FIX: Removed "Shipped" — not applicable for a restaurant system
+    paymentMethod: {
+      type: String,
+      enum: ["Cash", "UPI", "Card", "Online"],
+      default: "Cash",
+    },
+
+    paymentStatus: {
+      type: String,
+      default: "Unpaid",
+      enum: ["Unpaid", "Paid", "Refunded"],
+    },
+
+    // ── Order Status ──────────────────────────────────────────────────────
     status: {
       type: String,
       default: "Pending",
@@ -73,10 +109,9 @@ const OrderSchema = new mongoose.Schema(
       },
     },
 
-    paymentStatus: {
+    // ── Optional Notes ────────────────────────────────────────────────────
+    notes: {
       type: String,
-      default: "Unpaid",
-      enum: ["Unpaid", "Paid", "Refunded"],
     },
   },
   { timestamps: true }

@@ -36,6 +36,18 @@ const menuSchema = new mongoose.Schema({
     default: false,
   },
 
+  // ─── Quantity Unit ─────────────────────────────────────────────────────────
+  // Controls what unit label appears next to qty sold in Reports ("2 pcs", "1 glass", etc.)
+  // Set this correctly when creating/editing a menu item in the admin panel.
+  unit: {
+    type:    String,
+    default: "pcs",
+    enum:    {
+      values:  ["pcs", "plate", "glass", "bowl", "cup"],
+      message: "{VALUE} is not a supported unit. Use: pcs | plate | glass | bowl | cup",
+    },
+  },
+
   // ─── Stock Management ──────────────────────────────────────────────────────
   stock: {
     type:     Number,

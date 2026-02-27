@@ -111,15 +111,6 @@ export default function Menu() {
 
     return catOk && srchOk && dietOk && priceOk;
   });
-
-  if (loading) {
-    return (
-      <div className="bg-black min-h-screen flex items-center justify-center">
-        <div className="text-[#f5c27a] animate-pulse font-black tracking-widest uppercase">Loading Southern Tales...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-black min-h-screen text-white pb-20">
 
