@@ -1,7 +1,7 @@
 const Reservation = require('../models/Reservation');
 const mongoose = require('mongoose');
 
-const VALID_STATUSES = ["Waiting", "Seated", "Completed", "Cancelled"];
+const VALID_STATUSES = ["Confirmed", "Waiting", "Seated", "Completed", "Cancelled"];
 
 /**
  * @desc    Create a new table reservation (Customer side)
@@ -12,13 +12,26 @@ exports.createReservation = async (req, res) => {
     try {
         const { date, time, guests, tableNumber, specialRequests, customerName, customerEmail } = req.body;
 
-        // ✅ FIX: Validate all required fields including customerName and customerEmail
         if (!date || !time || !guests) {
             return res.status(400).json({ error: "Date, time, and guest count are required." });
         }
 
         if (!customerName || !customerEmail) {
             return res.status(400).json({ error: "Customer name and email are required." });
+        }
+
+        // ── Block booking if selected table is already occupied ──
+        if (tableNumber && tableNumber !== "TBD") {
+            const occupied = await Reservation.findOne({
+                tableNumber,
+                status: { $in: ["Waiting", "Seated"] },
+            });
+
+            if (occupied) {
+                return res.status(400).json({
+                    error: "This table is occupied, please choose another table.",
+                });
+            }
         }
 
         const newReservation = await Reservation.create({
@@ -46,8 +59,29 @@ exports.createReservation = async (req, res) => {
 };
 
 /**
+ * @desc    Get currently occupied table numbers (for customer table picker)
+ * @route   GET /api/reservations/occupied-tables
+ * @access  Private
+ */
+exports.getOccupiedTables = async (req, res) => {
+    try {
+        const occupied = await Reservation.find(
+            { status: { $in: ["Waiting", "Seated"] }, tableNumber: { $ne: "TBD" } },
+            { tableNumber: 1, _id: 0 }
+        );
+
+        const occupiedTables = [...new Set(occupied.map((r) => r.tableNumber))];
+
+        res.status(200).json({ success: true, occupiedTables });
+    } catch (err) {
+        console.error("Occupied Tables Error:", err.message);
+        res.status(500).json({ error: "Failed to fetch occupied tables" });
+    }
+};
+
+/**
  * @desc    Get reservations for the logged-in user's profile
- * @route   GET /api/reservations/my
+ * @route   GET /api/reservations/my-reservations
  * @access  Private
  */
 exports.getMyReservations = async (req, res) => {
@@ -80,7 +114,6 @@ exports.getAllAdminReservations = async (req, res) => {
             data:    reservations,
         });
     } catch (err) {
-        // ✅ FIX: Include err.message for better debugging context
         console.error("Admin Fetch Error:", err.message);
         res.status(500).json({ error: "Admin fetch failed", details: err.message });
     }
@@ -103,7 +136,6 @@ exports.getWalkIns = async (req, res) => {
 
 /**
  * @desc    Create a walk-in reservation
- *          Task c: checks if selected table is already occupied before saving
  * @route   POST /api/reservations/walkin
  * @access  Private/Admin
  */
@@ -118,9 +150,7 @@ exports.createWalkIn = async (req, res) => {
             return res.status(400).json({ error: "Name, guests, date and time are required." });
         }
 
-        // ── Task c: Block booking if selected table is already occupied ──
-        // NOTE: Only "Waiting" and "Seated" statuses are treated as occupied
-        // so Cancelled tables remain available for rebooking
+        // ── Block booking if selected table is already occupied ──
         if (tableNumber && tableNumber !== "TBD") {
             const occupied = await Reservation.findOne({
                 tableNumber,
@@ -157,18 +187,16 @@ exports.createWalkIn = async (req, res) => {
 
 /**
  * @desc    Update reservation status
- *          Task a & b: Completed reservations are fully locked — status cannot be changed
+ *          Completed reservations are fully locked — status cannot be changed
  * @route   PATCH /api/reservations/:id/status
  * @access  Private/Admin
  */
 exports.updateStatus = async (req, res) => {
     try {
-        // ✅ FIX: Validate ObjectId format to avoid Mongoose CastError
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ error: "Invalid reservation ID" });
         }
 
-        // ✅ FIX: Validate incoming status value against allowed list
         if (!req.body.status || !VALID_STATUSES.includes(req.body.status)) {
             return res.status(400).json({
                 error: `Status must be one of: ${VALID_STATUSES.join(", ")}`,
@@ -181,7 +209,6 @@ exports.updateStatus = async (req, res) => {
             return res.status(404).json({ error: "Reservation not found." });
         }
 
-        // ── Task a & b: Block update if already Completed ──
         if (reservation.status === "Completed") {
             return res.status(403).json({
                 error: "Completed reservations cannot be modified.",
@@ -200,14 +227,12 @@ exports.updateStatus = async (req, res) => {
 };
 
 /**
- * @desc    Delete a reservation
- *          Task b: Completed records cannot be deleted
- * @route   DELETE /api/reservations/:id
+ * @desc    Update reservation table number (Admin reassigns table from dashboard)
+ * @route   PATCH /api/reservations/:id/table
  * @access  Private/Admin
  */
-exports.deleteReservation = async (req, res) => {
+exports.updateTable = async (req, res) => {
     try {
-        // ✅ FIX: Validate ObjectId format to avoid Mongoose CastError
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return res.status(400).json({ error: "Invalid reservation ID" });
         }
@@ -218,7 +243,57 @@ exports.deleteReservation = async (req, res) => {
             return res.status(404).json({ error: "Reservation not found." });
         }
 
-        // ── Task b: Block delete if record is Completed ──
+        if (reservation.status === "Completed") {
+            return res.status(403).json({
+                error: "Completed reservations cannot be modified.",
+            });
+        }
+
+        // ── Block if the new table is already occupied by someone else ──
+        const newTable = req.body.tableNumber || "TBD";
+        if (newTable !== "TBD" && newTable !== reservation.tableNumber) {
+            const occupied = await Reservation.findOne({
+                _id:         { $ne: req.params.id },  // exclude current record
+                tableNumber: newTable,
+                status:      { $in: ["Waiting", "Seated"] },
+            });
+
+            if (occupied) {
+                return res.status(400).json({
+                    error: "This table is occupied, please choose another table.",
+                });
+            }
+        }
+
+        reservation.tableNumber = newTable;
+        await reservation.save();
+
+        res.status(200).json({ success: true, data: reservation });
+
+    } catch (err) {
+        console.error("Update Table Error:", err.message);
+        res.status(500).json({ error: "Failed to update table", details: err.message });
+    }
+};
+
+/**
+ * @desc    Delete a reservation
+ *          Completed records cannot be deleted
+ * @route   DELETE /api/reservations/:id
+ * @access  Private/Admin
+ */
+exports.deleteReservation = async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ error: "Invalid reservation ID" });
+        }
+
+        const reservation = await Reservation.findById(req.params.id);
+
+        if (!reservation) {
+            return res.status(404).json({ error: "Reservation not found." });
+        }
+
         if (reservation.status === "Completed") {
             return res.status(403).json({
                 error: "Completed reservations cannot be deleted.",

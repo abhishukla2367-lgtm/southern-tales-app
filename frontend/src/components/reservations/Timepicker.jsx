@@ -1,5 +1,5 @@
 import { useState } from "react";
-import DrumColumn from "./DrumColumn";
+import DrumColumn from "./Drumcolumn";
 
 const HOURS   = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
