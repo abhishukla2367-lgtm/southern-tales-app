@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import API from "../../api/axiosConfig";
 import TimePicker from "./TimePicker";
 import OutOfHoursPopup from "./OutOfHoursPopup";
-import { STATUS_OPTIONS, TABLE_IDS, isWithinBusinessHours } from "./constants";
+import { STATUS_OPTIONS, TABLE_IDS, isWithinBusinessHours } from "./Constants";
 
 const BLANK_FORM = {
   customerName: "", phone: "", guests: "", tableNumber: "",

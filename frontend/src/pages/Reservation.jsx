@@ -1,25 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axiosConfig";
+
+// ✅ Match these to your actual table IDs — same as Constants.js TABLE_IDS
+const TABLE_IDS = ["T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12","T13","T14","T15","T16","T17","T18","T19","T20"];
 
 export default function Reservation() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
-        customerName:  "",   // ✅ matches schema field
-        customerEmail: "",   // ✅ matches schema field
+        customerName:  "",
+        customerEmail: "",
         phone:         "",
         date:          "",
         time:          "",
         guests:        "",
+        tableNumber:   "",
     });
 
-    const [errors, setErrors]       = useState({});
-    const [submitting, setSubmitting] = useState(false);
+    const [errors, setErrors]           = useState({});
+    const [submitting, setSubmitting]   = useState(false);
+    const [occupiedTables, setOccupiedTables] = useState([]);
+    const [tableWarning, setTableWarning]     = useState("");
 
-    // MAPPING: Scrambled names to actual form keys to trick Chrome/Safari autocomplete
+    // Fetch occupied tables on mount
+    useEffect(() => {
+        API.get("/reservations/occupied-tables")
+            .then((res) => setOccupiedTables(res.data?.occupiedTables || []))
+            .catch(() => {}); // fail silently — availability display is non-critical
+    }, []);
+
     const nameMap = {
-        "ux_user_fullname":      "customerName",   // ✅ updated
-        "ux_user_contact_email": "customerEmail",  // ✅ updated
+        "ux_user_fullname":      "customerName",
+        "ux_user_contact_email": "customerEmail",
         "ux_user_phone_num":     "phone",
         "ux_booking_date":       "date",
         "ux_booking_time":       "time",
@@ -29,6 +41,15 @@ export default function Reservation() {
     const handleChange = (e) => {
         const actualKey = nameMap[e.target.name] || e.target.name;
         setForm({ ...form, [actualKey]: e.target.value });
+    };
+
+    const handleTableChange = (value) => {
+        setForm((f) => ({ ...f, tableNumber: value }));
+        setTableWarning(
+            value && occupiedTables.includes(value)
+                ? "This table is currently occupied. Please choose another."
+                : ""
+        );
     };
 
     const validate = () => {
@@ -45,6 +66,8 @@ export default function Reservation() {
             newErrors.time = "Time is required";
         if (!form.guests)
             newErrors.guests = "Select number of guests";
+        if (tableWarning)
+            newErrors.tableNumber = tableWarning;
         return newErrors;
     };
 
@@ -66,12 +89,11 @@ export default function Reservation() {
 
         try {
             setSubmitting(true);
-            // Sends customerName, customerEmail — matches Reservation schema exactly
             await API.post("/reservations", form);
             alert("Table reserved successfully!");
             setForm({
                 customerName: "", customerEmail: "", phone: "",
-                date: "", time: "", guests: "",
+                date: "", time: "", guests: "", tableNumber: "",
             });
             setErrors({});
             navigate("/");
@@ -82,6 +104,9 @@ export default function Reservation() {
             setSubmitting(false);
         }
     };
+
+    const inputCls = "w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600";
+    const labelCls = "block text-sm font-bold mb-1 text-[#f5c27a]";
 
     return (
         <section id="reservation" className="py-20 mt-16 bg-black px-6 min-h-screen">
@@ -95,69 +120,49 @@ export default function Reservation() {
                     className="bg-[#111111] max-w-lg mx-auto p-8 rounded-2xl shadow-2xl border border-zinc-800 space-y-5 text-left"
                     onSubmit={handleSubmit}
                 >
-                    {/* HONEYPOT: Browser targets these first, leaving real inputs alone */}
+                    {/* HONEYPOT */}
                     <input type="text"  name="name"  style={{ display: "none" }} tabIndex="-1" autoComplete="off" />
                     <input type="email" name="email" style={{ display: "none" }} tabIndex="-1" autoComplete="off" />
 
                     {/* Full Name */}
                     <div>
-                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Full Name</label>
+                        <label className={labelCls}>Full Name</label>
                         <input
-                            type="text"
-                            name="ux_user_fullname"
-                            autoComplete="new-password"
-                            value={form.customerName}
-                            onChange={handleChange}
-                            className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
-                            placeholder="Your Name"
+                            type="text" name="ux_user_fullname" autoComplete="new-password"
+                            value={form.customerName} onChange={handleChange}
+                            className={inputCls} placeholder="Your Name"
                         />
-                        {errors.customerName && (
-                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.customerName}</p>
-                        )}
+                        {errors.customerName && <p className="text-red-400 text-xs mt-1 font-medium">{errors.customerName}</p>}
                     </div>
 
                     {/* Email */}
                     <div>
-                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Email Address</label>
+                        <label className={labelCls}>Email Address</label>
                         <input
-                            type="email"
-                            name="ux_user_contact_email"
-                            autoComplete="new-password"
-                            value={form.customerEmail}
-                            onChange={handleChange}
-                            className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
-                            placeholder="hello@example.com"
+                            type="email" name="ux_user_contact_email" autoComplete="new-password"
+                            value={form.customerEmail} onChange={handleChange}
+                            className={inputCls} placeholder="hello@example.com"
                         />
-                        {errors.customerEmail && (
-                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.customerEmail}</p>
-                        )}
+                        {errors.customerEmail && <p className="text-red-400 text-xs mt-1 font-medium">{errors.customerEmail}</p>}
                     </div>
 
                     {/* Phone */}
                     <div>
-                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Phone Number</label>
+                        <label className={labelCls}>Phone Number</label>
                         <input
-                            type="tel"
-                            name="ux_user_phone_num"
-                            autoComplete="new-password"
-                            value={form.phone}
-                            onChange={handleChange}
-                            className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none transition-all placeholder:text-zinc-600"
-                            placeholder="9876543210"
+                            type="tel" name="ux_user_phone_num" autoComplete="new-password"
+                            value={form.phone} onChange={handleChange}
+                            className={inputCls} placeholder="9876543210"
                         />
-                        {errors.phone && (
-                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.phone}</p>
-                        )}
+                        {errors.phone && <p className="text-red-400 text-xs mt-1 font-medium">{errors.phone}</p>}
                     </div>
 
                     {/* Guests */}
                     <div>
-                        <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Number of Guests</label>
+                        <label className={labelCls}>Number of Guests</label>
                         <select
-                            name="ux_guest_count"
-                            value={form.guests}
-                            onChange={handleChange}
-                            autoComplete="off"
+                            name="ux_guest_count" value={form.guests}
+                            onChange={handleChange} autoComplete="off"
                             className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none"
                         >
                             <option value="" className="bg-[#111111]">Select people</option>
@@ -167,50 +172,67 @@ export default function Reservation() {
                                 </option>
                             ))}
                         </select>
-                        {errors.guests && (
-                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.guests}</p>
+                        {errors.guests && <p className="text-red-400 text-xs mt-1 font-medium">{errors.guests}</p>}
+                    </div>
+
+                    {/* Table Number */}
+                    <div>
+                        <label className={labelCls}>
+                            Preferred Table <span className="text-zinc-500 font-normal text-xs">(optional)</span>
+                        </label>
+                        <select
+                            name="tableNumber"
+                            value={form.tableNumber}
+                            onChange={(e) => handleTableChange(e.target.value)}
+                            autoComplete="off"
+                            className={`w-full bg-[#1a1a1a] border ${tableWarning ? "border-red-500" : "border-zinc-800"} text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none`}
+                        >
+                            <option value="" className="bg-[#111111]">— No preference —</option>
+                            {TABLE_IDS.map((t) => (
+                                <option key={t} value={t} className="bg-[#111111]">
+                                    {t}{occupiedTables.includes(t) ? " — 🔴 Occupied" : " — 🟢 Available"}
+                                </option>
+                            ))}
+                        </select>
+                        {tableWarning && (
+                            <div className="flex items-center gap-2 bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 mt-2">
+                                <span>⚠️</span>
+                                <p className="text-red-400 text-xs font-bold">{tableWarning}</p>
+                            </div>
+                        )}
+                        {errors.tableNumber && !tableWarning && (
+                            <p className="text-red-400 text-xs mt-1 font-medium">{errors.tableNumber}</p>
                         )}
                     </div>
 
                     {/* Date & Time */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Date</label>
+                            <label className={labelCls}>Date</label>
                             <input
-                                type="date"
-                                name="ux_booking_date"
-                                autoComplete="off"
-                                value={form.date}
-                                onChange={handleChange}
+                                type="date" name="ux_booking_date" autoComplete="off"
+                                value={form.date} onChange={handleChange}
                                 min={new Date().toISOString().split("T")[0]}
                                 className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none [color-scheme:dark]"
                             />
-                            {errors.date && (
-                                <p className="text-red-400 text-xs mt-1 font-medium">{errors.date}</p>
-                            )}
+                            {errors.date && <p className="text-red-400 text-xs mt-1 font-medium">{errors.date}</p>}
                         </div>
-
                         <div>
-                            <label className="block text-sm font-bold mb-1 text-[#f5c27a]">Time</label>
+                            <label className={labelCls}>Time</label>
                             <input
-                                type="time"
-                                name="ux_booking_time"
-                                autoComplete="off"
-                                value={form.time}
-                                onChange={handleChange}
+                                type="time" name="ux_booking_time" autoComplete="off"
+                                value={form.time} onChange={handleChange}
                                 className="w-full bg-[#1a1a1a] border border-zinc-800 text-white px-4 py-2 rounded-lg focus:ring-2 focus:ring-[#f5c27a] outline-none [color-scheme:dark]"
                             />
-                            {errors.time && (
-                                <p className="text-red-400 text-xs mt-1 font-medium">{errors.time}</p>
-                            )}
+                            {errors.time && <p className="text-red-400 text-xs mt-1 font-medium">{errors.time}</p>}
                         </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={submitting}
+                        disabled={submitting || !!tableWarning}
                         className={`w-full ${
-                            submitting ? "bg-zinc-700" : "bg-orange-600 hover:bg-orange-500"
+                            submitting || tableWarning ? "bg-zinc-700 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-500"
                         } text-white py-3 rounded-lg font-black shadow-lg transition-all active:scale-[0.98] uppercase tracking-wider`}
                     >
                         {submitting ? "Booking..." : "Confirm Reservation"}

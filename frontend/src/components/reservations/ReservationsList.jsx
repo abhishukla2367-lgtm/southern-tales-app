@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import API from "../../api/axiosConfig";
 import EmptyState from "../admin/EmptyState";
 import ErrorState from "../admin/ErrorState";
-import WalkInModal from "./WalkInModal";
+import WalkInModal from "./Walkinmodal";
 import { STATUS_STYLES, STATUS_OPTIONS, TABLES } from "./Constants";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ export default function ReservationsList() {
       await API.patch(`/reservations/${id}/status`, { status });
       setReservations((prev) => prev.map((r) => (r._id === id ? { ...r, status } : r)));
     } catch {
-      alert("Failed to update status.");
+      alert("Table is already occupied. Please choose another table.");
     }
   };
 
@@ -82,7 +82,7 @@ export default function ReservationsList() {
       await API.patch(`/reservations/${id}/table`, { tableNumber });
       setReservations((prev) => prev.map((r) => (r._id === id ? { ...r, tableNumber } : r)));
     } catch {
-      alert("Failed to update table.");
+      alert("Table is already occupied. Please choose another table.");
     }
   };
 

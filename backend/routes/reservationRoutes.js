@@ -2,14 +2,15 @@ const express = require("express");
 const router = express.Router();
 const { protect, admin } = require("../middleware/protect");
 
-// ✅ FIX: Import controller functions instead of duplicating logic inline
 const {
   createReservation,
   getMyReservations,
+  getOccupiedTables,
   getAllAdminReservations,
   getWalkIns,
   createWalkIn,
   updateStatus,
+  updateTable,
   deleteReservation,
 } = require("../controllers/reservationController");
 
@@ -35,6 +36,18 @@ router.post("/", protect, createReservation);
  * ⚠️ Must be defined BEFORE /:id to avoid Express treating "my-reservations" as an id
  */
 router.get("/my-reservations", protect, getMyReservations);
+
+// ==========================================
+// USER SIDE: OCCUPIED TABLES (Table Picker)
+// ==========================================
+
+/**
+ * @route   GET /api/reservations/occupied-tables
+ * @desc    Returns list of currently occupied table numbers for the customer table picker
+ * @access  Private
+ * ⚠️ Must be defined BEFORE /:id to avoid Express treating "occupied-tables" as an id
+ */
+router.get("/occupied-tables", protect, getOccupiedTables);
 
 // ==========================================
 // ADMIN SIDE: ALL RESERVATIONS
@@ -63,7 +76,6 @@ router.get("/walkin", protect, admin, getWalkIns);
 /**
  * @route   POST /api/reservations/walkin
  * @desc    Admin creates a walk-in reservation
- *          Task c: checks if selected table is already occupied before saving
  * @access  Private/Admin
  */
 router.post("/walkin", protect, admin, createWalkIn);
@@ -75,10 +87,23 @@ router.post("/walkin", protect, admin, createWalkIn);
 /**
  * @route   PATCH /api/reservations/:id/status
  * @desc    Update reservation status
- *          Task a & b: Completed records are fully locked — cannot be changed
+ *          Completed records are fully locked — cannot be changed
  * @access  Private/Admin
  */
 router.patch("/:id/status", protect, admin, updateStatus);
+
+// ==========================================
+// ADMIN SIDE: UPDATE TABLE
+// ==========================================
+
+/**
+ * @route   PATCH /api/reservations/:id/table
+ * @desc    Admin reassigns a table number from the dashboard
+ *          Blocks if target table is already occupied by another reservation
+ *          Completed records are locked — cannot be changed
+ * @access  Private/Admin
+ */
+router.patch("/:id/table", protect, admin, updateTable);
 
 // ==========================================
 // ADMIN SIDE: DELETE RESERVATION
@@ -87,7 +112,7 @@ router.patch("/:id/status", protect, admin, updateStatus);
 /**
  * @route   DELETE /api/reservations/:id
  * @desc    Delete a reservation
- *          Task b: Completed records cannot be deleted
+ *          Completed records cannot be deleted
  * @access  Private/Admin
  */
 router.delete("/:id", protect, admin, deleteReservation);
