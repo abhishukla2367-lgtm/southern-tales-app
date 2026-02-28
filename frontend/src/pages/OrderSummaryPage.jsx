@@ -31,6 +31,11 @@ const OrderSummaryPage = () => {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
+  // ✅ Scroll to top when order is confirmed
+  useEffect(() => {
+    if (orderConfirmed) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [orderConfirmed]);
+
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + Number(item.price) * item.quantity, 0
   );
