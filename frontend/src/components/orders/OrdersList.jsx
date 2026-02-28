@@ -37,6 +37,8 @@ const FILTER_TABS = [
   { label: "Dine-in",  value: "dinein" },
 ];
 
+const LOCKED_STATUSES = ["Completed", "Cancelled"];
+
 // ─── Walk-in Order Modal ──────────────────────────────────────────────────────
 function WalkInModal({ onClose, onOrderPlaced }) {
   const [step, setStep]               = useState(1);
@@ -48,6 +50,52 @@ function WalkInModal({ onClose, onOrderPlaced }) {
   const [search, setSearch]           = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
   const [placing, setPlacing]         = useState(false);
+
+  // ── Table availability state ──
+  const [tables, setTables]           = useState([]);
+  const [tablesLoading, setTablesLoading] = useState(true);
+  const [tablesError, setTablesError] = useState(false);
+
+  // Fetch real-time table availability on mount
+  useEffect(() => {
+    const loadTables = async () => {
+      setTablesLoading(true);
+      setTablesError(false);
+      try {
+        // Expects: [{ tableNumber: "T1", status: "available" | "occupied" }, ...]
+        // Falls back to generating T1–T20 if endpoint not available
+        const { data } = await API.get("/tables");
+        const raw = data.tables || data || [];
+        setTables(raw);
+      } catch {
+        // Fallback: generate T1–T20 all as available (graceful degradation)
+        setTables(
+          Array.from({ length: 20 }, (_, i) => ({
+            tableNumber: `T${i + 1}`,
+            status: "available",
+          }))
+        );
+        setTablesError(true); // soft error — dropdown still works
+      } finally {
+        setTablesLoading(false);
+      }
+    };
+    loadTables();
+  }, []);
+
+  // Refresh table list (e.g. after re-opening)
+  const refreshTables = async () => {
+    setTablesLoading(true);
+    setTablesError(false);
+    try {
+      const { data } = await API.get("/tables");
+      setTables(data.tables || data || []);
+    } catch {
+      setTablesError(true);
+    } finally {
+      setTablesLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (step !== 2) return;
@@ -66,9 +114,9 @@ function WalkInModal({ onClose, onOrderPlaced }) {
   }, [step]);
 
   const handleStep1Next = () => {
-    if (!guestName.trim())            return alert("Please enter guest name.");
-    if (!tableNumber.trim())          return alert("Please enter table number.");
-    if (!numGuests || numGuests < 1)  return alert("Please enter number of guests.");
+    if (!guestName.trim())   return alert("Please enter guest name.");
+    if (!tableNumber)        return alert("Please select a table.");
+    if (!numGuests)          return alert("Please select number of guests.");
     setStep(2);
   };
 
@@ -89,7 +137,7 @@ function WalkInModal({ onClose, onOrderPlaced }) {
     });
   };
 
-  const getQty    = (id)  => selectedItems.find((i) => i._id === id)?.quantity || 0;
+  const getQty      = (id)  => selectedItems.find((i) => i._id === id)?.quantity || 0;
   const totalAmount = selectedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const handlePlaceOrder = async () => {
@@ -124,6 +172,10 @@ function WalkInModal({ onClose, onOrderPlaced }) {
     m.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Separate available vs occupied for display
+  const availableTables  = tables.filter((t) => t.status === "available");
+  const occupiedTables   = tables.filter((t) => t.status !== "available");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
       <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden">
@@ -142,6 +194,8 @@ function WalkInModal({ onClose, onOrderPlaced }) {
         {/* ── STEP 1: Guest Info ── */}
         {step === 1 && (
           <div className="p-6 space-y-4">
+
+            {/* Guest Name */}
             <div>
               <label className="text-[10px] font-bold text-[#aaa] uppercase tracking-widest block mb-1">Guest Name</label>
               <input
@@ -152,27 +206,107 @@ function WalkInModal({ onClose, onOrderPlaced }) {
                 className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white p-3 rounded-lg outline-none focus:border-[#f5c27a] transition text-sm"
               />
             </div>
+
+            {/* ── Table Number Dropdown ── */}
             <div>
-              <label className="text-[10px] font-bold text-[#aaa] uppercase tracking-widest block mb-1">Table Number</label>
-              <input
-                type="text"
-                placeholder="e.g. T4"
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white p-3 rounded-lg outline-none focus:border-[#f5c27a] transition text-sm"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] font-bold text-[#aaa] uppercase tracking-widest">Table Number</label>
+                <button
+                  type="button"
+                  onClick={refreshTables}
+                  disabled={tablesLoading}
+                  className="text-[10px] text-[#f5c27a] hover:underline disabled:opacity-40 transition"
+                >
+                  {tablesLoading ? "Refreshing..." : "↻ Refresh"}
+                </button>
+              </div>
+
+              {tablesError && (
+                <p className="text-[10px] text-amber-400 mb-1.5">
+                  ⚠ Could not load live table data. Showing default T1–T20.
+                </p>
+              )}
+
+              <div className="relative">
+                <select
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                  disabled={tablesLoading}
+                  className="w-full appearance-none bg-[#1a1a1a] border border-[#2a2a2a] text-white p-3 pr-10 rounded-lg outline-none focus:border-[#f5c27a] transition text-sm cursor-pointer disabled:opacity-50"
+                >
+                  <option value="" disabled className="bg-[#111] text-[#555]">
+                    {tablesLoading ? "Loading tables..." : "Select a table..."}
+                  </option>
+
+                  {/* Available tables group */}
+                  {availableTables.length > 0 && (
+                    <optgroup label="✅ Available" className="bg-[#111] text-emerald-400">
+                      {availableTables.map((t) => (
+                        <option
+                          key={t.tableNumber}
+                          value={t.tableNumber}
+                          className="bg-[#111] text-white"
+                        >
+                          {t.tableNumber} — Available
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+
+                  {/* Occupied tables group */}
+                  {occupiedTables.length > 0 && (
+                    <optgroup label="🔴 Occupied" className="bg-[#111] text-red-400">
+                      {occupiedTables.map((t) => (
+                        <option
+                          key={t.tableNumber}
+                          value={t.tableNumber}
+                          disabled
+                          className="bg-[#111] text-[#555]"
+                        >
+                          {t.tableNumber} — Occupied
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+
+                {/* Custom chevron */}
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#555]">▾</span>
+              </div>
+
+              {/* Availability summary pill */}
+              {!tablesLoading && tables.length > 0 && (
+                <div className="flex gap-3 mt-2">
+                  <span className="text-[10px] font-bold text-emerald-400">
+                    ● {availableTables.length} available
+                  </span>
+                  <span className="text-[10px] font-bold text-red-400">
+                    ● {occupiedTables.length} occupied
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* ── Number of Guests Dropdown (1–8) ── */}
             <div>
               <label className="text-[10px] font-bold text-[#aaa] uppercase tracking-widest block mb-1">Number of Guests</label>
-              <input
-                type="number"
-                placeholder="e.g. 3"
-                min="1"
-                value={numGuests}
-                onChange={(e) => setNumGuests(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white p-3 rounded-lg outline-none focus:border-[#f5c27a] transition text-sm"
-              />
+              <div className="relative">
+                <select
+                  value={numGuests}
+                  onChange={(e) => setNumGuests(e.target.value)}
+                  className="w-full appearance-none bg-[#1a1a1a] border border-[#2a2a2a] text-white p-3 pr-10 rounded-lg outline-none focus:border-[#f5c27a] transition text-sm cursor-pointer"
+                >
+                  <option value="" disabled className="bg-[#111] text-[#555]">Select number of guests...</option>
+                  {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n} className="bg-[#111] text-white">
+                      {n} {n === 1 ? "Guest" : "Guests"}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#555]">▾</span>
+              </div>
             </div>
+
             <button
               onClick={handleStep1Next}
               className="w-full py-3 bg-[#f5c27a] text-[#111] rounded-lg font-black text-sm uppercase tracking-widest hover:bg-[#f0b85a] transition mt-2"
@@ -281,15 +415,13 @@ function WalkInModal({ onClose, onOrderPlaced }) {
 
 // ─── Main OrdersList ──────────────────────────────────────────────────────────
 export default function OrdersList() {
-  const [orders, setOrders]             = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(false);
+  const [orders, setOrders]                   = useState([]);
+  const [loading, setLoading]                 = useState(true);
+  const [error, setError]                     = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("");
-  const [showWalkInModal, setShowWalkInModal] = useState(false);
+  const [activeFilter, setActiveFilter]       = useState("");
+  const [showWalkInModal, setShowWalkInModal]  = useState(false);
 
-  // ✅ FIX 1: useCallback so the latest activeFilter is always used,
-  //    and onOrderPlaced only calls setActiveFilter — the effect re-fetches automatically.
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError(false);
@@ -372,7 +504,6 @@ export default function OrdersList() {
                   <th className="px-6 py-4">Order ID</th>
                   <th className="px-6 py-4">Type</th>
                   <th className="px-6 py-4">Customer</th>
-                  {/* ✅ FIX 3: New Table column */}
                   <th className="px-6 py-4">Table</th>
                   <th className="px-6 py-4">Items</th>
                   <th className="px-6 py-4">Total</th>
@@ -384,10 +515,12 @@ export default function OrdersList() {
               </thead>
               <tbody>
                 {orders.map((order) => {
-                  const statusClass = STATUS_STYLES[order.status]        || "bg-zinc-800 text-zinc-400 border border-zinc-600";
-                  const typeClass   = ORDER_TYPE_STYLES[order.orderType] || "bg-zinc-800 text-zinc-400 border border-zinc-600";
-                  const typeLabel   = ORDER_TYPE_LABELS[order.orderType] || order.orderType || "—";
-                  const isInHouse   = ["walkin", "dinein"].includes(order.orderType);
+                  const currentStatus = order.status || "Pending";
+                  const isLocked      = LOCKED_STATUSES.includes(currentStatus);
+                  const statusClass   = STATUS_STYLES[currentStatus]         || "bg-zinc-800 text-zinc-400 border border-zinc-600";
+                  const typeClass     = ORDER_TYPE_STYLES[order.orderType]   || "bg-zinc-800 text-zinc-400 border border-zinc-600";
+                  const typeLabel     = ORDER_TYPE_LABELS[order.orderType]   || order.orderType || "—";
+                  const isInHouse     = ["walkin", "dinein"].includes(order.orderType);
 
                   return (
                     <tr key={order._id} className="border-b border-[#1a1a1a] hover:bg-[#161616] transition-colors">
@@ -415,7 +548,6 @@ export default function OrdersList() {
                         )}
                       </td>
 
-                      {/* ✅ FIX 3: Table column cell */}
                       <td className="px-6 py-4 text-sm text-[#aaa]">
                         {isInHouse
                           ? <span className="font-bold text-white">{order.tableNumber || "—"}</span>
@@ -427,30 +559,63 @@ export default function OrdersList() {
                         {order.items?.length || 0} item{order.items?.length !== 1 ? "s" : ""}
                       </td>
 
+                      {/* Total */}
                       <td className="px-6 py-4 font-black text-sm text-emerald-400">
                         ₹{order.totalAmount}
                       </td>
 
+                      {/* Payment status */}
                       <td className="px-6 py-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                          order.paymentStatus === "Paid"
-                            ? "bg-emerald-400/10 text-emerald-400"
-                            : "bg-red-400/10 text-red-400"
-                        }`}>
-                          {order.paymentStatus || "Unpaid"}
-                        </span>
+                        {["delivery", "pickup"].includes(order.orderType) ? (
+                          <button
+                            onClick={async () => {
+                              const newStatus = order.paymentStatus === "Paid" ? "Unpaid" : "Paid";
+                              try {
+                                await API.patch(`/orders/${order._id}/payment-status`, { paymentStatus: newStatus });
+                                setOrders((prev) =>
+                                  prev.map((o) => o._id === order._id ? { ...o, paymentStatus: newStatus } : o)
+                                );
+                              } catch {
+                                alert("Failed to update payment status.");
+                              }
+                            }}
+                            title="Click to toggle payment status"
+                            className={`text-sm font-black px-2.5 py-1 rounded-md border transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer ${
+                              order.paymentStatus === "Paid"
+                                ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/20"
+                                : "bg-red-400/10 text-red-400 border-red-400/30 hover:bg-red-400/20"
+                            }`}
+                          >
+                            {order.paymentStatus === "Paid" ? "✓ Paid" : "✗ Unpaid"}
+                          </button>
+                        ) : (
+                          <span className={`text-sm font-black px-2 py-0.5 rounded-md ${
+                            order.paymentStatus === "Paid"
+                              ? "bg-emerald-400/10 text-emerald-400"
+                              : "bg-red-400/10 text-red-400"
+                          }`}>
+                            {order.paymentStatus === "Paid" ? "✓ Paid" : "✗ Unpaid"}
+                          </span>
+                        )}
                       </td>
 
+                      {/* Status */}
                       <td className="px-6 py-4">
-                        <select
-                          className={`${statusClass} rounded-lg px-2.5 py-1 text-xs font-bold outline-none cursor-pointer bg-transparent`}
-                          value={order.status || "Pending"}
-                          onChange={(e) => updateStatus(order._id, e.target.value)}
-                        >
-                          {STATUS_OPTIONS.map((s) => (
-                            <option key={s} value={s} className="bg-[#111111] text-white">{s}</option>
-                          ))}
-                        </select>
+                        {isLocked ? (
+                          <span className={`${statusClass} rounded-lg px-2.5 py-1 text-xs font-bold cursor-not-allowed opacity-70`}>
+                            {currentStatus}
+                          </span>
+                        ) : (
+                          <select
+                            className={`${statusClass} rounded-lg px-2.5 py-1 text-xs font-bold outline-none cursor-pointer bg-transparent`}
+                            value={currentStatus}
+                            onChange={(e) => updateStatus(order._id, e.target.value)}
+                          >
+                            {STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s} className="bg-[#111111] text-white">{s}</option>
+                            ))}
+                          </select>
+                        )}
                       </td>
 
                       <td className="px-6 py-4 text-xs text-[#555]">
@@ -460,7 +625,6 @@ export default function OrdersList() {
                       </td>
 
                       <td className="px-6 py-4">
-                        {/* ✅ FIX 2: Hide Bill button for Cancelled orders */}
                         {isInHouse && order.status !== "Cancelled" ? (
                           <button
                             onClick={() => setSelectedOrderId(order._id)}
@@ -482,25 +646,25 @@ export default function OrdersList() {
         </div>
       )}
 
-      {/* Walk-in Modal — ✅ FIX 1: only setActiveFilter, effect handles re-fetch */}
+      {/* Walk-in Modal */}
       {showWalkInModal && (
         <WalkInModal
           onClose={() => setShowWalkInModal(false)}
           onOrderPlaced={() => {
-            setActiveFilter("walkin"); // useEffect will call fetchOrders automatically
+            setActiveFilter("walkin");
           }}
         />
       )}
 
       {/* Bill Modal */}
       {selectedOrderId && (
-  <BillModal
-    key={selectedOrderId}
-    orderId={selectedOrderId}
-    onClose={() => setSelectedOrderId(null)}
-    onPaid={handlePaid}
-  />
-)}
+        <BillModal
+          key={selectedOrderId}
+          orderId={selectedOrderId}
+          onClose={() => setSelectedOrderId(null)}
+          onPaid={handlePaid}
+        />
+      )}
     </>
   );
 }

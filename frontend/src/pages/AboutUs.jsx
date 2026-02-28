@@ -103,22 +103,38 @@ export default function About() {
 
       {/* 3. NOIR STATS SECTION */}
       <section className="bg-[#080808] border-y border-white/5 text-white py-24 relative">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-12">
-          {[
-            { value: "15+", label: "Years of Heritage" },
-            { value: "50+", label: "Spice Blends" },
-            { value: "10k+", label: "Global Guests" },
-            { value: "3", label: "Master Chefs" },
-          ].map((item, i) => (
-            <div key={i} className="group text-center">
-              <p className="text-5xl md:text-6xl font-black text-orange-500 mb-2 transition-transform group-hover:scale-110">
-                {item.value}
-              </p>
-              <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-black">
-                {item.label}
-              </p>
-            </div>
-          ))}
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Section Label */}
+          <div className="flex items-center justify-center gap-4 mb-16">
+            <div className="h-[1px] w-16 bg-orange-500/40"></div>
+            <span className="text-[10px] uppercase tracking-[0.4em] text-orange-500/70 font-black">By the Numbers</span>
+            <div className="h-[1px] w-16 bg-orange-500/40"></div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-8">
+            {[
+              { value: "15+",  label: "Years of Heritage",  icon: "⌛" },
+              { value: "50+",  label: "Spice Blends",       icon: "🌶" },
+              { value: "10k+", label: "Global Guests",       icon: "🌍" },
+              { value: "3",    label: "Master Chefs",        icon: "👨‍🍳" },
+              { value: "120+", label: "Dedicated Staff",     icon: "🤝" },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="group relative text-center px-4 py-8 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-orange-500/30 transition-all duration-500"
+              >
+                {/* Top accent line on hover */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 group-hover:w-12 h-[2px] bg-orange-500 rounded-full transition-all duration-500" />
+
+                <p className="text-4xl md:text-5xl font-black text-orange-500 mb-3 transition-transform duration-300 group-hover:scale-110">
+                  {item.value}
+                </p>
+                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] font-black leading-relaxed">
+                  {item.label}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
