@@ -66,6 +66,9 @@ app.use("/api/walkin", walkinRoutes);
 
 const billRoutes = require("./routes/billRoutes");
 app.use("/api/bill", billRoutes);
+
+const tableRoutes = require("./routes/tableRoutes");
+app.use("/api/tables", tableRoutes);
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.get("/api/health", (req, res) => {
