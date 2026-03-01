@@ -1,17 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const FALLBACK_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52' viewBox='0 0 52 52'%3E%3Crect width='52' height='52' fill='%231a1a1a'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='22' fill='%23444'%3E%F0%9F%8D%BD%EF%B8%8F%3C/text%3E%3C/svg%3E";
 
-// ─── Stock Level Thresholds ────────────────────────────────────────────────────
-// Tweak these numbers to match your business logic
-const STOCK_LOW_THRESHOLD = 5; // ≤ 5 → "Low Stock" warning (amber)
+const STOCK_LOW_THRESHOLD = 5;
 
-/**
- * Returns visual config for the stock badge based on quantity.
- * stock === 0      → Out of Stock  (red)
- * stock <= 5       → Low Stock     (amber)
- * stock > 5        → Available     (green)
- */
 function getStockMeta(stock) {
   if (stock === 0) {
     return {
@@ -45,7 +37,43 @@ const getThumbnail = (url) => {
   return url;
 };
 
-export default function MenuTable({ items, onEdit, onDelete }) {
+// ─── Inline Restock Row ────────────────────────────────────────────────────────
+function RestockCell({ item, onRestock }) {
+  const [qty, setQty]         = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRestock = async () => {
+    const parsed = parseInt(qty, 10);
+    if (!parsed || parsed <= 0) return;
+    setLoading(true);
+    await onRestock(item, parsed);
+    setQty("");
+    setLoading(false);
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 mt-2">
+      <input
+        type="number"
+        min="1"
+        value={qty}
+        onChange={(e) => setQty(e.target.value)}
+        placeholder="Qty"
+        className="w-16 text-center text-xs font-bold bg-neutral-800 border border-neutral-700 text-neutral-200 rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+      />
+      <button
+        onClick={handleRestock}
+        disabled={loading || !qty}
+        title="Restock"
+        className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-black transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {loading ? "..." : "Restock"}
+      </button>
+    </div>
+  );
+}
+
+export default function MenuTable({ items, onEdit, onDelete, onRestock }) {
 
   if (!items || !items.length)
     return (
@@ -76,8 +104,10 @@ export default function MenuTable({ items, onEdit, onDelete }) {
 
           <tbody className="divide-y divide-neutral-900">
             {items.map((item, index) => {
-              const stock = typeof item.stock === 'number' ? item.stock : 0;
-              const meta  = getStockMeta(stock);
+              const stock     = typeof item.stock === 'number' ? item.stock : 0;
+              const unit      = item.unit || "units"; // ← real unit from DB, fallback to "units"
+              const meta      = getStockMeta(stock);
+              const isOutOfStock = stock === 0;
 
               return (
                 <tr
@@ -124,15 +154,21 @@ export default function MenuTable({ items, onEdit, onDelete }) {
                     </span>
                   </td>
 
-                  {/* Stock Quantity */}
+                  {/* Stock Quantity + Restock input when 0 */}
                   <td className="px-6 py-4 text-center">
                     <span className={`font-black text-sm tabular-nums ${meta.qty}`}>
                       {stock}
                     </span>
-                    <span className="text-[10px] text-neutral-600 ml-1">units</span>
+                    {/* ← Real unit from DB */}
+                    <span className="text-[10px] text-neutral-600 ml-1">{unit}</span>
+
+                    {/* Restock control — only shown when stock is 0 */}
+                    {isOutOfStock && onRestock && (
+                      <RestockCell item={item} onRestock={onRestock} />
+                    )}
                   </td>
 
-                  {/* Status — fully auto-derived from stock */}
+                  {/* Status — auto-derived from stock */}
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${meta.badge}`}>
                       <span className={`w-1.5 h-1.5 rounded-full mr-2 ${meta.dot}`} />
@@ -140,9 +176,10 @@ export default function MenuTable({ items, onEdit, onDelete }) {
                     </span>
                   </td>
 
-                  {/* Actions */}
+                  {/* Actions — Edit & Delete */}
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
+                      {/* Edit */}
                       <button
                         onClick={() => onEdit(item)}
                         title="Edit item"
@@ -152,6 +189,8 @@ export default function MenuTable({ items, onEdit, onDelete }) {
                           <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.69,147.31,64l24-24L216,84.69Z" />
                         </svg>
                       </button>
+
+                      {/* Delete */}
                       <button
                         onClick={() => onDelete(item)}
                         title="Delete item"

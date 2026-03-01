@@ -38,7 +38,12 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+
+// ✅ Skip urlencoded parsing for multipart/form-data requests (let multer handle those)
+app.use((req, res, next) => {
+  if (req.is("multipart/form-data")) return next();
+  express.urlencoded({ extended: true })(req, res, next);
+});
 
 app.use((req, res, next) => {
   console.log(`📩 [${new Date().toISOString()}] ${req.method} ${req.url}`);
