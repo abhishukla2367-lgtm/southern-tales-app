@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const protect = async (req, res, next) => {
+const protect = (req, res, next) => {
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
@@ -9,12 +9,12 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       const userId = decoded.id || decoded._id;
-      
-      req.user = {      
+
+      req.user = {
         id: userId,        // ✅ For controllers using req.user.id
         _id: userId,       // ✅ For controllers using req.user._id
         role: decoded.role,
-        isAdmin: decoded.isAdmin
+        isAdmin: decoded.isAdmin,
       };
 
       return next();

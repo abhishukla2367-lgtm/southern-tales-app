@@ -6,7 +6,20 @@ import {
   deleteMenuItem,
 } from "../services/menuService";
 
-const POLL_INTERVAL_MS = 5000; // Refresh every 5 seconds
+const POLL_INTERVAL_MS = 5000;
+
+// ✅ Extracts a clean plain string ID, stripping any ":suffix" artifacts
+const getId = (item) => {
+  const raw = item?._id ?? item?.id;
+  if (!raw) return null;
+  return raw.toString().split(":")[0];
+};
+
+// ✅ Ensures every item entering React state has a clean plain-string _id
+const normalizeItem = (item) => {
+  if (!item) return item;
+  return { ...item, _id: getId(item) };
+};
 
 export default function useMenu() {
   const [menuItems, setMenuItems]   = useState([]);
@@ -14,16 +27,21 @@ export default function useMenu() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(false);
   const timerRef                    = useRef(null);
+  const deletingRef                 = useRef(false); // 🔒 blocks polling during delete
 
   // ─── Fetch & sync categories ──────────────────────────────────────────────
   const fetchMenu = useCallback(async (showLoader = false) => {
+    // 🔒 Don't overwrite state while a delete is in progress
+    if (deletingRef.current) return;
+
     try {
       if (showLoader) setLoading(true);
       const { data } = await getMenuItems();
       const menuData = Array.isArray(data) ? data : [];
 
-      setMenuItems(menuData);
-      setCategories(["All", ...new Set(menuData.map((i) => i.category).filter(Boolean))]);
+      const normalized = menuData.map(normalizeItem);
+      setMenuItems(normalized);
+      setCategories(["All", ...new Set(normalized.map((i) => i.category).filter(Boolean))]);
       setError(false);
     } catch (err) {
       console.error("Failed to fetch menu:", err.message);
@@ -33,7 +51,7 @@ export default function useMenu() {
     }
   }, []);
 
-  // ─── Polling: pause when tab hidden, resume on focus ─────────────────────
+  // ─── Polling ──────────────────────────────────────────────────────────────
   const startPolling = useCallback(() => {
     if (timerRef.current) return;
     timerRef.current = setInterval(() => {
@@ -47,12 +65,12 @@ export default function useMenu() {
   }, []);
 
   useEffect(() => {
-    fetchMenu(true); // Initial load with spinner
+    fetchMenu(true);
     startPolling();
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        fetchMenu();   // Immediately re-sync when tab regains focus
+        fetchMenu();
         startPolling();
       } else {
         stopPolling();
@@ -66,58 +84,83 @@ export default function useMenu() {
     };
   }, [fetchMenu, startPolling, stopPolling]);
 
-  // ─── Create or update an item ─────────────────────────────────────────────
+  // ─── Create or Update ─────────────────────────────────────────────────────
   const saveItem = async (formData, editItem) => {
     try {
       if (editItem) {
-        const id = editItem._id || editItem.id;
+        const id = getId(editItem);
+        console.log("✏️ Updating item ID:", id, "| raw _id:", editItem._id); // debug
+        if (!id) throw new Error("Cannot update: item has no valid ID");
+
         const { data } = await updateMenuItem(id, formData);
+        const clean    = normalizeItem(data);
+
         setMenuItems((prev) =>
-          prev.map((i) => (i._id === id || i.id === id ? data : i))
+          prev.map((i) => (getId(i) === id ? clean : i))
         );
       } else {
         const { data } = await createMenuItem(formData);
-        setMenuItems((prev) => [data, ...prev]);
-        if (data.category && !categories.includes(data.category)) {
-          setCategories((prev) => [...prev, data.category]);
+        const clean    = normalizeItem(data);
+
+        setMenuItems((prev) => [clean, ...prev]);
+        if (clean.category && !categories.includes(clean.category)) {
+          setCategories((prev) => [...prev, clean.category]);
         }
       }
     } catch (err) {
       console.error("Save item error:", err);
-      throw err; // Let the modal handle the error display
+      throw err;
     }
   };
 
-  // ─── Delete an item ───────────────────────────────────────────────────────
+  // ─── Delete ───────────────────────────────────────────────────────────────
   const removeItem = async (item) => {
-    const id = item._id || item.id;
-    if (!window.confirm(`Delete "${item.name}"? This will also remove the image from the cloud.`)) return;
+    const id = getId(item);
+    console.log("🗑️ Deleting item ID:", id, "| raw _id:", item._id); // debug
+
+    if (!id) return alert("Cannot delete: item has no valid ID");
+
+    // Confirm BEFORE touching state or locking polling
+    const confirmed = window.confirm(`Delete "${item.name}"? This will also remove the image from the cloud.`);
+    if (!confirmed) return;
+
+    // ✅ OPTIMISTIC DELETE — remove from UI immediately, restore on failure
+    deletingRef.current = true;
+    setMenuItems((prev) => prev.filter((i) => getId(i) !== id));
 
     try {
       await deleteMenuItem(id);
-      setMenuItems((prev) => prev.filter((i) => i._id !== id && i.id !== id));
     } catch (err) {
       console.error("Delete failed:", err);
+      // ✅ Restore the item if the API call failed
+      setMenuItems((prev) => [normalizeItem(item), ...prev]);
       alert("Failed to delete item.");
+    } finally {
+      deletingRef.current = false;
     }
   };
 
-  // ─── Restock an item (admin manually adds units) ──────────────────────────
-  // Calls PATCH /api/menu/:id/restock  { quantity }
+  // ─── Restock ──────────────────────────────────────────────────────────────
   const restockItem = async (item, quantity) => {
-    const id = item._id || item.id;
+    const id = getId(item);
+    if (!id) return alert("Cannot restock: item has no valid ID");
+
     try {
+      // ✅ Read token from localStorage and attach as Bearer header
+      const token = localStorage.getItem("token");
       const res = await fetch(`/api/menu/${id}/restock`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({ quantity }),
       });
       if (!res.ok) throw new Error(await res.text());
       const { item: updated } = await res.json();
 
-      // Immediately reflect new stock in UI without waiting for next poll
       setMenuItems((prev) =>
-        prev.map((i) => (i._id === id || i.id === id ? updated : i))
+        prev.map((i) => (getId(i) === id ? normalizeItem(updated) : i))
       );
     } catch (err) {
       console.error("Restock failed:", err);
@@ -132,8 +175,7 @@ export default function useMenu() {
     error,
     saveItem,
     removeItem,
-    restockItem,  // Use this to manually add stock from admin UI
+    restockItem,
     refetch: fetchMenu,
-    // toggleAvailability removed — status is now auto-derived from stock
   };
 }

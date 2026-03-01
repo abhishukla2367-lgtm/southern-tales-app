@@ -8,7 +8,7 @@ import MenuItemModal from "./MenuItemModal";
 export default function MenuList() {
   const {
     menuItems, categories, loading, error,
-    saveItem, removeItem, toggleAvailability,
+    saveItem, removeItem, restockItem,   // ← restockItem added
   } = useMenu();
 
   const [activeCategory, setActiveCategory] = useState("All");
@@ -17,7 +17,7 @@ export default function MenuList() {
   const [priceFilter, setPriceFilter]       = useState("All Prices");
   const [showModal, setShowModal]           = useState(false);
   const [editItem, setEditItem]             = useState(null);
-  const [isSaving, setIsSaving]             = useState(false); // New state for upload feedback
+  const [isSaving, setIsSaving]             = useState(false);
 
   const filteredItems = menuItems.filter((item) => {
     const catMatch = activeCategory === "All" || item.category === activeCategory;
@@ -47,8 +47,7 @@ export default function MenuList() {
 
   const handleAdd  = () => { setEditItem(null); setShowModal(true); };
   const handleEdit = (item) => { setEditItem(item); setShowModal(true); };
-  
-  // Updated handleSave to handle the asynchronous upload
+
   const handleSave = async (formData) => {
     setIsSaving(true);
     try {
@@ -101,7 +100,7 @@ export default function MenuList() {
         items={filteredItems}
         onEdit={handleEdit}
         onDelete={removeItem}
-        onToggle={toggleAvailability}
+        onRestock={restockItem}   // ← passed down
       />
 
       {showModal && (
@@ -110,7 +109,7 @@ export default function MenuList() {
           categories={categories}
           onSave={handleSave}
           onClose={() => setShowModal(false)}
-          isSaving={isSaving} // Pass saving state to show a spinner in the modal
+          isSaving={isSaving}
         />
       )}
     </div>

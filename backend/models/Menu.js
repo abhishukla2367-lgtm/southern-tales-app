@@ -1,6 +1,12 @@
 const mongoose = require("mongoose");
 
 const menuSchema = new mongoose.Schema({
+  // ✅ FIX: Explicitly declare _id as String so Mongoose stops casting
+  //         values like "a3" or "b4" to ObjectId (which throws a CastError).
+  _id: {
+    type: String,
+  },
+
   name: {
     type:     String,
     required: [true, "Dish name is required"],
@@ -23,6 +29,10 @@ const menuSchema = new mongoose.Schema({
     type:    String,
     default: "",
   },
+  cloudinaryId: {
+    type:    String,
+    default: "",
+  },
   veg: {
     type:    Boolean,
     default: true,
@@ -37,8 +47,6 @@ const menuSchema = new mongoose.Schema({
   },
 
   // ─── Quantity Unit ─────────────────────────────────────────────────────────
-  // Controls what unit label appears next to qty sold in Reports ("2 pcs", "1 glass", etc.)
-  // Set this correctly when creating/editing a menu item in the admin panel.
   unit: {
     type:    String,
     default: "pcs",
@@ -57,29 +65,22 @@ const menuSchema = new mongoose.Schema({
   },
 
   // ─── Availability ──────────────────────────────────────────────────────────
+  // Auto-managed by hooks — do not set this manually.
   available: {
     type:    Boolean,
     default: false,
   },
 }, {
-  timestamps: true,
-  collection: "menu",
-  // ✅ No toJSON transform — _id serialization handled in the controller
+  timestamps:  true,
+  collection:  "menu",
 });
 
 // ─── Pre-save Hook ────────────────────────────────────────────────────────────
-menuSchema.pre("save", function (next) {
+// ✅ Use async (no next parameter) — required for Mongoose 7+
+// Only used on new item creation — available is derived from stock.
+// For updates, available is computed explicitly in the route handler.
+menuSchema.pre("save", async function () {
   this.available = this.stock > 0;
-  next();
-});
-
-// ─── Pre-update Hook ──────────────────────────────────────────────────────────
-menuSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
-  const update = this.getUpdate();
-  if (update && update.stock !== undefined) {
-    update.available = Number(update.stock) > 0;
-  }
-  next();
 });
 
 module.exports = mongoose.model("Menu", menuSchema);

@@ -4,13 +4,15 @@ const emptyForm = {
   name: "", category: "", price: "", description: "", available: true,
 };
 
-export default function MenuItemModal({ editItem, categories, onSave, onClose }) {
-  const [form, setForm]             = useState(emptyForm);
-  const [imageFile, setImageFile]   = useState(null);
+export default function MenuItemModal({ editItem, categories, onSave, onClose, isSaving }) {
+  const [form, setForm]                 = useState(emptyForm);
+  const [imageFile, setImageFile]       = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [saving, setSaving]         = useState(false);
-  const [errors, setErrors]         = useState({});
-  const fileRef                     = useRef();
+  const [errors, setErrors]             = useState({});
+  const fileRef                         = useRef();
+
+  // Strip "All" sentinel — it's only for the filter, not a real category
+  const realCategories = categories.filter((c) => c !== "All");
 
   useEffect(() => {
     if (editItem) {
@@ -24,12 +26,13 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
       setImagePreview(editItem.image || "");
       setImageFile(null);
     } else {
-      setForm({ ...emptyForm, category: categories[1] || "" });
+      setForm({ ...emptyForm, category: realCategories[0] || "" });
       setImagePreview("");
       setImageFile(null);
     }
     setErrors({});
-  }, [editItem, categories]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editItem]);
 
   const handleImageFile = (e) => {
     const file = e.target.files[0];
@@ -41,16 +44,14 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
     reader.readAsDataURL(file);
   };
 
-  // ── Inline validation ──────────────────────────────────────────────────────
   const validate = () => {
-    const newErrors = {};
-    if (!form.name.trim())       newErrors.name  = "Dish name is required";
-    if (!form.price)             newErrors.price = "Price is required";
-    if (Number(form.price) <= 0) newErrors.price = "Price must be greater than 0";
-    if (!form.category)          newErrors.category = "Category is required";
-    // Image required only for new items (edit can keep existing image)
-    if (!editItem && !imageFile) newErrors.image = "Please select an image";
-    return newErrors;
+    const errs = {};
+    if (!form.name.trim())       errs.name     = "Dish name is required";
+    if (!form.price)             errs.price    = "Price is required";
+    if (Number(form.price) <= 0) errs.price    = "Price must be greater than 0";
+    if (!form.category)          errs.category = "Category is required";
+    if (!editItem && !imageFile) errs.image    = "Please select an image";
+    return errs;
   };
 
   const handleSave = async () => {
@@ -60,24 +61,26 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
       return;
     }
 
-    setSaving(true);
     setErrors({});
+
     try {
       const formData = new FormData();
-      formData.append("name",        form.name);
+      formData.append("name",        form.name.trim());
       formData.append("price",       form.price);
       formData.append("category",    form.category);
       formData.append("description", form.description);
       formData.append("available",   form.available);
       if (imageFile) formData.append("image", imageFile);
 
+      // ✅ Let the parent (MenuList) own the close — no onClose() here.
+      //    MenuList.handleSave calls setShowModal(false) on success.
       await onSave(formData);
-      onClose();
+
     } catch (err) {
-      console.error("Save failed:", err.message);
-      setErrors({ submit: err.response?.data?.message || "Failed to save. Please try again." });
-    } finally {
-      setSaving(false);
+      console.error("Save failed:", err);
+      setErrors({
+        submit: err.response?.data?.message || "Failed to save. Please try again.",
+      });
     }
   };
 
@@ -92,7 +95,8 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
           </h2>
           <button
             onClick={onClose}
-            className="text-neutral-500 hover:text-neutral-300 text-xl cursor-pointer transition-colors"
+            disabled={isSaving}
+            className="text-neutral-500 hover:text-neutral-300 text-xl cursor-pointer transition-colors disabled:opacity-30"
           >
             ✕
           </button>
@@ -207,7 +211,10 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
               className={`w-full bg-neutral-900 border text-neutral-100 text-sm rounded-lg px-4 py-3 outline-none transition-colors
                 ${errors.category ? "border-red-500/60 focus:border-red-500" : "border-neutral-800 focus:border-yellow-500"}`}
             >
-              {categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+              {/* ✅ "All" is filtered out — only real categories shown */}
+              {realCategories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
             {errors.category && <p className="text-[11px] text-red-400 font-semibold mt-1">⚠ {errors.category}</p>}
           </div>
@@ -241,20 +248,21 @@ export default function MenuItemModal({ editItem, categories, onSave, onClose })
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 bg-transparent hover:bg-neutral-900 text-neutral-500 py-3 text-xs font-black uppercase tracking-widest transition-colors rounded-xl border border-neutral-800"
+            disabled={isSaving}
+            className="flex-1 bg-transparent hover:bg-neutral-900 text-neutral-500 py-3 text-xs font-black uppercase tracking-widest transition-colors rounded-xl border border-neutral-800 disabled:opacity-30"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={isSaving}
             className={`flex-[2] rounded-xl py-3 text-xs font-black uppercase tracking-widest transition-all
-              ${saving
+              ${isSaving
                 ? "bg-neutral-800 text-neutral-600 cursor-wait"
                 : "bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg shadow-yellow-900/20 hover:shadow-yellow-900/40"
               }`}
           >
-            {saving ? "Uploading to Cloud..." : editItem ? "Update Item" : "Confirm & Add"}
+            {isSaving ? "Uploading to Cloud..." : editItem ? "Update Item" : "Confirm & Add"}
           </button>
         </div>
 
