@@ -1,23 +1,36 @@
-// src/socket.js
-// ─────────────────────────────────────────────────────────────────────────────
-// Singleton Socket.io client — import this anywhere in the frontend.
-// Usage:
-//   import socket from "../socket";
-//   socket.on("tables:updated", ({ tables }) => { ... });
-// ─────────────────────────────────────────────────────────────────────────────
 import { io } from "socket.io-client";
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL ||   // set in your .env: VITE_SOCKET_URL=http://localhost:5000
-  import.meta.env.VITE_API_URL    ||
-  "http://localhost:5000";
-const socket = io(SOCKET_URL, {
+
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+
+const createSocket = () => io(SOCKET_URL, {
   withCredentials: true,
-  autoConnect: true,
+  autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: 10,
-  reconnectionDelay: 2000,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  pingTimeout: 300000,     // ✅ 5 minutes — handles tab throttling
+  pingInterval: 60000,     // ✅ ping every 60s
+  transports: ["websocket"],
+  upgrade: false,
 });
-socket.on("connect",         () => console.log("🔌 Socket connected:", socket.id));
-socket.on("disconnect",      ()  => console.log("🔌 Socket disconnected"));
-socket.on("connect_error",   (e) => console.warn("🔌 Socket error:", e.message));
-export default socket; 
+
+const socket = globalThis._socket ?? createSocket();
+if (!globalThis._socket) globalThis._socket = socket;
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    socket.disconnect();
+    delete globalThis._socket;
+  });
+}
+
+socket.on("connect",           () => console.log("🔌 Socket connected:", socket.id));
+socket.on("disconnect",        (reason) => console.warn("⚠️ Disconnected:", reason));
+socket.on("connect_error",     (e) => console.warn("❌ Socket error:", e.message));
+socket.on("reconnect",         (n) => console.log(`🔄 Reconnected after ${n} attempts`));
+socket.on("reconnect_attempt", (n) => console.log(`🔁 Attempt #${n}`));
+
+if (!socket.connected) socket.connect();
+
+export default socket;

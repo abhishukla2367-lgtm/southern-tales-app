@@ -1,69 +1,130 @@
 import { useState, useEffect, useCallback } from "react";
 
-const IMAGES = [
-  // ── FOOD (15 images – South Indian dishes) ───────────────────────────
-  { src: "https://images.unsplash.com/photo-1630383249896-424e482df921", category: "food", title: "Masala Dosa",        h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc", category: "food", title: "Idli Sambar",        h: "h-48" },
-  { src: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8", category: "food", title: "Biryani",            h: "h-72" },
-  { src: "https://images.unsplash.com/photo-1606491956689-2ea866880c84", category: "food", title: "South Indian Thali", h: "h-56" },
-  { src: "https://images.unsplash.com/photo-1574653853027-5382a3d23a15", category: "food", title: "Medu Vada",          h: "h-80" },
-  { src: "https://images.unsplash.com/photo-1548943487-a2e4e43b4853", category: "food", title: "Uttapam",              h: "h-52" },
-  { src: "https://images.unsplash.com/photo-1625398407796-82650a8c135f", category: "food", title: "Appam",              h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7", category: "food", title: "Sambar Rice",        h: "h-56" },
-  { src: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0", category: "food", title: "Coconut Chutney",    h: "h-48" },
-  { src: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4", category: "food", title: "Pongal",             h: "h-72" },
-  { src: "https://images.unsplash.com/photo-1606756790138-261d2b21cd75", category: "food", title: "Rasam",              h: "h-60" },
-  { src: "https://images.unsplash.com/photo-1516714435131-44d6b64dc6a2", category: "food", title: "Fish Curry",         h: "h-80" },
-  { src: "https://images.unsplash.com/photo-1607330289024-1535c6b4e1c1", category: "food", title: "Filter Coffee",      h: "h-44" },
-  { src: "https://images.unsplash.com/photo-1589302168068-964664d93dc0", category: "food", title: "Dosa & Chutneys",    h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1626804475297-41608ea09aeb", category: "food", title: "Kerala Prawn Curry", h: "h-56" },
+const BASE = "https://res.cloudinary.com/db2vju4mv/image/upload";
 
-  // ── INTERIOR (15 images – South Indian restaurant spaces) ─────────────
-  { src: "https://images.unsplash.com/photo-1524758631624-e2822e304c36", category: "interior", title: "Luxury Dining Hall",   h: "h-72" },
-  { src: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4", category: "interior", title: "Restaurant Ambience",  h: "h-56" },
-  { src: "https://images.unsplash.com/photo-1552566626-52f8b828add9", category: "interior", title: "Modern Seating",          h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1592861956120-e524fc739696", category: "interior", title: "Fine Dining Hall",     h: "h-48" },
-  { src: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5", category: "interior", title: "Cafe Interior",           h: "h-80" },
-  { src: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0", category: "interior", title: "Premium Dining",       h: "h-52" },
-  { src: "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d", category: "interior", title: "Outdoor Seating",      h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1559339352-11d035aa65de", category: "interior", title: "Rooftop Dining",          h: "h-72" },
-  { src: "https://images.unsplash.com/photo-1537047902294-62a40c20a6ae", category: "interior", title: "Bar Lounge",            h: "h-44" },
-  { src: "https://images.unsplash.com/photo-1567521464027-f127ff144326", category: "interior", title: "Warm Ambience",         h: "h-60" },
-  { src: "https://images.unsplash.com/photo-1544148103-0773bf10d330", category: "interior", title: "Heritage Decor",           h: "h-56" },
-  { src: "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17", category: "interior", title: "Garden Dining",         h: "h-80" },
-  { src: "https://images.unsplash.com/photo-1578474846511-04ba529f0b88", category: "interior", title: "Candlelit Table",       h: "h-48" },
-  { src: "https://images.unsplash.com/photo-1521017432531-fbd92d768814", category: "interior", title: "Cozy Corner",           h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1600891964092-4316c288032e", category: "interior", title: "Private Booth",         h: "h-56" },
-
-  // ── EVENTS (15 images – South Indian restaurant events) ───────────────
-  { src: "https://images.unsplash.com/photo-1531058020387-3be344556be6", category: "events", title: "Birthday Celebration",   h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1521334884684-d80222895322", category: "events", title: "Corporate Gathering",    h: "h-80" },
-  { src: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf", category: "events", title: "Live Music Night",       h: "h-52" },
-  { src: "https://images.unsplash.com/photo-1503428593586-e225b39bddfe", category: "events", title: "Private Party",          h: "h-72" },
-  { src: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30", category: "events", title: "Festival Evening",       h: "h-56" },
-  { src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee", category: "events", title: "Celebration Setup",      h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3", category: "events", title: "Wedding Banquet",        h: "h-80" },
-  { src: "https://images.unsplash.com/photo-1510076857177-7470076d4098", category: "events", title: "Anniversary Dinner",     h: "h-60" },
-  { src: "https://images.unsplash.com/photo-1540575467063-178a50c2df87", category: "events", title: "Grand Opening",          h: "h-48" },
-  { src: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622", category: "events", title: "Gala Dinner",            h: "h-72" },
-  { src: "https://images.unsplash.com/photo-1505236858219-8359eb29e329", category: "events", title: "Live Performance",       h: "h-44" },
-  { src: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3", category: "events", title: "DJ Night",               h: "h-64" },
-  { src: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7", category: "events", title: "Cultural Night",         h: "h-56" },
-  { src: "https://images.unsplash.com/photo-1511578314322-379afb476865", category: "events", title: "Conference Banquet",     h: "h-80" },
-  { src: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4", category: "events", title: "Neon Party Night",       h: "h-52" },
+const CL = {
+  // Food: Beverages
+  filterCoffee:     `${BASE}/f_auto,q_auto/v1772552477/filter-coffee_jirsbm.jpg`,
+  buttermilk:       `${BASE}/f_auto,q_auto/v1772552485/buttermilk_hdiu8w.jpg`,
+  badamMilk:        `${BASE}/f_auto,q_auto/v1772552475/badam-milk_ibwfmp.jpg`,
+  // Food: Desserts
+  mysorePak:        `${BASE}/f_auto,q_auto/v1772552446/mysore-pak_ybzumq.webp`,
+  gulabJamun:       `${BASE}/f_auto,q_auto/v1772552445/gulab-jamun_k3w0bg.webp`,
+  badamHalwa:       `${BASE}/f_auto,q_auto/v1772552444/badam-halwa_rvz158.jpg`,
+  // Food: Mains
+  biryani:          `${BASE}/f_auto,q_auto/v1772552408/biryani_z3o9wa.jpg`,
+  rasam:            `${BASE}/f_auto,q_auto/v1772552408/rasam_xrud1c.jpg`,
+  chettinadChicken: `${BASE}/f_auto,q_auto/v1772552408/chettinad-chicken_eosq6b.jpg`,
+  // Food: Starters
+  chicken65:        `${BASE}/f_auto,q_auto/v1772552356/chicken-65_aselin.jpg`,
+  cornCutlet:       `${BASE}/f_auto,q_auto/v1772552349/corn-cutlet_y59sgr.jpg`,
+  paneerTikka:      `${BASE}/f_auto,q_auto/v1772552349/paneer-tikka_tvjcn1.jpg`,
+  // Food: Breakfast
+  pongal:           `${BASE}/f_auto,q_auto/v1772552278/pongal_ugvjil.jpg`,
+  idli:             `${BASE}/f_auto,q_auto/v1772552277/idli_mgyai6.jpg`,
+  appam:            `${BASE}/f_auto,q_auto/v1772552275/appam_xhodf7.webp`,
+  // Interior
+  interior1:  `${BASE}/f_auto,q_auto/v1772552560/interior1_h8lndv.gif`,
+  interior2:  `${BASE}/f_auto,q_auto/v1772552548/interior2_uztwzg.jpg`,
+  interior3:  `${BASE}/f_auto,q_auto/v1772552549/interior3_rnz0jd.jpg`,
+  interior4:  `${BASE}/f_auto,q_auto/v1772552550/interior4_bpllqm.jpg`,
+  interior5:  `${BASE}/f_auto,q_auto/v1772552551/interior5_z2spxo.jpg`,
+  interior6:  `${BASE}/f_auto,q_auto/v1772552552/interior6_lmrqce.jpg`,
+  interior7:  `${BASE}/f_auto,q_auto/v1772552553/interior7_ewulhk.avif`,
+  interior8:  `${BASE}/f_auto,q_auto/v1772552554/interior8_vdy2iw.jpg`,
+  interior9:  `${BASE}/f_auto,q_auto/v1772552555/interior9_bfcxdl.jpg`,
+  interior10: `${BASE}/f_auto,q_auto/v1772552557/interior10_y5hcxd.jpg`,
+  interior11: `${BASE}/f_auto,q_auto/v1772552558/interior11_reba2y.jpg`,
+  interior12: `${BASE}/f_auto,q_auto/v1772552559/interior12_whtmvs.jpg`,
+  interior14: `${BASE}/f_auto,q_auto/v1772552561/interior14_dwgpni.jpg`,
+  interior15: `${BASE}/f_auto,q_auto/v1772552563/interior15_uz9ekd.jpg`,
+  interior16: `${BASE}/f_auto,q_auto/v1772554612/interior16_jbob7j.jpg`,
+  // Events
+  events1:  `${BASE}/f_auto,q_auto/v1772552610/events1_ygyjae.jpg`,
+  events2:  `${BASE}/f_auto,q_auto/v1772552612/events2_pmsrdi.avif`,
+  events3:  `${BASE}/f_auto,q_auto/v1772552613/events3_vqlgn4.jpg`,
+  events4:  `${BASE}/f_auto,q_auto/v1772552614/events4_zx3v0b.jpg`,
+  events5:  `${BASE}/f_auto,q_auto/v1772552616/events5_ykz35g.jpg`,
+  events6:  `${BASE}/f_auto,q_auto/v1772552617/events6_puhjs0.jpg`,
+  events7:  `${BASE}/f_auto,q_auto/v1772552619/events7_q1dccv.jpg`,
+  events8:  `${BASE}/f_auto,q_auto/v1772552619/events8_vw68t2.avif`,
+  events9:  `${BASE}/f_auto,q_auto/v1772552620/events9_ospagx.jpg`,
+  events10: `${BASE}/f_auto,q_auto/v1772552622/events10_ih3cjd.jpg`,
+  events11: `${BASE}/f_auto,q_auto/v1772554309/events11_opmnqn.jpg`,
+  events12: `${BASE}/f_auto,q_auto/v1772554311/events12_mrf65l.jpg`,
+};
+  const IMAGES = [
+  // Row 1
+  { src: CL.pongal,           category: "food",     title: "Traditional Pongal",      cloudinary: true },
+  { src: CL.interior15,       category: "interior", title: "Chef's Special Garnish",  cloudinary: true },
+  { src: CL.events12,         category: "events",   title: "Birthday Celebration",   cloudinary: true }, // events12
+  // Row 2
+  { src: CL.idli,             category: "food",     title: "Idli Sambar",             cloudinary: true },
+  { src: CL.interior14,       category: "interior", title: "Premium Dining Area",     cloudinary: true },
+  { src: CL.events11,         category: "events",   title: "Corporate Stage Setup",   cloudinary: true }, // events11
+  // Row 3
+  { src: CL.appam,            category: "food",     title: "Appam",                   cloudinary: true },
+  { src: CL.interior12,       category: "interior", title: "Classic Interior View",   cloudinary: true },
+  { src: CL.events10,         category: "events",   title: "Grand Entry Floral Decor", cloudinary: true }, // events10
+  // Row 4
+  { src: CL.cornCutlet,       category: "food",     title: "Corn Cutlet",             cloudinary: true },
+  { src: CL.interior16,       category: "interior", title: "Chef at Work",            cloudinary: true },
+  { src: CL.events9,          category: "events",   title: "Wedding Reception Hall",  cloudinary: true }, // events9
+  // Row 5
+  { src: CL.paneerTikka,      category: "food",     title: "Paneer Tikka",            cloudinary: true },
+  { src: CL.interior11,       category: "interior", title: "Luxury Wall Art",         cloudinary: true },
+  { src: CL.events8,          category: "events",   title: "Traditional Mandap",      cloudinary: true }, // events8
+  // Row 6
+  { src: CL.chicken65,        category: "food",     title: "Chicken 65",              cloudinary: true },
+  { src: CL.interior10,       category: "interior", title: "Booth Seating",           cloudinary: true },
+  { src: CL.events7,          category: "events",   title: "Outdoor Dinner",          cloudinary: true }, // events7
+  // Row 7
+  { src: CL.biryani,          category: "food",     title: "Biryani",                 cloudinary: true },
+  { src: CL.interior1,        category: "interior", title: "Indoor Setup", cloudinary: true },
+  { src: CL.events6,          category: "events",   title: "Evening Buffet Spread",    cloudinary: true }, // events6
+  // Row 8
+  { src: CL.chettinadChicken, category: "food",     title: "Chettinad Chicken",       cloudinary: true },
+  { src: CL.interior9,        category: "interior", title: "Ambient Lighting",        cloudinary: true },
+  { src: CL.events5,          category: "events",   title: "Traditional Event", cloudinary: true }, // events5
+  // Row 9
+  { src: CL.rasam,            category: "food",     title: "Rasam",                   cloudinary: true },
+  { src: CL.interior8,        category: "interior", title: "Elegant Table Setting",   cloudinary: true },
+  { src: CL.events4,          category: "events",   title: "Festive Mood",  cloudinary: true }, // events4
+  // Row 10
+  { src: CL.mysorePak,        category: "food",     title: "Mysore Pak",              cloudinary: true },
+  { src: CL.interior7,        category: "interior", title: "Lounge Seating",          cloudinary: true },
+  { src: CL.events3,          category: "events",   title: "Cultural Night",          cloudinary: true }, // events3
+  // Row 11
+  { src: CL.gulabJamun,       category: "food",     title: "Gulab Jamun",             cloudinary: true },
+  { src: CL.interior6,        category: "interior", title: "Bar Counter View",        cloudinary: true },
+  { src: CL.events2,          category: "events",   title: "Garba Event",             cloudinary: true }, // events2
+  // Row 12
+  { src: CL.badamHalwa,       category: "food",     title: "Badam Halwa",             cloudinary: true },
+  { src: CL.interior5,        category: "interior", title: "Decorative Archway",      cloudinary: true },
+  { src: CL.events1,          category: "events",   title: "Rangoli Competition",     cloudinary: true }, // events1
+  
+  // Remaining items
+  { src: CL.filterCoffee,     category: "food",     title: "Filter Coffee",           cloudinary: true },
+  { src: CL.buttermilk,       category: "food",     title: "Buttermilk",              cloudinary: true },
+  { src: CL.badamMilk,        category: "food",     title: "Badam Milk",              cloudinary: true },
+  { src: CL.interior4,        category: "interior", title: "Cozy Dining Nook",        cloudinary: true },
+  { src: CL.interior3,        category: "interior", title: "Traditional Decor",       cloudinary: true },
+  { src: CL.interior2,        category: "interior", title: "Window-Side Table",       cloudinary: true },
 ];
-
 const FILTERS = [
   { key: "all",      label: "All",      activeBg: "bg-orange-400", activeText: "text-stone-950" },
-  { key: "food",     label: "Food",     activeBg: "bg-orange-400", activeText: "text-stone-950" },
+  { key: "food",     label: "Food",     activeBg: "bg-emerald-400", activeText: "text-stone-950" },
   { key: "interior", label: "Interior", activeBg: "bg-teal-400",   activeText: "text-stone-950" },
   { key: "events",   label: "Events",   activeBg: "bg-violet-400", activeText: "text-stone-950" },
 ];
 
-const catText   = { all: "text-orange-400", food: "text-orange-400", interior: "text-teal-400",   events: "text-violet-400"  };
-const catDot    = { all: "bg-orange-400",   food: "bg-orange-400",   interior: "bg-teal-400",     events: "bg-violet-400"    };
-const catBorder = { all: "border-orange-400/40", food: "border-orange-400/40", interior: "border-teal-400/40", events: "border-violet-400/40" };
-const catRing   = { all: "ring-orange-400", food: "ring-orange-400", interior: "ring-teal-400",   events: "ring-violet-400"  };
+const catText   = { all: "text-orange-400",  food: "text-emerald-400",  interior: "text-teal-400",           events: "text-violet-400"         };
+const catDot    = { all: "bg-orange-400",    food: "bg-emerald-400",    interior: "bg-teal-400",             events: "bg-violet-400"           };
+const catBorder = { all: "border-orange-400/40", food: "border-emerald-400/40", interior: "border-teal-400/40", events: "border-violet-400/40" };
+const catRing   = { all: "ring-orange-400",  food: "ring-emerald-400",  interior: "ring-teal-400",           events: "ring-violet-400"         };
+
+const buildSrc = (img, w, fit = "crop") =>
+  img.cloudinary ? img.src : `${img.src}?auto=format&fit=${fit}&w=${w}&q=80`;
 
 export default function Gallery() {
   const [active,    setActive]    = useState("all");
@@ -109,8 +170,6 @@ export default function Gallery() {
 
   return (
     <section className="min-h-screen bg-stone-950 text-stone-100">
-
-      {/* ── HEADER ── */}
       <div className="flex flex-col items-center text-center px-6 pt-24 pb-14">
         <span className={`text-[10px] font-semibold tracking-[0.4em] uppercase mb-5 block transition-colors duration-500 ${catText[active]}`}>
           Visual Stories
@@ -126,7 +185,6 @@ export default function Gallery() {
         <div className={`w-px h-12 mt-8 opacity-50 transition-colors duration-500 ${catDot[active]}`} />
       </div>
 
-      {/* ── FILTER BAR ── */}
       <div className="flex justify-center px-4 pb-12">
         <div className="flex items-center gap-1 bg-stone-900 border border-stone-800 rounded-full p-1">
           {FILTERS.map(({ key, label, activeBg, activeText }) => {
@@ -148,7 +206,6 @@ export default function Gallery() {
         </div>
       </div>
 
-      {/* ── UNIFORM GRID ── */}
       <div className={`grid grid-cols-3 gap-8 px-10 pb-24 transition-opacity duration-[260ms] ${fading ? "opacity-0" : "opacity-100"}`}>
         {filtered.map((img, i) => (
           <div
@@ -157,7 +214,7 @@ export default function Gallery() {
             className={`group relative overflow-hidden rounded-md cursor-pointer bg-stone-900 transition-all duration-500 aspect-[4/3] ${shown[i] ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}
           >
             <img
-              src={`${img.src}?auto=format&fit=crop&w=600&q=80`}
+              src={buildSrc(img, 600)}
               alt={img.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
@@ -178,7 +235,6 @@ export default function Gallery() {
         ))}
       </div>
 
-      {/* ── LIGHTBOX ── */}
       {lb && current && (
         <div
           className="fixed inset-0 z-50 bg-stone-950/96 backdrop-blur-2xl flex items-center justify-center px-4 py-6"
@@ -193,42 +249,33 @@ export default function Gallery() {
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-
           <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-3 text-stone-600 text-[10px] tracking-widest uppercase font-medium select-none">
             <span>← → Navigate</span>
             <span className="w-px h-3 bg-stone-700" />
             <span>Esc Close</span>
           </div>
-
           <div className="relative max-w-5xl w-full flex flex-col items-center gap-5" onClick={e => e.stopPropagation()}>
             <div className="relative w-full flex items-center justify-center">
               <button
                 onClick={() => setLb(l => ({ ...l, index: (l.index - 1 + l.list.length) % l.list.length }))}
                 className="absolute -left-4 sm:-left-14 w-11 h-11 rounded-full bg-stone-800/70 border border-stone-700 text-stone-300 hover:bg-orange-400 hover:border-orange-400 hover:text-stone-950 flex items-center justify-center transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
-
               <img
                 key={lb.index}
-                src={`${current.src}?auto=format&fit=contain&w=1400&q=90`}
+                src={buildSrc(current, 1400, "contain")}
                 alt={current.title}
                 className="max-h-[66vh] max-w-full rounded-lg shadow-2xl object-contain"
                 style={{ animation: "imgIn 0.3s ease" }}
               />
-
               <button
                 onClick={() => setLb(l => ({ ...l, index: (l.index + 1) % l.list.length }))}
                 className="absolute -right-4 sm:-right-14 w-11 h-11 rounded-full bg-stone-800/70 border border-stone-700 text-stone-300 hover:bg-orange-400 hover:border-orange-400 hover:text-stone-950 flex items-center justify-center transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
-
             <div className="flex items-center justify-between w-full px-1">
               <div className="flex items-center gap-3">
                 <span className={`flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase px-3 py-1.5 rounded-full border bg-stone-900/60 ${catText[current.category]} ${catBorder[current.category]}`}>
@@ -241,12 +288,11 @@ export default function Gallery() {
                 {String(lb.index + 1).padStart(2, "0")} / {String(lb.list.length).padStart(2, "0")}
               </span>
             </div>
-
             <div className="flex gap-1.5 overflow-x-auto max-w-full pb-1" style={{ scrollbarWidth: "none" }}>
               {lb.list.map((img, i) => (
                 <img
                   key={i}
-                  src={`${img.src}?auto=format&fit=crop&w=120&q=60`}
+                  src={buildSrc(img, 120)}
                   alt={img.title}
                   onClick={() => setLb(l => ({ ...l, index: i }))}
                   className={`w-12 h-9 object-cover rounded flex-shrink-0 cursor-pointer transition-all duration-200 ${i === lb.index ? `opacity-100 scale-110 ring-2 ${catRing[active]}` : "opacity-30 hover:opacity-60"}`}
@@ -254,7 +300,6 @@ export default function Gallery() {
               ))}
             </div>
           </div>
-
           <style>{`
             @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
             @keyframes imgIn  { from { opacity:0; transform:scale(0.95) } to { opacity:1; transform:scale(1) } }

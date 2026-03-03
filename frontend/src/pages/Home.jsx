@@ -5,60 +5,71 @@ import {
   Send, MapPin, Clock, CheckCircle2, ChevronDown, Play,
 } from "lucide-react";
 
-import offer1     from "../assets/images/offers/offer1.jpg";
-import offer2     from "../assets/images/offers/offer2.jpg";
-import offer3     from "../assets/images/offers/offer3.jpg";
-import dosa       from "../assets/images/dishes/dosa.jpg";
-import idli       from "../assets/images/dishes/idli.jpg";
-import payasam   from "../assets/images/dishes/payasam.jpg";
-import gallery1   from "../assets/images/gallery/gallery1.jpg";
-import gallery2   from "../assets/images/gallery/gallery2.jpg";
-import gallery3   from "../assets/images/gallery/gallery3.jpg";
-import gallery4   from "../assets/images/gallery/gallery4.jpg";
-import gallery5   from "../assets/images/gallery/gallery5.jpg";
-import gallery6   from "../assets/images/gallery/gallery6.jpg";
-import aboutImage from "../assets/images/about/our-story.jpg";
+/* ─────────────────────────────────────────────────────────────────
+   CLOUDINARY CONFIG
+   Cloud: db2vju4mv
+   Folder structure: southerntales/home folder/{hero,offers,dishes,gallery,about}
+───────────────────────────────────────────────────────────────── */
+const BASE = "https://res.cloudinary.com/db2vju4mv/image/upload";
 
+const IMG = {
+  hero1:   `${BASE}/f_auto,q_auto,w_1920/v1772547194/heroimage_y7tlwp.jpg`,
+  hero2:   `${BASE}/f_auto,q_auto,w_1920/v1772547193/heroimage2_je0bi2.webp`,
+  hero3:   `${BASE}/f_auto,q_auto,w_1920/v1772547195/heroimage3_kdxami.jpg`,
+  offer1:  `${BASE}/f_auto,q_auto/v1772540149/offer1_gmau0i.jpg`,
+  offer2:  `${BASE}/f_auto,q_auto/v1772540152/offer2_q6hebg.webp`,
+  offer3:  `${BASE}/f_auto,q_auto/v1772540153/offer3_dossgi.jpg`,
+  dosa:    `${BASE}/f_auto,q_auto/v1772540188/dosa_wz4foc.jpg`,
+  idli:    `${BASE}/f_auto,q_auto/v1772540191/idli_qbowmm.jpg`,
+  payasam: `${BASE}/f_auto,q_auto/v1772540193/payasam_f0farz.jpg`,
+  about:   `${BASE}/f_auto,q_auto/v1772540285/our-story_izc7sx.webp`,
+};
+
+const galleryImages = [
+  "https://res.cloudinary.com/db2vju4mv/image/upload/v1772552275/appam_xhodf7.webp",     
+  "https://res.cloudinary.com/db2vju4mv/image/upload/v1772552552/interior6_lmrqce.jpg",   
+  "https://res.cloudinary.com/db2vju4mv/image/upload/v1772552553/interior7_ewulhk.avif",  
+  "https://res.cloudinary.com/db2vju4mv/image/upload/v1772552610/events1_ygyjae.jpg",     
+  "https://res.cloudinary.com/db2vju4mv/image/upload/v1772552617/events6_puhjs0.jpg",     
+  "https://res.cloudinary.com/db2vju4mv/image/upload/v1772552477/filter-coffee_jirsbm.jpg" 
+];
+/* ─────────────────────────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────────────────────────── */
 const promoVideos = [
-  { 
-    id: "SkUXFCIjXiI", 
-    tag: "Restaurant Tour", 
-    title: "Welcome to Southern Tales", 
-    desc: "Take a tour of our restaurant in CBD Belapur — the ambiance, the warmth, and the hospitality." 
+  {
+    id: "SkUXFCIjXiI",
+    tag: "Restaurant Tour",
+    title: "Welcome to Southern Tales",
+    desc: "Take a tour of our restaurant in CBD Belapur — the ambiance, the warmth, and the hospitality.",
   },
-  { 
-    id: "HpQzYMVCeFw", 
-    tag: "Chef's Special", 
-    title: "Authentic South Indian Kitchen", 
-    desc: "Watch our chefs craft traditional South Indian dishes with the finest spices and recipes." 
+  {
+    id: "HpQzYMVCeFw",
+    tag: "Chef's Special",
+    title: "Authentic South Indian Kitchen",
+    desc: "Watch our chefs craft traditional South Indian dishes with the finest spices and recipes.",
   },
-  { 
-    id: "fECzOAmRsso", 
-    tag: "Dining Experience", 
-    title: "A Feast at Southern Tales", 
-    desc: "From crispy dosas to hearty meals — experience authentic South Indian dining at its finest." 
+  {
+    id: "fECzOAmRsso",
+    tag: "Dining Experience",
+    title: "A Feast at Southern Tales",
+    desc: "From crispy dosas to hearty meals — experience authentic South Indian dining at its finest.",
   },
 ];
 
-const heroImages = [
-  "https://images.pexels.com/photos/35539315/pexels-photo-35539315.jpeg?auto=compress&cs=tinysrgb&w=1920",
-  "https://images.pexels.com/photos/31199041/pexels-photo-31199041.jpeg?auto=compress&cs=tinysrgb&w=1920",
-  "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920",
-];
+const heroImages = [IMG.hero1, IMG.hero2, IMG.hero3];
 
 const offers = [
-  { img: offer1, tag: "Weekend Deal",  title: "20% Off All Dishes", desc: "Enjoy 20% off on all South Indian dishes every weekend." },
-  { img: offer2, tag: "Happy Hours",   title: "Buy 1 Get 1 Free",   desc: "Filter Coffee & beverages during 5–7 PM daily." },
-  { img: offer3, tag: "Lunch Special", title: "Free Dessert Combo", desc: "Get a free dessert with any Main Course combo meal." },
+  { img: IMG.offer1, tag: "Weekend Deal",  title: "20% Off All Dishes", desc: "Enjoy 20% off on all South Indian dishes every weekend." },
+  { img: IMG.offer2, tag: "Happy Hours",   title: "Buy 1 Get 1 Free",   desc: "Filter Coffee & beverages during 5–7 PM daily." },
+  { img: IMG.offer3, tag: "Lunch Special", title: "Free Dessert Combo", desc: "Get a free dessert with any Main Course combo meal." },
 ];
 
 const featuredDishes = [
-  { img: dosa,  name: "Masala Dosa", origin: "Karnataka",   price: "₹149", desc: "Crispy rice crepe with spiced potato filling" },
-  { img: idli,  name: "Idli Sambar", origin: "Tamil Nadu",  price: "₹99",  desc: "Steamed rice cakes with lentil vegetable stew" },
-  { img: payasam, name: "Payasam",   origin: "Kerala", price: "₹180",  desc: "Creamy rice pudding slow-cooked with milk and jaggery" },
+  { img: IMG.dosa,    name: "Masala Dosa", origin: "Karnataka",  price: "₹149", desc: "Crispy rice crepe with spiced potato filling" },
+  { img: IMG.idli,    name: "Idli Sambar", origin: "Tamil Nadu", price: "₹99",  desc: "Steamed rice cakes with lentil vegetable stew" },
+  { img: IMG.payasam, name: "Payasam",     origin: "Kerala",     price: "₹180", desc: "Creamy rice pudding slow-cooked with milk and jaggery" },
 ];
-
-const galleryImages = [gallery1, gallery2, gallery3, gallery4, gallery5, gallery6];
 
 const tickerItems = [
   "Dosa","Filter Coffee","Idli Sambar","Chettinad Chicken",
@@ -82,7 +93,6 @@ const contactInfo = [
 /* ─────────────────────────────────────────────────────────────────
    HOOKS
 ───────────────────────────────────────────────────────────────── */
-
 function useScrollReveal() {
   useEffect(() => {
     const els = document.querySelectorAll("[data-reveal]");
@@ -134,7 +144,7 @@ function useCounter(target, duration = 2000) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   REVEAL WRAPPER
+   COMPONENTS
 ───────────────────────────────────────────────────────────────── */
 const Reveal = ({ children, dir = "up", delay = "", className = "" }) => {
   const initial = {
@@ -142,20 +152,16 @@ const Reveal = ({ children, dir = "up", delay = "", className = "" }) => {
     left:  "opacity-0 -translate-x-12",
     right: "opacity-0 translate-x-12",
   }[dir];
-
   return (
     <div
       data-reveal={dir}
-      className={`${initial} transition-all duration-700 ease-spring ${delay} ${className}`}
+      className={`${initial} transition-all duration-700 ease-out ${delay} ${className}`}
     >
       {children}
     </div>
   );
 };
 
-/* ─────────────────────────────────────────────────────────────────
-   REUSABLE UI PIECES
-───────────────────────────────────────────────────────────────── */
 const PrimaryBtn = ({ children, onClick }) => (
   <button
     onClick={onClick}
@@ -176,9 +182,7 @@ const GhostBtn = ({ children, onClick }) => (
 
 const SectionLabel = ({ children, center = false }) => (
   <div className={`mb-4 ${center ? "flex flex-col items-center" : ""}`}>
-    <p className="text-xs tracking-[4px] uppercase text-orange-500 font-semibold mb-3">
-      {children}
-    </p>
+    <p className="text-xs tracking-[4px] uppercase text-orange-500 font-semibold mb-3">{children}</p>
     <div className="w-12 h-0.5 bg-gradient-to-r from-orange-500 to-transparent" />
   </div>
 );
@@ -187,26 +191,19 @@ const CounterStat = ({ target, suffix, label }) => {
   const [count, ref] = useCounter(target);
   return (
     <div ref={ref} className="text-center">
-      <div className="font-display text-5xl font-bold text-orange-500 leading-none">
-        {count}{suffix}
-      </div>
+      <div className="font-display text-5xl font-bold text-orange-500 leading-none">{count}{suffix}</div>
       <p className="text-xs tracking-[3px] uppercase text-gray-500 mt-2">{label}</p>
     </div>
   );
 };
 
-/* ─── YouTube Video Card ─── */
 const VideoCard = ({ id, tag, title, desc, delay }) => {
   const [playing, setPlaying] = useState(false);
-
   return (
     <Reveal dir="up" delay={delay} className="group relative rounded-3xl bg-neutral-900 border border-white/5 overflow-hidden hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/60 hover:border-orange-500/20 transition-all duration-500">
       <div className="relative bg-black">
         {!playing ? (
-          <div
-            className="relative cursor-pointer overflow-hidden aspect-video"
-            onClick={() => setPlaying(true)}
-          >
+          <div className="relative cursor-pointer overflow-hidden aspect-video" onClick={() => setPlaying(true)}>
             <img
               src={`https://img.youtube.com/vi/${id}/maxresdefault.jpg`}
               alt={title}
@@ -215,16 +212,11 @@ const VideoCard = ({ id, tag, title, desc, delay }) => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-orange-500/40 animate-ping-slow" />
-                <div className="relative z-10 w-16 h-16 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center shadow-2xl shadow-orange-500/60 group-hover:scale-110 transition-all duration-300">
-                  <Play size={24} className="text-white ml-1" fill="white" />
-                </div>
+              <div className="w-16 h-16 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center shadow-2xl shadow-orange-500/60 group-hover:scale-110 transition-all duration-300">
+                <Play size={24} className="text-white ml-1" fill="white" />
               </div>
             </div>
-            <span className="absolute top-3 right-3 z-10 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded tracking-widest uppercase">
-              YouTube
-            </span>
+            <span className="absolute top-3 right-3 z-10 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded tracking-widest uppercase">YouTube</span>
           </div>
         ) : (
           <div className="relative w-full aspect-video">
@@ -238,15 +230,12 @@ const VideoCard = ({ id, tag, title, desc, delay }) => {
           </div>
         )}
       </div>
-
       <div className="p-7">
         <div className="flex items-center gap-1.5 mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />
           <span className="text-[10px] font-bold tracking-[2.5px] uppercase text-orange-500">{tag}</span>
         </div>
-        <h3 className="font-display text-2xl font-bold text-neutral-100 mb-2 leading-snug group-hover:text-orange-400 transition-colors duration-300">
-          {title}
-        </h3>
+        <h3 className="font-display text-2xl font-bold text-neutral-100 mb-2 leading-snug group-hover:text-orange-400 transition-colors duration-300">{title}</h3>
         <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
         {!playing && (
           <button
@@ -275,13 +264,11 @@ const Home = () => {
 
   useScrollReveal();
 
-  /* Hero auto-slide */
   useEffect(() => {
     const t = setInterval(() => setHeroIdx((p) => (p + 1) % heroImages.length), 3500);
     return () => clearInterval(t);
   }, []);
 
-  /* Parallax */
   useEffect(() => {
     const onScroll = () => setParallax(window.scrollY * 0.3);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -306,24 +293,16 @@ const Home = () => {
           HERO
       ══════════════════════════════════════════════════ */}
       <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
-
-        {/* Slides */}
         {heroImages.map((img, i) => (
           <div
             key={i}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms] brightness-[0.55] ${i === heroIdx ? 'opacity-100' : 'opacity-0'}`}
-            style={{
-              backgroundImage: `url(${img})`,
-              transform:       `translateY(${parallax}px) scale(1.15)`,
-            }}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[1500ms] brightness-[0.55] ${i === heroIdx ? "opacity-100" : "opacity-0"}`}
+            style={{ backgroundImage: `url(${img})`, transform: `translateY(${parallax}px) scale(1.15)` }}
           />
         ))}
-
-        {/* Gradients */}
         <div className="absolute inset-0 z-[2] bg-gradient-to-b from-black/25 via-transparent to-neutral-950" />
         <div className="absolute inset-0 z-[2] bg-gradient-to-br from-orange-500/5 to-transparent" />
 
-        {/* Arrows */}
         {[-1, 1].map((dir) => (
           <button
             key={dir}
@@ -334,7 +313,6 @@ const Home = () => {
           </button>
         ))}
 
-        {/* Dots */}
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex gap-2">
           {heroImages.map((_, i) => (
             <button
@@ -345,7 +323,6 @@ const Home = () => {
           ))}
         </div>
 
-        {/* Copy */}
         <div className="relative z-[5] text-center max-w-4xl px-6">
           <p className="animate-fade-up text-xs tracking-[5px] uppercase text-orange-500 font-semibold mb-6">
             Authentic Southern Cuisine · Est. 2010
@@ -367,7 +344,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Scroll hint */}
         <div className="animate-scroll-bob absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-white/30 text-[10px] tracking-[3px] uppercase">
           <span>Scroll</span>
           <ChevronDown size={14} />
@@ -398,15 +374,12 @@ const Home = () => {
               Crafted for Every<br />Occasion
             </h2>
           </Reveal>
-
           <div className="grid md:grid-cols-3 gap-7">
             {offers.map((o, i) => (
               <Reveal key={i} dir="up" delay={["delay-100","delay-200","delay-300"][i]} className="group relative rounded-3xl bg-neutral-900 border border-white/5 overflow-hidden hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/50 hover:border-orange-500/20 transition-all duration-500">
                 <div className="relative h-52 overflow-hidden">
                   <img src={o.img} alt={o.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <span className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-bold tracking-[2px] uppercase px-3 py-1.5 rounded-full">
-                    {o.tag}
-                  </span>
+                  <span className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-bold tracking-[2px] uppercase px-3 py-1.5 rounded-full">{o.tag}</span>
                 </div>
                 <div className="p-8">
                   <h3 className="font-display text-2xl font-bold text-neutral-100 mb-3 group-hover:text-orange-400 transition-colors duration-300">{o.title}</h3>
@@ -420,12 +393,11 @@ const Home = () => {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          PROMOTIONS — 3 YouTube Videos
+          PROMO VIDEOS
       ══════════════════════════════════════════════════ */}
       <section className="py-28 px-6 bg-neutral-900 relative overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-orange-500/4 rounded-full blur-[80px] pointer-events-none" />
-
         <div className="max-w-6xl mx-auto relative z-10">
           <Reveal dir="up" className="mb-16">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
@@ -441,7 +413,6 @@ const Home = () => {
               </p>
             </div>
           </Reveal>
-
           <div className="grid md:grid-cols-3 gap-7">
             {promoVideos.map((v, i) => (
               <VideoCard key={i} {...v} delay={["delay-100","delay-200","delay-300"][i]} />
@@ -459,7 +430,6 @@ const Home = () => {
             <SectionLabel center>From Our Kitchen</SectionLabel>
             <h2 className="font-display text-[clamp(36px,5vw,56px)] font-bold mt-4">Signature Dishes</h2>
           </Reveal>
-
           <div className="grid md:grid-cols-3 gap-7">
             {featuredDishes.map((d, i) => (
               <Reveal key={i} dir="up" delay={["delay-100","delay-200","delay-300"][i]} className="group rounded-3xl bg-neutral-900 border border-white/5 overflow-hidden hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/60 transition-all duration-500">
@@ -475,7 +445,6 @@ const Home = () => {
               </Reveal>
             ))}
           </div>
-
           <Reveal dir="up" className="text-center mt-14">
             <PrimaryBtn onClick={() => navigate("/menu")}>View Full Menu</PrimaryBtn>
           </Reveal>
@@ -487,17 +456,15 @@ const Home = () => {
       ══════════════════════════════════════════════════ */}
       <section className="py-32 px-6 bg-neutral-900">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
-
           <Reveal dir="left" className="animate-float relative">
             <div className="absolute -inset-5 rounded-[40px] border border-orange-500/15" />
             <div className="absolute -inset-2 rounded-[36px] bg-gradient-to-br from-orange-500/6 to-transparent" />
-            <img src={aboutImage} alt="Our Story" className="relative z-10 w-full rounded-[28px] shadow-2xl" />
+            <img src={IMG.about} alt="Our Story" className="relative z-10 w-full rounded-[28px] shadow-2xl" />
             <div className="absolute -bottom-6 -right-6 z-20 w-24 h-24 rounded-full bg-orange-500 flex flex-col items-center justify-center text-white shadow-xl shadow-orange-500/30">
               <span className="font-display text-3xl font-bold leading-none">15</span>
               <span className="text-[10px] tracking-[2px] uppercase opacity-80">Years</span>
             </div>
           </Reveal>
-
           <Reveal dir="right">
             <SectionLabel>Our Story</SectionLabel>
             <h2 className="font-display text-[clamp(36px,4.5vw,54px)] font-bold leading-tight mt-4 mb-6">
@@ -529,7 +496,6 @@ const Home = () => {
             <SectionLabel center>What We Offer</SectionLabel>
             <h2 className="font-display text-[clamp(36px,5vw,56px)] font-bold mt-4">Our Services</h2>
           </Reveal>
-
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {services.map((s, i) => (
               <Reveal key={i} dir="up" delay={["delay-100","delay-200","delay-300","delay-400"][i]} className="group text-center p-10 rounded-3xl border bg-neutral-900 border-white/5 hover:bg-orange-500 hover:border-orange-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-orange-500/25 transition-all duration-500 cursor-default">
@@ -550,15 +516,12 @@ const Home = () => {
           <Reveal dir="up" className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-16">
             <div>
               <SectionLabel>Visual Story</SectionLabel>
-              <h2 className="font-display text-[clamp(36px,5vw,56px)] font-bold leading-tight mt-4">
-                Inside Southern Tales
-              </h2>
+              <h2 className="font-display text-[clamp(36px,5vw,56px)] font-bold leading-tight mt-4">Inside Southern Tales</h2>
             </div>
             <p className="text-gray-400 text-sm max-w-xs leading-relaxed">
               A glimpse into our world — the flavours, the ambiance, and the stories behind every dish.
             </p>
           </Reveal>
-
           <Reveal dir="up" className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="row-span-2 group relative rounded-2xl overflow-hidden min-h-[420px]">
               <img src={galleryImages[0]} alt="Gallery 1" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -570,10 +533,7 @@ const Home = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
             ))}
-            <div
-              className="group relative rounded-2xl overflow-hidden h-[200px] cursor-pointer"
-              onClick={() => navigate("/gallery")}
-            >
+            <div className="group relative rounded-2xl overflow-hidden h-[200px] cursor-pointer" onClick={() => navigate("/gallery")}>
               <img src={galleryImages[4]} alt="More" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
               <div className="absolute inset-0 bg-black/60 group-hover:bg-black/75 transition-colors duration-300 flex flex-col items-center justify-center gap-2">
                 <span className="font-display text-5xl font-bold text-white leading-none">+{galleryImages.length - 4}</span>
@@ -581,7 +541,6 @@ const Home = () => {
               </div>
             </div>
           </Reveal>
-
           <Reveal dir="up" className="text-center mt-12">
             <PrimaryBtn onClick={() => navigate("/gallery")}>View Full Gallery</PrimaryBtn>
           </Reveal>
@@ -598,7 +557,6 @@ const Home = () => {
             <h2 className="font-display text-[clamp(36px,5vw,56px)] font-bold mt-4 mb-3">Connect With Us</h2>
             <p className="text-gray-400 text-base">Reach out for bookings, feedback, or inquiries.</p>
           </Reveal>
-
           <div className="grid lg:grid-cols-2 gap-16 items-start">
             <Reveal dir="left" className="relative bg-neutral-900 rounded-3xl border border-white/5 p-10 overflow-hidden">
               {sent && (
@@ -611,7 +569,6 @@ const Home = () => {
                   <p className="text-gray-400 text-base">We'll get back to you shortly.</p>
                 </div>
               )}
-
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 {[
                   { name: "name",  type: "text",  label: "Full Name",     placeholder: "e.g. Arjun Sharma",    Icon: User },
@@ -655,13 +612,9 @@ const Home = () => {
                 </button>
               </form>
             </Reveal>
-
             <Reveal dir="right" className="flex flex-col gap-5">
               {contactInfo.map(({ Icon, title, detail }) => (
-                <div
-                  key={title}
-                  className="group flex items-center gap-5 p-5 rounded-2xl bg-neutral-900 border border-white/5 hover:border-orange-500/30 transition-all duration-300"
-                >
+                <div key={title} className="group flex items-center gap-5 p-5 rounded-2xl bg-neutral-900 border border-white/5 hover:border-orange-500/30 transition-all duration-300">
                   <div className="w-11 h-11 rounded-xl bg-orange-500/10 flex items-center justify-center flex-shrink-0 group-hover:bg-orange-500/20 transition-colors duration-300">
                     <Icon size={18} className="text-orange-500" />
                   </div>
@@ -671,7 +624,6 @@ const Home = () => {
                   </div>
                 </div>
               ))}
-
               <div className="rounded-2xl overflow-hidden h-56 border border-white/5">
                 <iframe
                   title="Restaurant Location"

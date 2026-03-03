@@ -4,27 +4,27 @@ import {
   ShoppingCart, Phone, Menu, X,
   UserCircle, LogOut, Clock, MapPin, PhoneCall,
 } from "lucide-react";
-import logo from "../assets/images/logo/southern-tales-logo.jpeg";
 import { AuthContext } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
+// ─── CLOUDINARY LOGO CONFIG ──────────────────────────────────────────────────
+const LOGO_URL = "https://res.cloudinary.com/db2vju4mv/image/upload/f_auto,q_auto,w_200/v1772560792/southern-tales-logo_knrfgm.jpg";
+
 const PHONE = "+919999999999";
-const dial  = () => window.open(`tel:${PHONE}`, "_self");
+const dial = () => window.open(`tel:${PHONE}`, "_self");
 
 // ─── Single source of truth for all nav links ──────────────────────────────
-//     Used by BOTH desktop and mobile — no more route mismatches
 const NAV_LINKS = [
-  ["Home",        "/"],
-  ["Menu",        "/menu"],
-  ["About Us",    "/about"],
-  ["Gallery",     "/gallery"],
+  ["Home", "/"],
+  ["Menu", "/menu"],
+  ["About Us", "/about"],
+  ["Gallery", "/gallery"],
   ["Reservation", "/reservation"],
-  ["Contact",     "/contactus"],
+  ["Contact", "/contactus"],
 ];
 
 // ─── Call Modal ────────────────────────────────────────────────────────────────
 function CallModal({ onClose }) {
-  // Close on Escape key
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -37,7 +37,6 @@ function CallModal({ onClose }) {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-[#1f1b16] border border-[#f5c27a]/20 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
-
         {/* Top accent bar */}
         <div className="h-1 w-full bg-gradient-to-r from-[#f5c27a] to-[#e3922a]" />
 
@@ -64,8 +63,6 @@ function CallModal({ onClose }) {
 
         {/* Content */}
         <div className="px-6 py-5 space-y-4">
-
-          {/* Phone card */}
           <button
             onClick={dial}
             className="w-full flex items-center gap-4 p-4 rounded-xl bg-[#f5c27a]/10 border border-[#f5c27a]/20 hover:bg-[#f5c27a]/20 transition-all group text-left"
@@ -77,11 +74,10 @@ function CallModal({ onClose }) {
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#f5c27a]/60">
                 Reservations & Enquiries
               </p>
-              <p className="text-lg font-black text-white tracking-wide">+91 99999 99999</p>
+              <p className="text-lg font-black text-white tracking-wide">{PHONE}</p>
             </div>
           </button>
 
-          {/* Hours */}
           <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
             <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0">
               <Clock size={16} className="text-[#f5c27a]" />
@@ -95,7 +91,6 @@ function CallModal({ onClose }) {
             </div>
           </div>
 
-          {/* Location */}
           <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
             <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0">
               <MapPin size={16} className="text-[#f5c27a]" />
@@ -110,7 +105,6 @@ function CallModal({ onClose }) {
           </div>
         </div>
 
-        {/* Footer CTA */}
         <div className="px-6 pb-6">
           <button
             onClick={dial}
@@ -127,17 +121,16 @@ function CallModal({ onClose }) {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 const Header = () => {
-  const [isOpen,        setIsOpen]        = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
 
   const { isLoggedIn, user, logout } = useContext(AuthContext);
-  const { cartItems }                = useCart();
-  const navigate                     = useNavigate();
-  const { pathname }                 = useLocation(); // ✅ FIX 2: active link detection
+  const { cartItems } = useCart();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
-  // ✅ FIX 3: close mobile menu whenever route changes
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -147,7 +140,6 @@ const Header = () => {
     navigate("/");
   };
 
-  // Helper — close menu AND navigate (for imperative navigations like cart)
   const goTo = (path) => {
     setIsOpen(false);
     navigate(path);
@@ -158,16 +150,16 @@ const Header = () => {
       {showCallModal && <CallModal onClose={() => setShowCallModal(false)} />}
 
       <header className="fixed top-0 left-0 w-full z-50">
-
         {/* ── Main bar ── */}
         <div className="relative flex items-center justify-between px-6 lg:px-12 py-5 bg-[#1f1b16] shadow-lg">
-
-          {/* LOGO */}
+          
+          {/* LOGO SECTION */}
           <Link to="/" className="flex items-center gap-3 no-underline">
             <img
-              src={logo}
-              alt="Southern Tales"
+              src={LOGO_URL}
+              alt="Southern Tales Logo"
               className="w-14 h-14 rounded-full object-cover ring-2 ring-[#f5c27a]/30"
+              loading="eager"
             />
             <div className="flex flex-col leading-tight">
               <span className="text-2xl font-black text-white tracking-tight">
@@ -181,19 +173,17 @@ const Header = () => {
 
           {/* DESKTOP NAV — absolutely centered */}
           <nav className="hidden lg:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
-            {/* ✅ FIX 1: single NAV_LINKS array — no mismatches */}
             {NAV_LINKS.map(([label, path]) => (
               <Link
                 key={path}
                 to={path}
                 className={`font-medium transition-colors duration-200 no-underline relative group ${
                   pathname === path
-                    ? "text-[#f5c27a] font-bold"           // ✅ FIX 2: active highlight
+                    ? "text-[#f5c27a] font-bold"
                     : "text-gray-300 hover:text-[#f5c27a]"
                 }`}
               >
                 {label}
-                {/* Active underline indicator */}
                 <span
                   className={`absolute -bottom-1 left-0 h-px bg-[#f5c27a] transition-all duration-300 ${
                     pathname === path ? "w-full" : "w-0 group-hover:w-full"
@@ -205,8 +195,6 @@ const Header = () => {
 
           {/* DESKTOP ACTIONS */}
           <div className="hidden lg:flex items-center gap-4 text-white">
-
-            {/* Call Now */}
             <button
               onClick={() => setShowCallModal(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-transparent text-white text-sm font-semibold hover:border-white/70 hover:text-white/80 transition-all duration-200"
@@ -215,7 +203,6 @@ const Header = () => {
               <span>Call Now</span>
             </button>
 
-            {/* Cart */}
             <button
               onClick={() => goTo("/cart")}
               className="relative group p-2 rounded-full hover:bg-white/5 transition-colors"
@@ -226,13 +213,15 @@ const Header = () => {
               </span>
             </button>
 
-            {/* Auth */}
             <div className="flex items-center gap-3 border-l border-white/10 pl-4">
               {!isLoggedIn ? (
                 <>
-                    <button
+                  <button
                     onClick={() => goTo("/login")}
-                    className="px-5 py-2 rounded-full border border-white/30 bg-transparent text-white text-sm font-bold hover:border-white/70 hover:text-white/80 transition-all duration-200">Login</button>
+                    className="px-5 py-2 rounded-full border border-white/30 bg-transparent text-white text-sm font-bold hover:border-white/70 hover:text-white/80 transition-all duration-200"
+                  >
+                    Login
+                  </button>
                   <button
                     onClick={() => goTo("/register")}
                     className="px-5 py-2 rounded-full bg-[#f5c27a] text-black hover:bg-[#e3b26a] transition-all text-sm font-bold shadow-md"
@@ -262,7 +251,6 @@ const Header = () => {
 
           {/* MOBILE — Cart + Hamburger */}
           <div className="lg:hidden flex items-center gap-3">
-            {/* Cart icon visible on mobile too */}
             <button
               onClick={() => goTo("/cart")}
               className="relative p-2 text-white"
@@ -278,7 +266,6 @@ const Header = () => {
               className="text-white hover:text-[#f5c27a] p-1 transition-colors"
               aria-label="Toggle menu"
             >
-              {/* ✅ Animated icon swap */}
               <div className={`transition-transform duration-200 ${isOpen ? "rotate-90" : "rotate-0"}`}>
                 {isOpen ? <X size={26} /> : <Menu size={26} />}
               </div>
@@ -286,27 +273,20 @@ const Header = () => {
           </div>
         </div>
 
-        {/* ── MOBILE MENU — fixed overlay, doesn't push content ── */}
-        {/* ✅ FIX 4: slide-in overlay instead of content-pushing block */}
+        {/* ── MOBILE MENU ── */}
         <div
           className={`fixed inset-0 top-[80px] z-40 lg:hidden bg-[#1a1208]/98 backdrop-blur-md transition-transform duration-300 ease-in-out overflow-y-auto ${
             isOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
           <div className="px-6 py-8 space-y-1">
-
-            {/* Nav links */}
-            {/* ✅ FIX 1: same NAV_LINKS array — routes guaranteed correct */}
             {NAV_LINKS.map(([label, path]) => (
               <Link
                 key={path}
                 to={path}
                 className={`flex items-center justify-between py-4 text-lg font-medium border-b border-white/5 no-underline transition-colors duration-200 ${
-                  pathname === path
-                    ? "text-[#f5c27a]"            // ✅ FIX 2: active state in mobile too
-                    : "text-gray-200 hover:text-[#f5c27a]"
+                  pathname === path ? "text-[#f5c27a]" : "text-gray-200 hover:text-[#f5c27a]"
                 }`}
-                // ✅ FIX 3: menu auto-closes via useEffect on pathname change
               >
                 {label}
                 {pathname === path && (
@@ -315,7 +295,6 @@ const Header = () => {
               </Link>
             ))}
 
-            {/* Call Now */}
             <div className="pt-6 space-y-3">
               <button
                 onClick={() => { setShowCallModal(true); setIsOpen(false); }}
@@ -325,7 +304,6 @@ const Header = () => {
                 Call Now
               </button>
 
-              {/* Auth */}
               <div className="pt-2 border-t border-white/10">
                 {!isLoggedIn ? (
                   <div className="flex flex-col gap-3">
