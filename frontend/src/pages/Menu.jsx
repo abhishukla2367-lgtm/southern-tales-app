@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import API from "../api/axiosConfig"; // ✅ FIX: replaced raw axios with configured API instance
+import API from "../api/axiosConfig";
+const BASE = "https://res.cloudinary.com/db2vju4mv/image/upload";
 
-/* ================= HERO IMAGE IMPORTS ================= */
-import southFoodHero  from "../assets/images/hero/south-food.jpg";
-import southFoodHero2 from "../assets/images/hero/south-food2.jpg";
-import southFoodHero3 from "../assets/images/hero/south-food3.jpg";
+const heroImages = [
+  `${BASE}/f_auto,q_auto,w_1920/v1772540974/south-food_ehaehk.jpg`,
+  `${BASE}/f_auto,q_auto,w_1920/v1772540977/south-food2_tsrvco.jpg`,
+  `${BASE}/f_auto,q_auto,w_1920/v1772540972/south-food3_qr4f4j.jpg`,
+];
 
 /* ─────────────────── FILTER CONFIG ─────────────────────── */
-// Matches the professional sequence from your backend
 const CATEGORIES  = ["All","Breakfast","Starters","Main Course","Desserts","Beverages"];
 
 const PRICE_RANGES = [
@@ -21,11 +22,11 @@ const PRICE_RANGES = [
 ];
 
 const DIET_FILTERS = [
-  { label:"All",     value:"All"     },
-  { label:"● Veg",   value:"Veg"     },
-  { label:"▲ Non-Veg",value:"NonVeg" },
-  { label:"🌿 Vegan", value:"Vegan"  },
-  { label:"🥗 Dietary",value:"Dietary"},
+  { label:"All",      value:"All"     },
+  { label:"● Veg",    value:"Veg"     },
+  { label:"▲ Non-Veg",value:"NonVeg"  },
+  { label:"🌿 Vegan",  value:"Vegan"   },
+  { label:"🥗 Dietary",value:"Dietary" },
 ];
 
 const DIET_COLOURS = {
@@ -43,23 +44,18 @@ export default function Menu() {
   const { isLoggedIn } = useAuth();
   const { addToCart }  = useCart();
 
-  const [menuItems, setMenuItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [menuItems,        setMenuItems]        = useState([]);
+  const [loading,          setLoading]          = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDiet, setSelectedDiet] = useState("All");
-  const [selectedPrice, setSelectedPrice] = useState("All");
-  const [activeHero, setActiveHero] = useState(0);
+  const [searchTerm,       setSearchTerm]       = useState("");
+  const [selectedDiet,     setSelectedDiet]     = useState("All");
+  const [selectedPrice,    setSelectedPrice]    = useState("All");
+  const [activeHero,       setActiveHero]       = useState(0);
 
-  const heroImages = [southFoodHero, southFoodHero2, southFoodHero3];
-
-  // 1. FETCH LIVE DATA
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        // ✅ FIX: use API instance (includes baseURL, auth headers, interceptors)
         const res = await API.get("/menu");
-        // ✅ FIX: ensure _id is always a plain string for addToCart compatibility
         const normalized = res.data.map((item) => ({
           ...item,
           _id: item._id ? item._id.toString() : item.id,
@@ -74,11 +70,10 @@ export default function Menu() {
     fetchMenu();
   }, []);
 
-  // Hero auto-play
   useEffect(() => {
     const t = setInterval(() => setActiveHero(p => (p + 1) % heroImages.length), 3200);
     return () => clearInterval(t);
-  }, [heroImages.length]);
+  }, []);
 
   const handleAdd = (item) => {
     if (!isLoggedIn) {
@@ -88,14 +83,11 @@ export default function Menu() {
     addToCart(item);
   };
 
-  // 2. FILTER LOGIC
   const filteredItems = menuItems.filter(item => {
-    // Normalizing category strings (Handling "Main Course" vs "main-course")
-    const dbCat = item.category?.toLowerCase().replace(" ", "-");
+    const dbCat      = item.category?.toLowerCase().replace(" ", "-");
     const selectedCat = selectedCategory.toLowerCase().replace(" ", "-");
-    
-    const catOk   = selectedCategory === "All" || dbCat === selectedCat;
-    const srchOk  = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const catOk  = selectedCategory === "All" || dbCat === selectedCat;
+    const srchOk = item.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     let dietOk = true;
     if (selectedDiet === "Veg")     dietOk = item.veg && !item.vegan;
@@ -111,10 +103,11 @@ export default function Menu() {
 
     return catOk && srchOk && dietOk && priceOk;
   });
+
   return (
     <div className="bg-black min-h-screen text-white pb-20">
 
-      {/* HERO SECTION */}
+      {/* ══════════════════════ HERO ══════════════════════ */}
       <div className="relative h-[480px] w-full overflow-hidden border-b border-zinc-900">
         {heroImages.map((img, idx) => (
           <img
@@ -128,13 +121,18 @@ export default function Menu() {
         ))}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-          <span className="text-[#f5c27a] font-black tracking-[0.3em] text-xs mb-4 uppercase">Authentic South Indian Flavours</span>
-          <h1 className="text-6xl md:text-7xl font-black tracking-tighter text-white mb-4">OUR MENU</h1>
+          <span className="text-[#f5c27a] font-black tracking-[0.3em] text-xs mb-4 uppercase">
+            Authentic South Indian Flavours
+          </span>
+          <h1 className="text-6xl md:text-7xl font-black tracking-tighter mb-4 flex items-center gap-4">
+            <span style={{ color: "#ffffff" }}>OUR</span>
+            <span style={{ color: "#f5c27a" }}>MENU</span>
+          </h1>
           <div className="h-1.5 w-24 bg-[#f5c27a] rounded-full" />
         </div>
       </div>
 
-      {/* FILTER PANEL */}
+      {/* ══════════════════════ FILTER PANEL ══════════════════════ */}
       <div className="max-w-7xl mx-auto px-4 mt-12 space-y-8">
         <div className="bg-[#0a0a0a] p-6 rounded-[2rem] border border-zinc-900 space-y-5">
           <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -164,7 +162,7 @@ export default function Menu() {
 
           <div className="flex flex-wrap gap-2">
             {DIET_FILTERS.map(({ label, value }) => {
-              const col = DIET_COLOURS[value];
+              const col      = DIET_COLOURS[value];
               const isActive = selectedDiet === value;
               return (
                 <button
@@ -173,8 +171,8 @@ export default function Menu() {
                   className="px-5 py-2 rounded-xl font-bold text-xs uppercase transition-all"
                   style={{
                     background: isActive ? col.active : "transparent",
-                    color: isActive ? col.text : "#666",
-                    border: `1px solid ${isActive ? col.active : "#2a2a2a"}`,
+                    color:      isActive ? col.text   : "#666",
+                    border:     `1px solid ${isActive ? col.active : "#2a2a2a"}`,
                   }}
                 >
                   {label}
@@ -191,8 +189,8 @@ export default function Menu() {
                 className="px-5 py-2 rounded-xl font-bold text-xs uppercase transition-all"
                 style={{
                   background: selectedCategory === cat ? "#f5c27a" : "transparent",
-                  color: selectedCategory === cat ? "#000" : "#555",
-                  border: `1px solid ${selectedCategory === cat ? "#f5c27a" : "#2a2a2a"}`,
+                  color:      selectedCategory === cat ? "#000"    : "#555",
+                  border:     `1px solid ${selectedCategory === cat ? "#f5c27a" : "#2a2a2a"}`,
                 }}
               >
                 {cat}
@@ -201,7 +199,7 @@ export default function Menu() {
           </div>
         </div>
 
-        {/* DISH GRID */}
+        {/* ══════════════════════ DISH GRID ══════════════════════ */}
         {filteredItems.length === 0 ? (
           <div className="flex flex-col items-center py-24 text-zinc-700">
             <span className="text-5xl mb-4">🍽️</span>
@@ -210,7 +208,6 @@ export default function Menu() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredItems.map(item => (
-              // ✅ FIX: fallback chain until we confirm the real ID field from the debug log above
               <DishCard key={item._id || item.id || item.name} item={item} onAdd={handleAdd} />
             ))}
           </div>
@@ -221,13 +218,11 @@ export default function Menu() {
 }
 
 /* ════════════════════ SUB-COMPONENT: DISH CARD ════════════════════ */
-/* ════════════════════ SUB-COMPONENT: DISH CARD ════════════════════ */
-/* ════════════════════ SUB-COMPONENT: DISH CARD ════════════════════ */
 function DishCard({ item, onAdd }) {
   const [isAdded, setIsAdded] = React.useState(false);
 
-  const optimizedImage = item.image?.includes('cloudinary') 
-    ? item.image.replace('/upload/', '/upload/w_400,c_fill,g_auto,f_auto,q_auto/')
+  const optimizedImage = item.image?.includes("cloudinary")
+    ? item.image.replace("/upload/", "/upload/w_400,c_fill,g_auto,f_auto,q_auto/")
     : item.image;
 
   const handleButtonClick = () => {
@@ -238,8 +233,6 @@ function DishCard({ item, onAdd }) {
 
   return (
     <div className="h-full flex flex-col bg-[#0a0a0a] border border-zinc-900 rounded-[2rem] overflow-hidden group hover:border-[#f5c27a]/50 transition-all duration-500 shadow-xl hover:shadow-[0_0_30px_-10px_rgba(245,194,122,0.15)]">
-      
-      {/* IMAGE SECTION */}
       <div className="relative h-56 flex-shrink-0 overflow-hidden">
         <img
           src={optimizedImage}
@@ -247,13 +240,11 @@ function DishCard({ item, onAdd }) {
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           loading="lazy"
         />
-        {/* Glowing Status Dot */}
         <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10">
-          <div className={`w-3 h-3 rounded-full ${item.veg ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500 shadow-[0_0_8px_#ef4444]'}`} />
+          <div className={`w-3 h-3 rounded-full ${item.veg ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500 shadow-[0_0_8px_#ef4444]"}`} />
         </div>
       </div>
 
-      {/* CONTENT SECTION */}
       <div className="p-6 flex flex-col flex-grow">
         <div className="mb-2">
           <h3 className="text-xl font-black tracking-tight text-white group-hover:text-[#f5c27a] transition-colors line-clamp-1">
@@ -267,21 +258,16 @@ function DishCard({ item, onAdd }) {
 
         <div className="flex-grow" />
 
-        {/* --- UPDATED ACTIONS SECTION --- */}
         <div className="pt-6 flex items-center justify-between border-t border-zinc-900/50 mt-2">
-          {/* Price moved here for professional focus */}
-          <div className="flex flex-col">
-            <span className="text-[#f5c27a] font-black text-xl tracking-tighter">
-              ₹{item.price}
-            </span>
-          </div>
-
+          <span className="text-[#f5c27a] font-black text-xl tracking-tighter">
+            ₹{item.price}
+          </span>
           <button
             onClick={handleButtonClick}
             disabled={isAdded}
             className={`flex-shrink-0 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-300 transform active:scale-95 shadow-lg ${
-              isAdded 
-                ? "bg-green-500 text-white translate-y-0" 
+              isAdded
+                ? "bg-green-500 text-white translate-y-0"
                 : "bg-[#f5c27a] text-black hover:bg-white hover:-translate-y-1"
             }`}
           >

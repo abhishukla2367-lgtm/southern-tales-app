@@ -1,32 +1,20 @@
+// server/server.js
 require("dotenv").config();
 const express    = require("express");
 const mongoose   = require("mongoose");
 const cors       = require("cors");
 const dns        = require("node:dns");
 const http       = require("http");
-const { Server } = require("socket.io");
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const app    = express();
-const server = http.createServer(app); // ← wrap express in http server
+const server = http.createServer(app);
 
 // ── Socket.io setup ──────────────────────────────────────────────────────────
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || ["http://localhost:5173", "http://localhost:5174"],
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
-
-// Make io accessible in all route files via req.app.get("io")
-app.set("io", io);
-
-io.on("connection", (socket) => {
-  console.log(`🔌 Socket connected: ${socket.id}`);
-  socket.on("disconnect", () => console.log(`🔌 Socket disconnected: ${socket.id}`));
-});
+const { initSocket } = require("./socket");         // ✅ import from socket.js
+const io = initSocket(server);                       // ✅ initialize with server
+app.set("io", io);                                   // ✅ accessible via req.app.get("io")
 
 // --- 1. MIDDLEWARE CONFIGURATION ---
 
@@ -61,40 +49,29 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- 3. ROUTES ---
 
-const otpRoutes = require("./routes/otpRoutes");
-app.use("/api/otp", otpRoutes);
-
-const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes);
-
-const cartRoutes = require("./routes/cartRoutes");
-app.use("/api/cart", cartRoutes);
-
-const menuRoutes = require("./routes/menuRoutes");
-app.use("/api/menu", menuRoutes);
-
-const orderRoutes = require("./routes/orderRoutes");
-app.use("/api/orders", orderRoutes);
-
+const otpRoutes         = require("./routes/otpRoutes");
+const authRoutes        = require("./routes/authRoutes");
+const cartRoutes        = require("./routes/cartRoutes");
+const menuRoutes        = require("./routes/menuRoutes");
+const orderRoutes       = require("./routes/orderRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
+const adminRoutes       = require("./routes/adminRoutes");
+const reportRoutes      = require("./routes/reportRoutes");
+const walkinRoutes      = require("./routes/walkinRoutes");
+const billRoutes        = require("./routes/billRoutes");
+const tableRoutes       = require("./routes/tableRoutes");
+
+app.use("/api/otp",          otpRoutes);
+app.use("/api/auth",         authRoutes);
+app.use("/api/cart",         cartRoutes);
+app.use("/api/menu",         menuRoutes);
+app.use("/api/orders",       orderRoutes);
 app.use("/api/reservations", reservationRoutes);
-
-const adminRoutes = require("./routes/adminRoutes");
-app.use("/api/admin", adminRoutes);
-
-const reportRoutes = require("./routes/reportRoutes");
-app.use("/api/reports", reportRoutes);
-
-// ── New routes for Live Orders feature ──────────────────────────────────────
-const walkinRoutes = require("./routes/walkinRoutes");
-app.use("/api/walkin", walkinRoutes);
-
-const billRoutes = require("./routes/billRoutes");
-app.use("/api/bill", billRoutes);
-
-const tableRoutes = require("./routes/tableRoutes");
-app.use("/api/tables", tableRoutes);
-// ─────────────────────────────────────────────────────────────────────────────
+app.use("/api/admin",        adminRoutes);
+app.use("/api/reports",      reportRoutes);
+app.use("/api/walkin",       walkinRoutes);
+app.use("/api/bill",         billRoutes);
+app.use("/api/tables",       tableRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -114,7 +91,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- 5. START SERVER --- (use `server.listen` not `app.listen`)
+// --- 5. START SERVER ---
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
