@@ -11,7 +11,11 @@ const heroImages = [
   `${BASE}/f_auto,q_auto,w_1920/v1772540972/south-food3_qr4f4j.jpg`,
 ];
 
-/* ─────────────────── FILTER CONFIG ─────────────────────── */
+const heroAlts = [
+  "Authentic South Indian cuisine spread",
+  "Traditional South Indian dishes at Southern Tales",
+  "South Indian food platter at Southern Tales restaurant",
+];
 const CATEGORIES  = ["All","Breakfast","Starters","Main Course","Desserts","Beverages"];
 
 const PRICE_RANGES = [
@@ -116,7 +120,7 @@ export default function Menu() {
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
               activeHero === idx ? "opacity-50" : "opacity-0"
             }`}
-            alt="Hero"
+            alt={heroAlts[idx]}
           />
         ))}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60" />
@@ -137,8 +141,10 @@ export default function Menu() {
         <div className="bg-[#0a0a0a] p-6 rounded-[2rem] border border-zinc-900 space-y-5">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative w-full md:w-1/3">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">🔍</span>
+              <label htmlFor="menu-search" className="sr-only">Search for a dish</label>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" aria-hidden="true">🔍</span>
               <input
+                id="menu-search"
                 type="text"
                 placeholder="Search for a dish..."
                 value={searchTerm}
@@ -147,7 +153,9 @@ export default function Menu() {
               />
             </div>
 
+            <label htmlFor="price-filter" className="sr-only">Filter by price</label>
             <select
+              id="price-filter"
               value={selectedPrice}
               onChange={e => setSelectedPrice(e.target.value)}
               className="bg-black border border-zinc-800 text-white rounded-xl px-4 py-3 text-sm font-semibold outline-none cursor-pointer focus:border-[#f5c27a]"
@@ -241,7 +249,11 @@ function DishCard({ item, onAdd }) {
           loading="lazy"
         />
         <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10">
-          <div className={`w-3 h-3 rounded-full ${item.veg ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500 shadow-[0_0_8px_#ef4444]"}`} />
+          <div
+            className={`w-3 h-3 rounded-full ${item.veg ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500 shadow-[0_0_8px_#ef4444]"}`}
+            role="img"
+            aria-label={item.veg ? "Vegetarian" : "Non-vegetarian"}
+          />
         </div>
       </div>
 

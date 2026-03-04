@@ -66,8 +66,9 @@ const Login = () => {
 
         {/* Email */}
         <div className="mb-5">
-          <label className="mb-2 block text-sm font-bold text-gray-300">Email Address</label>
+          <label htmlFor="login-email" className="mb-2 block text-sm font-bold text-gray-300">Email Address</label>
           <input
+            id="login-email"
             type="email"
             value={email}
             autoComplete="off"
@@ -81,7 +82,7 @@ const Login = () => {
         {/* Password */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-bold text-gray-300">Password</label>
+            <label htmlFor="login-password" className="text-sm font-bold text-gray-300">Password</label>
             <Link
               to="/forgot-password"
               className="text-sm font-bold text-[#f5c27a] hover:underline transition-colors"
@@ -92,6 +93,7 @@ const Login = () => {
 
           <div className="relative">
             <input
+              id="login-password"
               type={showPassword ? "text" : "password"}
               value={password}
               autoComplete="new-password"
