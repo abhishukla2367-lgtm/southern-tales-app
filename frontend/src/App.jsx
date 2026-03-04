@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from "react";
+import React, { lazy, Suspense, useEffect, useContext } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,40 +7,47 @@ import {
   Navigate,
 } from "react-router-dom";
 
-// Components
+// ─── Always-loaded components (small, used on every page) ─────────────────
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 import ProtectedRoute from "./components/ProtectedRoute";
-
-// Pages
-import Home from "./pages/Home";
-import Menu from "./pages/Menu";
-import OrderSummaryPage from "./pages/OrderSummaryPage";
-import AboutUs from "./pages/AboutUs";
-import ContactUs from "./pages/ContactUs";
-import Reservation from "./pages/Reservation";
-import Gallery from "./pages/Gallery";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import OTPVerification from "./pages/otpVerification";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile";
-
-// Admin Components
-import AdminDashboard from "./components/admin/AdminDashboard";
-import MenuList from "./components/admin/menu/MenuList";
-import OrdersList from "./components/orders/OrdersList";         // 🔄 fixed path
-import ReservationsList from "./components/reservations/ReservationsList";
-
-// Admin Pages
-import ReportsPage from "./pages/admin/ReportsPage";
-import LiveOrders from "./pages/LiveOrders";                     // ✅ new
-
-// Contexts
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
+
+// ─── Lazy-loaded pages (code-split per route) ────────────────────────────
+const Home              = lazy(() => import("./pages/Home"));
+const Menu              = lazy(() => import("./pages/Menu"));
+const OrderSummaryPage  = lazy(() => import("./pages/OrderSummaryPage"));
+const AboutUs           = lazy(() => import("./pages/AboutUs"));
+const ContactUs         = lazy(() => import("./pages/ContactUs"));
+const Reservation       = lazy(() => import("./pages/Reservation"));
+const Gallery           = lazy(() => import("./pages/Gallery"));
+const Login             = lazy(() => import("./pages/Login"));
+const Register          = lazy(() => import("./pages/Register"));
+const OTPVerification   = lazy(() => import("./pages/otpVerification"));
+const ForgotPassword    = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword     = lazy(() => import("./pages/ResetPassword"));
+const Profile           = lazy(() => import("./pages/Profile"));
+
+// ─── Admin pages (heavy — only loaded if admin visits) ───────────────────
+const AdminDashboard    = lazy(() => import("./components/admin/AdminDashboard"));
+const MenuList          = lazy(() => import("./components/admin/menu/MenuList"));
+const OrdersList        = lazy(() => import("./components/orders/OrdersList"));
+const ReservationsList  = lazy(() => import("./components/reservations/ReservationsList"));
+const ReportsPage       = lazy(() => import("./pages/admin/ReportsPage"));
+const LiveOrders        = lazy(() => import("./pages/Liveorders"));
+
+// ─── Minimal full-page loading fallback ──────────────────────────────────
+const PageLoader = () => (
+  <div
+    role="status"
+    aria-label="Loading page"
+    className="h-screen flex items-center justify-center bg-neutral-950"
+  >
+    <div className="w-10 h-10 rounded-full border-2 border-orange-500/20 border-t-orange-500 animate-spin" />
+  </div>
+);
 
 /* ── Admin Route Protector ── */
 const AdminRoute = ({ children }) => {
@@ -66,11 +73,14 @@ const ScrollToTop = () => {
 /* ── Main Layout ── */
 const Layout = ({ children }) => {
   const { pathname } = useLocation();
-
   const isAdminRoute = pathname.startsWith("/admin");
 
   return (
-    <div className={isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-black text-white"}>
+    <div
+      className={
+        isAdminRoute ? "min-h-screen bg-gray-100" : "min-h-screen bg-black text-white"
+      }
+    >
       {!isAdminRoute && <Header />}
       <main className={isAdminRoute ? "" : "min-h-screen"}>{children}</main>
       {!isAdminRoute && <Footer />}
@@ -90,38 +100,40 @@ export default function App() {
         <CartProvider>
           <ScrollToTop />
           <Layout>
-            <Routes>
-              {/* PUBLIC ROUTES */}
-              <Route path="/"          element={<Home />} />
-              <Route path="/menu"      element={<Menu />} />
-              <Route path="/about"     element={<AboutUs />} />
-              <Route path="/contactus" element={<ContactUs />} />
-              <Route path="/gallery"   element={<Gallery />} />
-              <Route path="/cart"      element={<CartDrawer />} />
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* PUBLIC ROUTES */}
+                <Route path="/"          element={<Home />} />
+                <Route path="/menu"      element={<Menu />} />
+                <Route path="/about"     element={<AboutUs />} />
+                <Route path="/contactus" element={<ContactUs />} />
+                <Route path="/gallery"   element={<Gallery />} />
+                <Route path="/cart"      element={<CartDrawer />} />
 
-              {/* AUTH ROUTES */}
-              <Route path="/login"                 element={<Login />} />
-              <Route path="/register"              element={<Register />} />
-              <Route path="/verify-otp"            element={<OTPVerification />} />
-              <Route path="/forgot-password"       element={<ForgotPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
+                {/* AUTH ROUTES */}
+                <Route path="/login"                 element={<Login />} />
+                <Route path="/register"              element={<Register />} />
+                <Route path="/verify-otp"            element={<OTPVerification />} />
+                <Route path="/forgot-password"       element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-              {/* PROTECTED USER ROUTES */}
-              <Route path="/reservation"   element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
-              <Route path="/order-summary" element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} />
-              <Route path="/profile"       element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                {/* PROTECTED USER ROUTES */}
+                <Route path="/reservation"   element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
+                <Route path="/order-summary" element={<ProtectedRoute><OrderSummaryPage /></ProtectedRoute>} />
+                <Route path="/profile"       element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-              {/* PROTECTED ADMIN ROUTES */}
-              <Route path="/admin"              element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/menu"         element={<AdminRoute><MenuList /></AdminRoute>} />
-              <Route path="/admin/orders"       element={<AdminRoute><OrdersList /></AdminRoute>} />
-              <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
-              <Route path="/admin/reports"      element={<AdminRoute><ReportsPage /></AdminRoute>} />
-              <Route path="/admin/live-orders"  element={<AdminRoute><LiveOrders /></AdminRoute>} />  {/* ✅ new */}
+                {/* PROTECTED ADMIN ROUTES */}
+                <Route path="/admin"              element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin/menu"         element={<AdminRoute><MenuList /></AdminRoute>} />
+                <Route path="/admin/orders"       element={<AdminRoute><OrdersList /></AdminRoute>} />
+                <Route path="/admin/reservations" element={<AdminRoute><ReservationsList /></AdminRoute>} />
+                <Route path="/admin/reports"      element={<AdminRoute><ReportsPage /></AdminRoute>} />
+                <Route path="/admin/live-orders"  element={<AdminRoute><LiveOrders /></AdminRoute>} />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </Suspense>
           </Layout>
         </CartProvider>
       </AuthProvider>

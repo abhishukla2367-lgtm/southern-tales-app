@@ -74,8 +74,9 @@ const Register = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-400">Full Name</label>
+            <label htmlFor="reg-name" className="mb-1 block text-sm font-semibold text-gray-400">Full Name</label>
             <input
+              id="reg-name"
               name={fieldKeys.name}
               type="text"
               placeholder="e.g. Arjun Sharma"
@@ -88,8 +89,9 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-400">Email Address</label>
+            <label htmlFor="reg-email" className="mb-1 block text-sm font-semibold text-gray-400">Email Address</label>
             <input
+              id="reg-email"
               name={fieldKeys.email}
               type="email"
               placeholder="e.g. arjun@gmail.com"
@@ -102,8 +104,9 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-400">Phone Number</label>
+            <label htmlFor="reg-phone" className="mb-1 block text-sm font-semibold text-gray-400">Phone Number</label>
             <input
+              id="reg-phone"
               name={fieldKeys.phone}
               type="tel"
               placeholder="e.g. +91 98765 43210"
@@ -116,8 +119,9 @@ const Register = () => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-400">Residential Address</label>
+            <label htmlFor="reg-address" className="mb-1 block text-sm font-semibold text-gray-400">Residential Address</label>
             <textarea
+              id="reg-address"
               name={fieldKeys.address}
               rows="2"
               placeholder="e.g. 12, MG Road, Koramangala, Bengaluru – 560034"
@@ -130,9 +134,10 @@ const Register = () => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-semibold text-gray-400">Password</label>
+            <label htmlFor="reg-password" className="mb-1 block text-sm font-semibold text-gray-400">Password</label>
             <div className="relative">
               <input
+                id="reg-password"
                 name={fieldKeys.pass}
                 type={showPassword ? "text" : "password"}
                 placeholder="Min. 8 characters"

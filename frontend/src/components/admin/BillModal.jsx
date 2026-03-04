@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import API from "../../api/axiosConfig";
-import restaurantLogo from "../../assets/images/logo/southern-tales-logo.jpeg";
 
+const LOGO_URL = "https://res.cloudinary.com/db2vju4mv/image/upload/f_auto,q_auto,w_200/v1772560792/southern-tales-logo_knrfgm.jpg";
 const RESTAURANT = {
   name: "Southern Tales",
   tagline: "Where Every Bite Tells A Story",
@@ -180,9 +180,7 @@ export default function BillModal({ orderId, onClose, onPaid }) {
             {/* ── RESTAURANT HEADER ── */}
             <div className="relative px-8 pt-8 pb-6 text-center" style={{ borderBottom: "1px solid #2e1f08" }}>
               <div className="flex justify-center mb-4">
-                <img
-                  src={restaurantLogo}
-                  alt={RESTAURANT.name}
+                <img src={LOGO_URL} alt={RESTAURANT.name}
                   className="w-20 h-20 rounded-full object-cover"
                   style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}
                 />

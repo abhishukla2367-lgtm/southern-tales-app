@@ -247,10 +247,11 @@ const Contact = () => {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid md:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Full Name</label>
+                      <label htmlFor="contact-name" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Full Name</label>
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} aria-hidden="true" />
                         <input
+                          id="contact-name"
                           type="text"
                           name="name"
                           placeholder="Your Name"
@@ -262,10 +263,11 @@ const Contact = () => {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Email Address</label>
+                      <label htmlFor="contact-email" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Email Address</label>
                       <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} aria-hidden="true" />
                         <input
+                          id="contact-email"
                           type="email"
                           name="email"
                           placeholder="hello@example.com"
@@ -278,8 +280,9 @@ const Contact = () => {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Message</label>
+                    <label htmlFor="contact-message" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Message</label>
                     <textarea
+                      id="contact-message"
                       name="message"
                       placeholder="How can we help you? Ask about reservations, menu, events..."
                       value={form.message}
@@ -443,10 +446,11 @@ const Contact = () => {
                   <form onSubmit={handleReviewSubmit} className="space-y-5">
                     <div className="grid md:grid-cols-2 gap-5">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Name</label>
+                        <label htmlFor="review-name" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Name</label>
                         <div className="relative">
-                          <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} aria-hidden="true" />
                           <input
+                            id="review-name"
                             type="text"
                             placeholder="Your Name"
                             value={reviewForm.name}
@@ -458,10 +462,11 @@ const Contact = () => {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Email Address</label>
+                        <label htmlFor="review-email" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Email Address</label>
                         <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} aria-hidden="true" />
                           <input
+                            id="review-email"
                             type="email"
                             placeholder="hello@example.com"
                             value={reviewForm.email}
@@ -475,10 +480,11 @@ const Contact = () => {
 
                     {/* Dish Ordered (optional) */}
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">
+                      <label htmlFor="review-dish" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">
                         Dish Ordered <span className="text-zinc-600 normal-case font-normal">(optional)</span>
                       </label>
                       <input
+                        id="review-dish"
                         type="text"
                         placeholder="e.g. Masala Dosa, Payasam..."
                         value={reviewForm.dish}
@@ -489,8 +495,8 @@ const Contact = () => {
 
                     {/* Star Rating Picker */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Rating</label>
-                      <div className="bg-[#141414] border border-zinc-800 rounded-xl px-4 py-3.5">
+                      <label htmlFor="review-rating" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Rating</label>
+                      <div id="review-rating" className="bg-[#141414] border border-zinc-800 rounded-xl px-4 py-3.5">
                         <StarPicker
                           value={reviewForm.rating}
                           onChange={(r) => setReviewForm({ ...reviewForm, rating: r })}
@@ -501,8 +507,9 @@ const Contact = () => {
 
                     {/* Review Text */}
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Review</label>
+                      <label htmlFor="review-message" className="text-[10px] font-black uppercase tracking-widest text-[#f5c27a]/70">Your Review</label>
                       <textarea
+                        id="review-message"
                         placeholder="Tell us about your dining experience — food quality, ambiance, service..."
                         value={reviewForm.message}
                         onChange={(e) => setReviewForm({ ...reviewForm, message: e.target.value })}

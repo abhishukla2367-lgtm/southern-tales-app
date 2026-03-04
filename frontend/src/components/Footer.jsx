@@ -27,9 +27,9 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: <FaFacebookF />, href: "https://facebook.com" },
-    { icon: <FaInstagram />, href: "https://instagram.com" },
-    { icon: <SiX />,         href: "https://x.com" },
+    { icon: <FaFacebookF aria-hidden="true" />, href: "https://facebook.com", label: "Follow us on Facebook" },
+    { icon: <FaInstagram aria-hidden="true" />, href: "https://instagram.com", label: "Follow us on Instagram" },
+    { icon: <SiX         aria-hidden="true" />, href: "https://x.com",         label: "Follow us on X (Twitter)" },
   ];
 
   const contactInfo = [
@@ -62,8 +62,9 @@ const Footer = () => {
               An authentic South Indian dining experience crafted with heritage recipes and the finest spices from across the Deccan.
             </p>
             <div className="flex gap-3">
-              {socialLinks.map(({ icon, href }, i) => (
+              {socialLinks.map(({ icon, href, label }, i) => (
                 <a key={i} href={href} target="_blank" rel="noopener noreferrer"
+                  aria-label={label}
                   className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center text-gray-400 text-sm hover:border-orange-500 hover:text-orange-500 transition-all duration-300"
                 >
                   {icon}
