@@ -2,12 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey:            "AIzaSyAzc6bc9ByiZ99p5g0G7MmbgMaRZj_-2dE",
-  authDomain:        "southern-tales.firebaseapp.com",
-  projectId:         "southern-tales",
-  storageBucket:     "southern-tales.firebasestorage.app",
-  messagingSenderId: "1054009904247",
-  appId:             "1:1054009904247:web:4c7c8c5498f93ccd348a72",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
