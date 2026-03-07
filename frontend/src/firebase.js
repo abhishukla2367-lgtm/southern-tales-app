@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,4 +11,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// memoryLocalCache disables IndexedDB persistence — prevents Lighthouse
+// "stored data affecting performance" warning and removes the IDB write
+// on every page load that was delaying LCP by ~2s on mobile
+export const db = initializeFirestore(app, { localCache: memoryLocalCache() });
