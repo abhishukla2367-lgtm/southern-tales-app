@@ -1,4 +1,4 @@
-import{j as e,A as w}from"./index-CGo4ogYq.js";import{r as l}from"./vendor-react-BFgx2P6V.js";import{u as R,w as V}from"./xlsx-C2K9OxTh.js";import{E as K,a as X}from"./ErrorState-FLmbG1P0.js";import"./vendor-icons-BS4pEh3t.js";import"./vendor-socket-Ba-X_5Ya.js";const Z="https://res.cloudinary.com/db2vju4mv/image/upload/f_auto,q_auto,w_200/v1772560792/southern-tales-logo_knrfgm.jpg",L={name:"Southern Tales",tagline:"Where Every Bite Tells A Story",address:"CBD Belapur, Navi Mumbai, Maharashtra",phone:"+91 98765 43210",gst:"33AABCU9603R1ZX"},J=`
+import{j as e,A as w}from"./index-GT_6T4rx.js";import{r as l}from"./vendor-react-BFgx2P6V.js";import{u as R,w as V}from"./xlsx-C2K9OxTh.js";import{E as K,a as X}from"./ErrorState-XOtd70o0.js";import"./vendor-icons-BS4pEh3t.js";import"./vendor-socket-Ba-X_5Ya.js";const Z="https://res.cloudinary.com/db2vju4mv/image/upload/f_auto,q_auto,w_200/v1772560792/southern-tales-logo_knrfgm.jpg",L={name:"Southern Tales",tagline:"Where Every Bite Tells A Story",address:"CBD Belapur, Navi Mumbai, Maharashtra",phone:"+91 98765 43210",gst:"33AABCU9603R1ZX"},J=`
   @media print {
     .bill-no-print {
       display: none !important;
