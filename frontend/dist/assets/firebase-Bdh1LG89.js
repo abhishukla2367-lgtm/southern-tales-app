@@ -1,1 +1,0 @@
-import{e,f as a,m as s}from"./vendor-firebase-9wE27zUm.js";const o={apiKey:"AIzaSyCz8Upv9rBrO5Y5Y4AMKgA8dDvNTBcnnOY",authDomain:"southern-tales.firebaseapp.com",projectId:"southern-tales",storageBucket:"southern-tales.firebasestorage.app",messagingSenderId:"1054009904247",appId:"1:1054009904247:web:4c7c8c5498f93ccd348a72"},t=a(o),i=e(t,{localCache:s()});export{i as d};
